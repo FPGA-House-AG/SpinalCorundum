@@ -23,22 +23,47 @@ import spinal.lib._
 
 import scala.util.Random
 
+object MyTopLevel {
+  case class BundleA(aaa : Int) extends Bundle{
+    val a = UInt(8 bit)
+    val b = Bool()
+  }
+}
+
+import mylib.MyTopLevel._
+
+case class RGB(channelWidth : Int) extends Bundle{
+  val x   = Bool()
+}
+
+//val source = Stream(RGB(8))
+//val sink   = Stream(RGB(8))
+//sink <-< source
+
 //Hardware definition
 class MyTopLevel extends Component {
   val io = new Bundle {
-    val cond0 = in  Bool()
-    val cond1 = in  Bool()
-    val flag  = out Bool()
-    val state = out UInt(8 bits)
+    val slave0 = slave Stream new RGB(8)
+    val slave1 = slave Stream new RGB(8)
+    val master0 = master Stream new RGB(8)
   }
-  val counter = Reg(UInt(8 bits)) init(0)
+//    val xslave = slave Stream(BundleA(8))
+//    val xmaster = master Stream(BundleA(8))
 
-  when(io.cond0){
-    counter := counter + 1
-  }
+  val source = Stream(RGB(8))
+  val sink   = Stream(RGB(8))
+  source << sink.s2mPipe().m2sPipe()
 
-  io.state := counter
-  io.flag  := (counter === 0) | io.cond1
+  io.slave0 <> sink
+  io.master0 <> source
+
+  //io.slave0 <> xslave
+  //io.master0 <> xmaster
+  //slave << master.s2m()
+
+  //val arbiterLowIdPortFirstFragmentLockInputs =  Vec(slave Stream(Fragment(RGB(8))),3)
+  //val arbiterLowIdPortFirstFragmentLockOutput =  master Stream(Fragment(RGB(8)))
+  //arbiterLowIdPortFirstFragmentLockOutput << StreamArbiterFactory.lowerFirst.fragmentLock.on(arbiterLowIdPortFirstFragmentLockInputs)
 }
 
 //Generate the MyTopLevel's Verilog

@@ -1,0 +1,11 @@
+read_verilog MyTopLevel.v
+hierarchy -check
+
+prep -top MyTopLevel
+
+proc; opt; fsm; opt; memory; opt
+
+json -o MyTopLevel.json
+
+synth_xilinx
+
