@@ -1,3 +1,8 @@
+Fork
+====
+This fork of SpinalTemplateSbt is aimed at learning SpinalHDL designs, by inspecting the generated
+output through yosys/netlistsvg via Makefile to automate and document the flow.
+
 Spinal Base Project
 ============
 This repository is a base SBT project added to help non Scala/SBT native people in their first steps.
