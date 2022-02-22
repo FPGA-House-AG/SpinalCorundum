@@ -37,7 +37,7 @@ bin/
 *.json
 *.vcd
 !tester/src/test/resources/*.vhd
-
+/*.svg
 
 simWorkspace/
 tmp/
