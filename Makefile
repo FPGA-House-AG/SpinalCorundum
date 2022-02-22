@@ -18,33 +18,33 @@
 # continuous build (using sbt ~)
 repl:
 	set -e
-	sbt "~runMain corundum.MyTopLevelVerilog"
+	sbt "~runMain corundum.MuxHighPrioFragmentStreamVerilog"
 
 sim_repl:
 	set -e
 # run in background
 	gtkwave -f ./simWorkspace/FragmentStash/test.vcd -a ./FragmentStash.gtkw &
-	gtkwave -f ./simWorkspace/MyTopLevel/test.vcd -a ./MyTopLevel.gtkw &
+	gtkwave -f ./simWorkspace/MuxHighPrioFragmentStream/test.vcd -a ./MuxHighPrioFragmentStream.gtkw &
 # continuous build/simulate, press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
-	sbt "~test:runMain corundum.MyTopLevelSim; test:runMain corundum.FragmentStashSim;"
+	sbt "~test:runMain corundum.MuxHighPrioFragmentStreamSim; test:runMain corundum.FragmentStashSim;"
 	# @TODO can we kill gtkwave here?
 
-spinal: src/main/scala/corundum/MyTopLevel.scala
+spinal: src/main/scala/corundum/MuxHighPrioFragmentStream.scala
 	set -e
-	sbt "runMain corundum.MyTopLevelVerilog"
+	sbt "runMain corundum.MuxHighPrioFragmentStreamVerilog"
 
-MyTopLevel.json: MyTopLevel.v MyTopLevel.ys
+MuxHighPrioFragmentStream.json: MuxHighPrioFragmentStream.v MuxHighPrioFragmentStream.ys
 	set -e
-	yosys MyTopLevel.ys
+	yosys MuxHighPrioFragmentStream.ys
 
-MyTopLevel.svg: MyTopLevel.json
+MuxHighPrioFragmentStream.svg: MuxHighPrioFragmentStream.json
 	set -e
-	netlistsvg MyTopLevel.json -o MyTopLevel.svg &
+	netlistsvg MuxHighPrioFragmentStream.json -o MuxHighPrioFragmentStream.svg &
 
-simulate: src/main/scala/corundum/MyTopLevel.scala src/main/scala/corundum/MyTopLevelSim.scala
+simulate: src/main/scala/corundum/MuxHighPrioFragmentStream.scala src/main/scala/corundum/MuxHighPrioFragmentStreamSim.scala
 	set -e
-	sbt "runMain corundum.MyTopLevelSim"
-	gtkwave -f ./simWorkspace/MyTopLevel/test.vcd -a ./MyTopLevel.gtkw &
+	sbt "runMain corundum.MuxHighPrioFragmentStreamSim"
+	gtkwave -f ./simWorkspace/MuxHighPrioFragmentStream/test.vcd -a ./MuxHighPrioFragmentStream.gtkw &
 
 clean:
 	rm -rf simWorkspace *.svg

@@ -29,7 +29,7 @@ case class CorundumFrame(dataWidth : Int) extends Bundle {
 }
 
 // companion object
-object MyTopLevel {
+object MuxHighPrioFragmentStream {
 //  case class BundleA(widthBits : Int) extends Bundle {
 //    val tkeep = UInt(aaa/8 bit)
 //    val tdata = UInt(aaa bit)
@@ -38,7 +38,7 @@ object MyTopLevel {
 
 }
 
-import corundum.MyTopLevel._
+import corundum.MuxHighPrioFragmentStream._
 
 //val source = Stream(RGB(8))
 //val sink   = Stream(RGB(8))
@@ -47,7 +47,7 @@ import corundum.MyTopLevel._
 //Hardware definition
 
 // multiplexes two packet streams (Stream(Fragment) with lock), first port has priority
-class MyTopLevel extends Component {
+class MuxHighPrioFragmentStream extends Component {
   val io = new Bundle {
     val slave0 = slave Stream Fragment(CorundumFrame(8))
     val slave1 = slave Stream Fragment(CorundumFrame(8))
@@ -116,42 +116,45 @@ object XilinxPatch {
   }
 }
 
-//Generate the MyTopLevel's Verilog
-object MyTopLevelVerilog {
+//Generate the MuxHighPrioFragmentStream's Verilog
+object MuxHighPrioFragmentStreamVerilog {
 //  def main(args: Array[String]) {
-//    SpinalVerilog(new MyTopLevel)
+//    SpinalVerilog(new MuxHighPrioFragmentStream)
 //  }
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new MyTopLevel
+      val toplevel = new MuxHighPrioFragmentStream
+      XilinxPatch(toplevel)
+    })
+    config.generateVerilog({
+      val toplevel = new FragmentStash
       XilinxPatch(toplevel)
     })
   }
 }
 
-//Generate the MyTopLevel's VHDL
-object MyTopLevelVhdl {
+//Generate the MuxHighPrioFragmentStream's VHDL
+object MuxHighPrioFragmentStreamVhdl {
   def main(args: Array[String]) {
 
-    SpinalVhdl(new MyTopLevel)
+    SpinalVhdl(new MuxHighPrioFragmentStream)
   }
 }
-
 
 //Define a custom SpinalHDL configuration with synchronous reset instead of the default asynchronous one. This configuration can be resued everywhere
 object MySpinalConfig extends SpinalConfig(defaultConfigForClockDomains = ClockDomainConfig(resetKind = SYNC))
 
-//Generate the MyTopLevel's Verilog using the above custom configuration.
-object MyTopLevelVerilogWithCustomConfig {
+//Generate the MuxHighPrioFragmentStream's Verilog using the above custom configuration.
+object MuxHighPrioFragmentStreamVerilogWithCustomConfig {
   def main(args: Array[String]) {
-    MySpinalConfig.generateVerilog(new MyTopLevel)
+    MySpinalConfig.generateVerilog(new MuxHighPrioFragmentStream)
   }
 }
 
 class FragmentStash extends Component {
   val maxFragmentSize = 16
-  val minPackets = 2
+  val minPackets = 1
   val fifoSize = minPackets * maxFragmentSize
   val io = new Bundle {
     val slave0 = slave Stream new Fragment(CorundumFrame(8))
@@ -176,6 +179,7 @@ class FragmentStash extends Component {
 
   io.full := fifo.io.availability < 2
 
+  //fifo.io.push << io.slave0 // @TODO we can remove x, but might want to add stages later
   x << io.slave0
   fifo.io.push << x
   fifo.io.pop >> y

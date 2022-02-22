@@ -1,0 +1,13 @@
+read_verilog MuxHighPrioFragmentStream.v
+hierarchy -check
+
+prep -top MuxHighPrioFragmentStream
+
+proc; opt; fsm; opt; memory; opt
+
+synth -top MuxHighPrioFragmentStream
+flatten
+json -o MuxHighPrioFragmentStream.json
+
+#synth_xilinx
+

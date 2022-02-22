@@ -64,13 +64,13 @@ Open a terminal in the root of it and run "sbt run". At the first execution, the
 cd SpinalTemplateSbt
 
 //If you want to generate the Verilog of your design
-sbt "runMain corundum.MyTopLevelVerilog"
+sbt "runMain corundum.MuxHighPrioFragmentStreamVerilog"
 
 //If you want to generate the VHDL of your design
-sbt "runMain corundum.MyTopLevelVhdl"
+sbt "runMain corundum.MuxHighPrioFragmentStreamVhdl"
 
 //If you want to run the scala written testbench
-sbt "runMain corundum.MyTopLevelSim"
+sbt "runMain corundum.MuxHighPrioFragmentStreamSim"
 ```
 
 The top level spinal code is defined into src\main\scala\corundum
@@ -89,9 +89,9 @@ And do the following :
 - Clone or download this repository.
 - In Intellij IDEA, "import project" with the root of this repository, Import project from external model SBT
 - In addition maybe you need to specify some path like JDK to Intellij
-- In the project (Intellij project GUI), go in src/main/scala/corundum/MyTopLevel.scala, right click on MyTopLevelVerilog, "Run MyTopLevelVerilog"
+- In the project (Intellij project GUI), go in src/main/scala/corundum/MuxHighPrioFragmentStream.scala, right click on MuxHighPrioFragmentStreamVerilog, "Run MuxHighPrioFragmentStreamVerilog"
 
-Normally, this must generate an MyTopLevel.v output files.
+Normally, this must generate an MuxHighPrioFragmentStream.v output files.
 
 ## Basics, with Eclipse and its scala plugin
 
@@ -111,9 +111,9 @@ And do the following :
 - Revert changes from https://github.com/SpinalHDL/SpinalTemplateSbt/commit/173bbb9bb8cbf70087339104f6ebced9321908dd
 - Run ```sbt eclipse``` in the ```SpinalTemplateSbt``` directory.
 - Import the eclipse project from eclipse.
-- In the project (eclipse project GUI), right click on src/main/scala/corundum/MyTopLevel.scala, right click on MyTopLevelVerilog, and select run it
+- In the project (eclipse project GUI), right click on src/main/scala/corundum/MuxHighPrioFragmentStream.scala, right click on MuxHighPrioFragmentStreamVerilog, and select run it
 
-Normally, this must generate output file ```MyTopLevel.v```.
+Normally, this must generate output file ```MuxHighPrioFragmentStream.v```.
 
 ## Mill Support (Experimental)
 
@@ -133,13 +133,13 @@ Open a terminal in the root of it and execute your favorite mill command. At the
 cd SpinalTemplateSbt
 
 //If you want to generate the Verilog of your design
-mill corundum.runMain corundum.MyTopLevelVerilog
+mill corundum.runMain corundum.MuxHighPrioFragmentStreamVerilog
 
 //If you want to generate the VHDL of your design
-mill corundum.runMain corundum.MyTopLevelVhdl
+mill corundum.runMain corundum.MuxHighPrioFragmentStreamVhdl
 
 //If you want to run the scala written testbench
-mill corundum.runMain corundum.MyTopLevelSim
+mill corundum.runMain corundum.MuxHighPrioFragmentStreamSim
 ```
 
 The top level spinal code is defined into src\main\scala\corundum
