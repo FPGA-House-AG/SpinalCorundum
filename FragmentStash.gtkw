@@ -1,32 +1,33 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Tue Feb 22 14:05:28 2022
+[*] Tue Feb 22 15:11:36 2022
 [*]
 [dumpfile] "/home/vexriscv/project/simWorkspace/FragmentStash/test.vcd"
-[dumpfile_mtime] "Tue Feb 22 14:01:46 2022"
-[dumpfile_size] 13683
+[dumpfile_mtime] "Tue Feb 22 15:09:33 2022"
+[dumpfile_size] 23932
 [savefile] "/home/vexriscv/project/FragmentStash.gtkw"
-[timestart] 592
-[size] 3322 1654
+[timestart] 0
+[size] 3345 1019
 [pos] -1 -1
-*-6.000000 1790 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-7.000000 320 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [sst_width] 298
 [signals_width] 486
 [sst_expanded] 1
-[sst_vpaned_height] 512
+[sst_vpaned_height] 289
 @28
 TOP.FragmentStash.clk
 TOP.FragmentStash.reset
 @200
 -
 -Input
+@29
+TOP.FragmentStash.io_slave0_ready
 @28
 TOP.FragmentStash.io_slave0_valid
 @22
 TOP.FragmentStash.io_slave0_payload_fragment_tdata[7:0]
 @28
-TOP.FragmentStash.io_slave0_ready
 TOP.FragmentStash.io_slave0_payload_last
 @200
 -
@@ -40,7 +41,6 @@ TOP.FragmentStash.io_master0_payload_fragment_tdata[7:0]
 TOP.FragmentStash.io_master0_payload_last
 @200
 -
-@201
 -Packets in FIFO
 @22
 TOP.FragmentStash.io_packets[4:0]

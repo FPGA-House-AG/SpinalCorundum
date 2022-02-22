@@ -158,9 +158,11 @@ class FragmentStash extends Component {
     val master0 = master Stream new Fragment(CorundumFrame(8))
     // worst case each packet is one beat
     val packets = out UInt(log2Up(fifoSize) bit)
+    val full = out Bool()
     println(log2Up(fifoSize))
   }
   val fifo = new StreamFifo(Fragment(CorundumFrame(8)), minPackets * maxFragmentSize)
+
   // track number of packets in the FIFO
   val packetsInFifoCounter = CounterUpDown(fifoSize, fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last, fifo.io.pop.ready & fifo.io.pop.valid & fifo.io.pop.last)
 
@@ -168,7 +170,11 @@ class FragmentStash extends Component {
   val x = Stream Fragment(CorundumFrame(8))
   // fifo source/master/pop port to component source/master port
   val y = Stream Fragment(CorundumFrame(8))
-  val z = y.continueWhen(packetsInFifoCounter.value >= minPackets).stage()
+  // gather at least minPackets packet(s) in the FIFO before continuing the pop/output stream
+  // however if the FIFO becomes full, also continue, to prevent corruption
+  val z = y.continueWhen((packetsInFifoCounter.value >= minPackets) || (fifo.io.availability < 2)).s2mPipe().m2sPipe()
+
+  io.full := fifo.io.availability < 2
 
   x << io.slave0
   fifo.io.push << x

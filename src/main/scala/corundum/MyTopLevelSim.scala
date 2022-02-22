@@ -87,13 +87,15 @@ object FragmentStashSim {
       var last0 = false
       var valid0 = false
 
-      for(idx <- 0 to 199){
+      for(idx <- 0 to 499){
+
+        //dut.io.rst = (Random.nextInt(16) == 0)
 
         // active beat
         if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) data0 += 1
         // active beat, or slave was not active yet?
         if ((dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) || !valid0) {
-          valid0 = (Random.nextInt(8) > 6)
+          valid0 = (Random.nextInt(8) > 6) | (idx > 300)
           last0 = (Random.nextInt(8) == 7) & valid0
         } 
         if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean & dut.io.slave0.last.toBoolean) data0 = 0

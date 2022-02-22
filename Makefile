@@ -20,12 +20,14 @@ repl:
 	set -e
 	sbt "~runMain corundum.MyTopLevelVerilog"
 
-# continuous build/simulate, press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
 sim_repl:
 	set -e
 # run in background
+	gtkwave -f ./simWorkspace/FragmentStash/test.vcd -a ./FragmentStash.gtkw &
 	gtkwave -f ./simWorkspace/MyTopLevel/test.vcd -a ./MyTopLevel.gtkw &
-	sbt "~test:runMain corundum.MyTopLevelSim"
+# continuous build/simulate, press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+	sbt "~test:runMain corundum.MyTopLevelSim; test:runMain corundum.FragmentStashSim;"
+	# @TODO can we kill gtkwave here?
 
 spinal: src/main/scala/corundum/MyTopLevel.scala
 	set -e
@@ -45,4 +47,4 @@ simulate: src/main/scala/corundum/MyTopLevel.scala src/main/scala/corundum/MyTop
 	gtkwave -f ./simWorkspace/MyTopLevel/test.vcd -a ./MyTopLevel.gtkw &
 
 clean:
-	rm -rf simWorkspace MyTopLevel.svg
+	rm -rf simWorkspace *.svg
