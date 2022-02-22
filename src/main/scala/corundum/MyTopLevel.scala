@@ -23,10 +23,10 @@ import spinal.lib._
 
 import scala.util.Random
 
-  case class CorundumFrame(dataWidth : Int) extends Bundle {
-    val tkeep = UInt(dataWidth/8 bit)
-    val tdata = UInt(dataWidth bit)
-  }
+case class CorundumFrame(dataWidth : Int) extends Bundle {
+  val tkeep = UInt(dataWidth/8 bit)
+  val tdata = UInt(dataWidth bit)
+}
 
 // companion object
 object MyTopLevel {
@@ -49,9 +49,9 @@ import corundum.MyTopLevel._
 // multiplexes two packet streams (Stream(Fragment) with lock), first port has priority
 class MyTopLevel extends Component {
   val io = new Bundle {
-    val slave0 = slave Stream new Fragment(CorundumFrame(8))
-    val slave1 = slave Stream new Fragment(CorundumFrame(8))
-    val master0 = master Stream new Fragment(CorundumFrame(8))
+    val slave0 = slave Stream Fragment(CorundumFrame(8))
+    val slave1 = slave Stream Fragment(CorundumFrame(8))
+    val master0 = master Stream Fragment(CorundumFrame(8))
   }
 //    val xslave = slave Stream(BundleA(8))
 //    val xmaster = master Stream(BundleA(8))
@@ -74,9 +74,6 @@ class MyTopLevel extends Component {
 
   noIoPrefix()
 }
-
-// @todo PacketStream FIFO using CounterUpDown(0, in.last & in.fire, out.last & out.fire)
-// out.valid := (counter > 0)
 
 object FrameSpecRenamer{
   def apply[T <: Bundle with CorundumFrame](that : T): T ={
@@ -151,3 +148,35 @@ object MyTopLevelVerilogWithCustomConfig {
     MySpinalConfig.generateVerilog(new MyTopLevel)
   }
 }
+
+class FragmentStash extends Component {
+  val maxFragmentSize = 16
+  val minPackets = 2
+  val fifoSize = minPackets * maxFragmentSize
+  val io = new Bundle {
+    val slave0 = slave Stream new Fragment(CorundumFrame(8))
+    val master0 = master Stream new Fragment(CorundumFrame(8))
+    // worst case each packet is one beat
+    val packets = out UInt(log2Up(fifoSize) bit)
+    println(log2Up(fifoSize))
+  }
+  val fifo = new StreamFifo(Fragment(CorundumFrame(8)), minPackets * maxFragmentSize)
+  // track number of packets in the FIFO
+  val packetsInFifoCounter = CounterUpDown(fifoSize, fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last, fifo.io.pop.ready & fifo.io.pop.valid & fifo.io.pop.last)
+
+  // component sink/slave port to fifo push/sink/slave port
+  val x = Stream Fragment(CorundumFrame(8))
+  // fifo source/master/pop port to component source/master port
+  val y = Stream Fragment(CorundumFrame(8))
+  val z = y.continueWhen(packetsInFifoCounter.value >= minPackets).stage()
+
+  x << io.slave0
+  fifo.io.push << x
+  fifo.io.pop >> y
+  z >> io.master0
+
+  io.packets := packetsInFifoCounter.value
+}
+
+// @todo PacketStream FIFO using CounterUpDown(0, in.last & in.fire, out.last & out.fire)
+// out.valid := (counter > 0)
