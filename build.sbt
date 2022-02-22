@@ -7,10 +7,11 @@ val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
 val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
 val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
 
-lazy val mylib = (project in file("."))
+lazy val corundum = (project in file("."))
   .settings(
-    name := "SpinalTemplateSbt",
+    name := "SpinalCorundum",
     libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin)
   )
 
+// for simulation
 fork := true

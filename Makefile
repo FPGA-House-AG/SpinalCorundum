@@ -13,17 +13,36 @@
 
 .ONESHELL:
 
-.PHONY: spinal clean simulate
+.PHONY: spinal clean simulate repl sim_repl
 
-spinal: src/main/scala/mylib/MyTopLevel.scala
+# continuous build (using sbt ~)
+repl:
 	set -e
-	sbt "runMain mylib.MyTopLevelVerilog"
+	sbt "~runMain corundum.MyTopLevelVerilog"
+
+# continuous build/simulate, press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+sim_repl:
+	set -e
+# run in background
+	gtkwave -f ./simWorkspace/MyTopLevel/test.vcd -a ./MyTopLevel.gtkw &
+	sbt "~test:runMain corundum.MyTopLevelSim"
+
+spinal: src/main/scala/corundum/MyTopLevel.scala
+	set -e
+	sbt "runMain corundum.MyTopLevelVerilog"
+
+MyTopLevel.json: MyTopLevel.v MyTopLevel.ys
+	set -e
 	yosys MyTopLevel.ys
+
+MyTopLevel.svg: MyTopLevel.json
+	set -e
 	netlistsvg MyTopLevel.json -o MyTopLevel.svg &
 
-simulate: src/main/scala/mylib/MyTopLevel.scala src/main/scala/mylib/MyTopLevelSim.scala
-	sbt "runMain mylib.MyTopLevelSim"
-	gtkwave simWorkspace/MyTopLevel/test.vcd &
+simulate: src/main/scala/corundum/MyTopLevel.scala src/main/scala/corundum/MyTopLevelSim.scala
+	set -e
+	sbt "runMain corundum.MyTopLevelSim"
+	gtkwave -f ./simWorkspace/MyTopLevel/test.vcd -a ./MyTopLevel.gtkw &
 
 clean:
 	rm -rf simWorkspace MyTopLevel.svg

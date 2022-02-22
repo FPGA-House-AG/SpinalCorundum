@@ -1,7 +1,7 @@
 Fork
 ====
-This fork of SpinalTemplateSbt is aimed at learning SpinalHDL designs, by inspecting the generated
-output through yosys/netlistsvg via Makefile to automate and document the flow.
+This fork of SpinalTemplateSbt is aimed at learning SpinalHDL designs, building some components
+for Corundum data flow.
 
 Spinal Base Project
 ============
@@ -64,16 +64,16 @@ Open a terminal in the root of it and run "sbt run". At the first execution, the
 cd SpinalTemplateSbt
 
 //If you want to generate the Verilog of your design
-sbt "runMain mylib.MyTopLevelVerilog"
+sbt "runMain corundum.MyTopLevelVerilog"
 
 //If you want to generate the VHDL of your design
-sbt "runMain mylib.MyTopLevelVhdl"
+sbt "runMain corundum.MyTopLevelVhdl"
 
 //If you want to run the scala written testbench
-sbt "runMain mylib.MyTopLevelSim"
+sbt "runMain corundum.MyTopLevelSim"
 ```
 
-The top level spinal code is defined into src\main\scala\mylib
+The top level spinal code is defined into src\main\scala\corundum
 
 ## Basics, with Intellij IDEA and its scala plugin
 
@@ -89,7 +89,7 @@ And do the following :
 - Clone or download this repository.
 - In Intellij IDEA, "import project" with the root of this repository, Import project from external model SBT
 - In addition maybe you need to specify some path like JDK to Intellij
-- In the project (Intellij project GUI), go in src/main/scala/mylib/MyTopLevel.scala, right click on MyTopLevelVerilog, "Run MyTopLevelVerilog"
+- In the project (Intellij project GUI), go in src/main/scala/corundum/MyTopLevel.scala, right click on MyTopLevelVerilog, "Run MyTopLevelVerilog"
 
 Normally, this must generate an MyTopLevel.v output files.
 
@@ -111,7 +111,7 @@ And do the following :
 - Revert changes from https://github.com/SpinalHDL/SpinalTemplateSbt/commit/173bbb9bb8cbf70087339104f6ebced9321908dd
 - Run ```sbt eclipse``` in the ```SpinalTemplateSbt``` directory.
 - Import the eclipse project from eclipse.
-- In the project (eclipse project GUI), right click on src/main/scala/mylib/MyTopLevel.scala, right click on MyTopLevelVerilog, and select run it
+- In the project (eclipse project GUI), right click on src/main/scala/corundum/MyTopLevel.scala, right click on MyTopLevelVerilog, and select run it
 
 Normally, this must generate output file ```MyTopLevel.v```.
 
@@ -133,13 +133,13 @@ Open a terminal in the root of it and execute your favorite mill command. At the
 cd SpinalTemplateSbt
 
 //If you want to generate the Verilog of your design
-mill mylib.runMain mylib.MyTopLevelVerilog
+mill corundum.runMain corundum.MyTopLevelVerilog
 
 //If you want to generate the VHDL of your design
-mill mylib.runMain mylib.MyTopLevelVhdl
+mill corundum.runMain corundum.MyTopLevelVhdl
 
 //If you want to run the scala written testbench
-mill mylib.runMain mylib.MyTopLevelSim
+mill corundum.runMain corundum.MyTopLevelSim
 ```
 
-The top level spinal code is defined into src\main\scala\mylib
+The top level spinal code is defined into src\main\scala\corundum

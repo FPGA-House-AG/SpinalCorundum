@@ -1,4 +1,4 @@
-package mylib
+package corundum
 
 import spinal.core._
 import spinal.sim._
@@ -14,11 +14,31 @@ object MyTopLevelSim {
       dut.clockDomain.forkStimulus(period = 10)
 
       var modelState = 0
+
+      //StreamFragmentGenerator(event: x, packetData: y, dataType: CorundumFrame)
+
+      var data0 = 0
+      var data1 = 0
+
       for(idx <- 0 to 99){
         //Drive the dut inputs with random values
-        dut.io.slave0.valid #= Random.nextBoolean()
-        dut.io.slave0.payload.x #= Random.nextBoolean()
-        //dut.io.cond1 #= Random.nextBoolean()
+        val valid0 = Random.nextBoolean()
+        val last0 = valid0 & (Random.nextInt(8) == 7)
+        dut.io.slave0.valid #= valid0
+        dut.io.slave0.payload.tdata #= data0
+        dut.io.slave0.last #= last0
+        if (valid0) data0 = data0 + 1
+        if (last0) data0 = 0
+
+        val valid1 = Random.nextBoolean()
+        val last1 = valid1 & (Random.nextInt(8) == 7)
+        dut.io.slave1.valid #= valid1
+        dut.io.slave1.payload.tdata #= 16 + data1
+        dut.io.slave1.last #= last1
+        if (valid1) data1 = data1 + 1
+        if (last1) data1 = 0
+
+        dut.io.master0.ready #= true
 
         //Wait a rising edge on the clock
         dut.clockDomain.waitRisingEdge()
