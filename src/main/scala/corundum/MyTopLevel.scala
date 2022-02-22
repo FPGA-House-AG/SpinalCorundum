@@ -45,6 +45,8 @@ import corundum.MyTopLevel._
 //sink <-< source
 
 //Hardware definition
+
+// multiplexes two packet streams (Stream(Fragment) with lock), first port has priority
 class MyTopLevel extends Component {
   val io = new Bundle {
     val slave0 = slave Stream new Fragment(CorundumFrame(8))
