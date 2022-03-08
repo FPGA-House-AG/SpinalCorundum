@@ -23,22 +23,11 @@ import spinal.lib._
 
 import scala.util.Random
 
-case class CorundumFrame(dataWidth : Int) extends Bundle {
-  val tkeep = UInt(dataWidth/8 bit)
-  val tdata = UInt(dataWidth bit)
-}
-
 // companion object
-object MuxHighPrioFragmentStream {
-//  case class BundleA(widthBits : Int) extends Bundle {
-//    val tkeep = UInt(aaa/8 bit)
-//    val tdata = UInt(aaa bit)
-//    val b = Bool()
-//  }
-
+object CorundumFrameMuxPrio {
 }
 
-import corundum.MuxHighPrioFragmentStream._
+import corundum.CorundumFrameMuxPrio._
 
 //val source = Stream(RGB(8))
 //val sink   = Stream(RGB(8))
@@ -47,7 +36,7 @@ import corundum.MuxHighPrioFragmentStream._
 //Hardware definition
 
 // multiplexes two packet streams (Stream(Fragment) with lock), first port has priority
-class MuxHighPrioFragmentStream extends Component {
+class CorundumFrameMuxPrio extends Component {
   val io = new Bundle {
     val slave0 = slave Stream Fragment(CorundumFrame(8))
     val slave1 = slave Stream Fragment(CorundumFrame(8))
@@ -116,77 +105,33 @@ object XilinxPatch {
   }
 }
 
-//Generate the MuxHighPrioFragmentStream's Verilog
-object MuxHighPrioFragmentStreamVerilog {
+//Generate the CorundumFrameMuxPrio's Verilog
+object CorundumFrameMuxPrioVerilog {
 //  def main(args: Array[String]) {
-//    SpinalVerilog(new MuxHighPrioFragmentStream)
+//    SpinalVerilog(new CorundumFrameMuxPrio)
 //  }
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new MuxHighPrioFragmentStream
-      XilinxPatch(toplevel)
-    })
-    config.generateVerilog({
-      val toplevel = new FragmentStash
+      val toplevel = new CorundumFrameMuxPrio
       XilinxPatch(toplevel)
     })
   }
 }
 
-//Generate the MuxHighPrioFragmentStream's VHDL
-object MuxHighPrioFragmentStreamVhdl {
+//Generate the CorundumFrameMuxPrio's VHDL
+object CorundumFrameMuxPrioVhdl {
   def main(args: Array[String]) {
-
-    SpinalVhdl(new MuxHighPrioFragmentStream)
+    SpinalVhdl(new CorundumFrameMuxPrio)
   }
 }
 
 //Define a custom SpinalHDL configuration with synchronous reset instead of the default asynchronous one. This configuration can be resued everywhere
 object MySpinalConfig extends SpinalConfig(defaultConfigForClockDomains = ClockDomainConfig(resetKind = SYNC))
 
-//Generate the MuxHighPrioFragmentStream's Verilog using the above custom configuration.
-object MuxHighPrioFragmentStreamVerilogWithCustomConfig {
+//Generate the CorundumFrameMuxPrio's Verilog using the above custom configuration.
+object CorundumFrameMuxPrioVerilogWithCustomConfig {
   def main(args: Array[String]) {
-    MySpinalConfig.generateVerilog(new MuxHighPrioFragmentStream)
+    MySpinalConfig.generateVerilog(new CorundumFrameMuxPrio)
   }
 }
-
-class FragmentStash extends Component {
-  val maxFragmentSize = 16
-  val minPackets = 1
-  val fifoSize = minPackets * maxFragmentSize
-  val io = new Bundle {
-    val slave0 = slave Stream new Fragment(CorundumFrame(8))
-    val master0 = master Stream new Fragment(CorundumFrame(8))
-    // worst case each packet is one beat
-    val packets = out UInt(log2Up(fifoSize) bit)
-    val full = out Bool()
-    println(log2Up(fifoSize))
-  }
-  val fifo = new StreamFifo(Fragment(CorundumFrame(8)), minPackets * maxFragmentSize)
-
-  // track number of packets in the FIFO
-  val packetsInFifoCounter = CounterUpDown(fifoSize, fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last, fifo.io.pop.ready & fifo.io.pop.valid & fifo.io.pop.last)
-
-  // component sink/slave port to fifo push/sink/slave port
-  val x = Stream Fragment(CorundumFrame(8))
-  // fifo source/master/pop port to component source/master port
-  val y = Stream Fragment(CorundumFrame(8))
-  // gather at least minPackets packet(s) in the FIFO before continuing the pop/output stream
-  // however if the FIFO becomes full, also continue, to prevent corruption
-  val z = y.continueWhen((packetsInFifoCounter.value >= minPackets) || (fifo.io.availability < 2)).s2mPipe().m2sPipe()
-
-  io.full := fifo.io.availability < 2
-
-  //fifo.io.push << io.slave0 // @TODO we can remove x, but might want to add stages later
-  x << io.slave0
-  fifo.io.push << x
-  fifo.io.pop >> y
-  z >> io.master0
-
-  io.packets := packetsInFifoCounter.value
-}
-
-// @todo PacketStream FIFO using CounterUpDown(0, in.last & in.fire, out.last & out.fire)
-// out.valid := (counter > 0)

@@ -18,33 +18,42 @@
 # continuous build (using sbt ~)
 repl:
 	set -e
-	sbt "~runMain corundum.MuxHighPrioFragmentStreamVerilog"
+	sbt "~ runMain corundum.CorundumFrameMuxPrioVerilog; runMain corundum.CorundumFrameStashVerilog"
 
 sim_repl:
 	set -e
 # run in background
-	gtkwave -f ./simWorkspace/FragmentStash/test.vcd -a ./FragmentStash.gtkw &
-	gtkwave -f ./simWorkspace/MuxHighPrioFragmentStream/test.vcd -a ./MuxHighPrioFragmentStream.gtkw &
-# continuous build/simulate, press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
-	sbt "~test:runMain corundum.MuxHighPrioFragmentStreamSim; test:runMain corundum.FragmentStashSim;"
+	gtkwave -f ./simWorkspace/CorundumFrameStash/test.vcd   -a ./CorundumFrameStash.gtkw   &
+	gtkwave -f ./simWorkspace/CorundumFrameMuxPrio/test.vcd -a ./CorundumFrameMuxPrio.gtkw &
+# continuous build/simulate on saved source code changes
+# press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+	sbt "~test:runMain corundum.CorundumFrameMuxPrioSim; test:runMain corundum.CorundumFrameStashSim;"
 	# @TODO can we kill gtkwave here?
 
-spinal: src/main/scala/corundum/MuxHighPrioFragmentStream.scala
+spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
-	sbt "runMain corundum.MuxHighPrioFragmentStreamVerilog"
+	sbt "runMain corundum.CorundumFrameMuxPrioVerilog"
 
-MuxHighPrioFragmentStream.json: MuxHighPrioFragmentStream.v MuxHighPrioFragmentStream.ys
+CorundumFrameMuxPrio.json: CorundumFrameMuxPrio.v CorundumFrameMuxPrio.ys
 	set -e
-	yosys MuxHighPrioFragmentStream.ys
+	yosys CorundumFrameMuxPrio.ys
 
-MuxHighPrioFragmentStream.svg: MuxHighPrioFragmentStream.json
+CorundumFrameMuxPrio.svg: CorundumFrameMuxPrio.json
 	set -e
-	netlistsvg MuxHighPrioFragmentStream.json -o MuxHighPrioFragmentStream.svg &
+	netlistsvg CorundumFrameMuxPrio.json -o CorundumFrameMuxPrio.svg &
 
-simulate: src/main/scala/corundum/MuxHighPrioFragmentStream.scala src/main/scala/corundum/MuxHighPrioFragmentStreamSim.scala
+simulate: src/main/scala/corundum/CorundumFrameMuxPrio.scala src/main/scala/corundum/CorundumFrameMuxPrioSim.scala
 	set -e
-	sbt "runMain corundum.MuxHighPrioFragmentStreamSim"
-	gtkwave -f ./simWorkspace/MuxHighPrioFragmentStream/test.vcd -a ./MuxHighPrioFragmentStream.gtkw &
+	sbt "runMain corundum.CorundumFrameMuxPrioSim"
+	gtkwave -f ./simWorkspace/CorundumFrameMuxPrio/test.vcd -a ./CorundumFrameMuxPrio.gtkw &
 
 clean:
 	rm -rf simWorkspace *.svg
+
+%.json: %.ys %.v
+	set -e
+	yosys $< -o $@
+
+%.svg: %.json
+	set -e
+	netlistsvg $< -o $@

@@ -1,0 +1,44 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Tue Mar  8 22:00:37 2022
+[*]
+[dumpfile] "/home/vexriscv/project/simWorkspace/CorundumFrameStash/test.vcd"
+[dumpfile_mtime] "Tue Mar  8 21:59:41 2022"
+[dumpfile_size] 42903
+[savefile] "/home/vexriscv/project/CorundumFrameStash.gtkw"
+[timestart] 0
+[size] 3352 1203
+[pos] -1 -1
+*-7.000000 646 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 458
+[signals_width] 486
+[sst_expanded] 1
+[sst_vpaned_height] 353
+@200
+-
+-Input
+@22
+TOP.CorundumFrameStash.io_slave0_payload_fragment_tdata[7:0]
+@28
+TOP.CorundumFrameStash.io_slave0_payload_fragment_tkeep[0]
+TOP.CorundumFrameStash.io_slave0_payload_last
+TOP.CorundumFrameStash.io_slave0_ready
+TOP.CorundumFrameStash.io_slave0_valid
+@200
+-
+-Output
+@22
+TOP.CorundumFrameStash.io_master0_payload_fragment_tdata[7:0]
+@28
+TOP.CorundumFrameStash.io_master0_payload_fragment_tkeep[0]
+TOP.CorundumFrameStash.io_master0_payload_last
+TOP.CorundumFrameStash.io_master0_ready
+TOP.CorundumFrameStash.io_master0_valid
+@200
+-
+-Packets in FIFO
+@23
+TOP.CorundumFrameStash.packetsInFifoCounter_value[3:0]
+[pattern_trace] 1
+[pattern_trace] 0
