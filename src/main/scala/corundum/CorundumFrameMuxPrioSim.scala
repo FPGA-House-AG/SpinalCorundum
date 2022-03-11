@@ -9,7 +9,7 @@ import scala.util.Random
 //CorundumFrameMuxPrio's testbench
 object CorundumFrameMuxPrioSim {
   def main(args: Array[String]) {
-    SimConfig.withWave.doSim(new CorundumFrameMuxPrio){dut =>
+    SimConfig.withWave.doSim(new CorundumFrameMuxPrio(8)){dut =>
       //Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 

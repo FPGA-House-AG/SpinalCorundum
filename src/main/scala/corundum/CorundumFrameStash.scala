@@ -27,27 +27,27 @@ import scala.util.Random
 object CorundumFrameStash {
 }
 
-class CorundumFrameStash extends Component {
+case class CorundumFrameStash(dataWidth : Int) extends Component {
   val maxFragmentSize = 16
   val minPackets = 1
   val fifoSize = minPackets * maxFragmentSize
   val io = new Bundle {
-    val slave0 = slave Stream new Fragment(CorundumFrame(8))
-    val master0 = master Stream new Fragment(CorundumFrame(8))
+    val slave0 = slave Stream new Fragment(CorundumFrame(dataWidth))
+    val master0 = master Stream new Fragment(CorundumFrame(dataWidth))
     // worst case each packet is one beat
     val packets = out UInt(log2Up(fifoSize) bit)
     val full = out Bool()
     println(log2Up(fifoSize))
   }
-  val fifo = new StreamFifo(Fragment(CorundumFrame(8)), minPackets * maxFragmentSize)
+  val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), minPackets * maxFragmentSize)
 
   // track number of packets in the FIFO
   val packetsInFifoCounter = CounterUpDown(fifoSize, fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last, fifo.io.pop.ready & fifo.io.pop.valid & fifo.io.pop.last)
 
   // component sink/slave port to fifo push/sink/slave port
-  val x = Stream Fragment(CorundumFrame(8))
+  val x = Stream Fragment(CorundumFrame(dataWidth))
   // fifo source/master/pop port to component source/master port
-  val y = Stream Fragment(CorundumFrame(8))
+  val y = Stream Fragment(CorundumFrame(dataWidth))
   // gather at least minPackets packet(s) in the FIFO before continuing the pop/output stream
   // however if the FIFO becomes full, also continue, to prevent corruption
   val z = y.continueWhen((packetsInFifoCounter.value >= minPackets) || (fifo.io.availability < 2)).s2mPipe().m2sPipe()
@@ -57,8 +57,8 @@ class CorundumFrameStash extends Component {
   //fifo.io.push << io.slave0 // @TODO we can remove x, but might want to add stages later
   x << io.slave0
   fifo.io.push << x
-  fifo.io.pop >> y
-  z >> io.master0
+  y << fifo.io.pop
+  io.master0 << z
 
   io.packets := packetsInFifoCounter.value
 }
@@ -74,11 +74,11 @@ object CorundumFrameStashVerilog {
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameStash
+      val toplevel = new CorundumFrameStash(512)
       XilinxPatch(toplevel)
     })
     config.generateVerilog({
-      val toplevel = new CorundumFrameStash
+      val toplevel = new CorundumFrameStash(512)
       XilinxPatch(toplevel)
     })
   }
@@ -87,6 +87,6 @@ object CorundumFrameStashVerilog {
 //Generate the CorundumFrameStash's VHDL
 object CorundumFrameStashVhdl {
   def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameStash)
+    SpinalVhdl(new CorundumFrameStash(512))
   }
 }

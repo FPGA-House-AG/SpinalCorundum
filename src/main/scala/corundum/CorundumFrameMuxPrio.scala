@@ -36,11 +36,11 @@ import corundum.CorundumFrameMuxPrio._
 //Hardware definition
 
 // multiplexes two packet streams (Stream(Fragment) with lock), first port has priority
-class CorundumFrameMuxPrio extends Component {
+case class CorundumFrameMuxPrio(dataWidth : Int = 8) extends Component {
   val io = new Bundle {
-    val slave0 = slave Stream Fragment(CorundumFrame(8))
-    val slave1 = slave Stream Fragment(CorundumFrame(8))
-    val master0 = master Stream Fragment(CorundumFrame(8))
+    val slave0 = slave Stream Fragment(CorundumFrame(dataWidth))
+    val slave1 = slave Stream Fragment(CorundumFrame(dataWidth))
+    val master0 = master Stream Fragment(CorundumFrame(dataWidth))
   }
 //    val xslave = slave Stream(BundleA(8))
 //    val xmaster = master Stream(BundleA(8))
@@ -57,10 +57,15 @@ class CorundumFrameMuxPrio extends Component {
   //io.master0 <> xmaster
   //slave << master.s2m()
 
-  val arbiterLowIdPortFirstFragmentLockInputs =  Vec(io.slave0.s2mPipe().m2sPipe(), io.slave1.s2mPipe().m2sPipe())
+  //val arbiterLowIdPortFirstFragmentLockInputs =  Vec(io.slave0.s2mPipe().m2sPipe(), io.slave1.s2mPipe().m2sPipe())
   //val arbiterLowIdPortFirstFragmentLockOutput =  master Stream(CorundumFrame(RGB(8)))
-  io.master0 << StreamArbiterFactory.lowerFirst.fragmentLock.on(arbiterLowIdPortFirstFragmentLockInputs)
 
+  val arbiter = StreamArbiterFactory.lowerFirst.fragmentLock.build(Fragment(CorundumFrame(dataWidth)), 2)
+
+  //io.master0 << StreamArbiterFactory.lowerFirst.fragmentLock.build(arbiterLowIdPortFirstFragmentLockInputs, 2)
+  arbiter.io.inputs(0) << io.slave0.s2mPipe().m2sPipe()
+  arbiter.io.inputs(1) << io.slave1.s2mPipe().m2sPipe()
+  io.master0 << arbiter.io.output.s2mPipe().m2sPipe()
   noIoPrefix()
 }
 
@@ -68,6 +73,7 @@ object FrameSpecRenamer{
   def apply[T <: Bundle with CorundumFrame](that : T): T ={
     def doIt = {
       that.flatten.foreach((bt) => {
+        println(bt.getName())
         bt.setName(bt.getName().replace("_payload_",""))
         bt.setName(bt.getName().replace("_valid","valid"))
         bt.setName(bt.getName().replace("_ready","ready"))
@@ -89,11 +95,10 @@ object XilinxPatch {
     //Get the io bundle via java reflection
     val m = c.getClass.getMethod("io")
     val io = m.invoke(c).asInstanceOf[Bundle]
-    println(m);
+    println("getClass %s", m);
 
     //Patch things
     io.elements.map(_._2).foreach {
-      
       //case axi : AxiLite4 => AxiLite4SpecRenamer(axi)
       //case axi : Axi4 => Axi4SpecRenamer(axi)
       case axi : CorundumFrame => FrameSpecRenamer(axi)
@@ -113,7 +118,7 @@ object CorundumFrameMuxPrioVerilog {
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameMuxPrio
+      val toplevel = new CorundumFrameMuxPrio(8)
       XilinxPatch(toplevel)
     })
   }
@@ -122,7 +127,7 @@ object CorundumFrameMuxPrioVerilog {
 //Generate the CorundumFrameMuxPrio's VHDL
 object CorundumFrameMuxPrioVhdl {
   def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameMuxPrio)
+    SpinalVhdl(new CorundumFrameMuxPrio(8))
   }
 }
 
@@ -132,6 +137,6 @@ object MySpinalConfig extends SpinalConfig(defaultConfigForClockDomains = ClockD
 //Generate the CorundumFrameMuxPrio's Verilog using the above custom configuration.
 object CorundumFrameMuxPrioVerilogWithCustomConfig {
   def main(args: Array[String]) {
-    MySpinalConfig.generateVerilog(new CorundumFrameMuxPrio)
+    MySpinalConfig.generateVerilog(new CorundumFrameMuxPrio(8))
   }
 }
