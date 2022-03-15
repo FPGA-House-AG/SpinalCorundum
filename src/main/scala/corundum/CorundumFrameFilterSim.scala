@@ -23,8 +23,12 @@ object CorundumFrameFilterSim {
       var valid0 = false
       var tkeep0 = 0
 
-      dut.io.mask #= 0x0F
-      dut.io.filter #= 0x03
+      dut.io.keepMask #= 0x80
+      dut.io.keepFilter #= 0x80
+
+      dut.io.dropMask #= 0x01
+      dut.io.dropFilter #= 0x01
+
 
       for (idx <- 0 to 499){
 
@@ -39,7 +43,7 @@ object CorundumFrameFilterSim {
         if (valid0) tkeep0 = 1
 
         if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean & dut.io.slave0.last.toBoolean) {
-          data0 = Random.nextInt(8)
+          data0 = Random.nextInt(0Xff)
         }
         dut.io.slave0.valid #= valid0
         dut.io.slave0.payload.tdata #= data0

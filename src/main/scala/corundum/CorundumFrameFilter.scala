@@ -3,6 +3,11 @@ package corundum
 import spinal.core._
 import spinal.lib._
 
+import spinal.lib.bus.misc._
+import spinal.lib.bus.amba4.axi._
+
+import scala.math._
+
 // companion object
 object CorundumFrameFilter {
 }
@@ -30,6 +35,42 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   val y = x.stage().takeWhen(keep_frame)
   x << io.slave0
   io.master0 << y
+
+  //printf("hashString = %s\n", SourceCodeGitHash())
+  //printf("commitCount = %d\n", SourceCodeGitCommits())
+
+  def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
+    val busCtrlWrapped = new BusSlaveFactoryAddressWrapper(busCtrl, baseAddress)
+
+    // leet code for Blackwire 1 Filter
+    busCtrlWrapped.read(B"32'bB1F117E5", 0x00, documentation = null)
+    // 16'b version and 16'b revision
+    busCtrlWrapped.read(B"32'b00010001", 0x04, documentation = null)
+
+    val gitCommits = B(BigInt(SourceCodeGitCommits()), 32 bits)
+    busCtrlWrapped.read(gitCommits, 0x08, 0, null)
+    val gitHash = B(BigInt(SourceCodeGitHash(), 16), 160 bits)
+    busCtrlWrapped.readMultiWord(gitHash, 0x0c, documentation = null)
+
+    val keepFilter = Reg(Bits(dataWidth bits))
+    busCtrlWrapped.writeMultiWord(keepFilter, 0x40, documentation = null)
+    val keepMask = Reg(Bits(dataWidth bits))
+    busCtrlWrapped.writeMultiWord(keepMask, 0x80, documentation = null)
+    val dropFilter = Reg(Bits(dataWidth bits))
+    busCtrlWrapped.writeMultiWord(dropFilter, 0xc0, documentation = null)
+    val dropMask = Reg(Bits(dataWidth bits))
+    busCtrlWrapped.writeMultiWord(dropMask, 0x100, documentation = null)
+
+    io.keepFilter := keepFilter
+    io.keepMask := keepMask
+    io.dropFilter := dropFilter
+    io.dropMask := dropMask
+  }
+
+  //val hexHashString = thisSourceFileGitHash(sourcecode.File().toString())
+  //assert(hexHashString.length == 40)
+  //printf("hashString = %s\n", hexHashString)
+  //val rev = B(BigInt(hexHashString.slice(0, 7), 16), 32 bits)
 }
 
 //Generate the CorundumFrameFilter's Verilog
