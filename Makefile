@@ -23,16 +23,29 @@ repl:
 sim_repl:
 	set -e
 # run in background
-	gtkwave -f ./simWorkspace/CorundumFrameStash/test.vcd   -a ./CorundumFrameStash.gtkw   &
-	gtkwave -f ./simWorkspace/CorundumFrameMuxPrio/test.vcd -a ./CorundumFrameMuxPrio.gtkw &
+	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst   -a ./CorundumFrameStash.gtkw   &
+	gtkwave -F -f ./simWorkspace/CorundumFrameMuxPrio/test.fst -a ./CorundumFrameMuxPrio.gtkw &
 # continuous build/simulate on saved source code changes
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
-	sbt "~test:runMain corundum.CorundumFrameMuxPrioSim; test:runMain corundum.CorundumFrameStashSim;"
+	sbt "~ test:runMain corundum.CorundumFrameMuxPrioSim; \
+	test:runMain corundum.CorundumFrameStashSim; \
+	test:runMain corundum.CorundumFrameFilterSim;"
 	# @TODO can we kill gtkwave here?
 
 spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
 	sbt "runMain corundum.CorundumFrameMuxPrioVerilog"
+
+rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
+rtl: src/main/scala/corundum/CorundumFrameStash.scala
+rtl: src/main/scala/corundum/CorundumFrameFilter.scala
+	set -e
+	sbt "
+	runMain corundum.CorundumFrameMuxPrioVerilog; \
+	runMain corundum.CorundumFrameStashVerilog; \
+	runMain corundum.CorundumFrameFilterVerilog; \
+	"
+
 
 CorundumFrameMuxPrio.json: CorundumFrameMuxPrio.v CorundumFrameMuxPrio.ys
 	set -e
