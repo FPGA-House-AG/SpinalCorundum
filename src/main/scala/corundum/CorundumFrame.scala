@@ -21,8 +21,6 @@ package corundum
 import spinal.core._
 import spinal.lib._
 
-import scala.util.Random
-
 case class CorundumFrame(dataWidth : Int) extends Bundle {
   val tkeep = Bits(dataWidth/8 bits)
   val tdata = Bits(dataWidth bits)
