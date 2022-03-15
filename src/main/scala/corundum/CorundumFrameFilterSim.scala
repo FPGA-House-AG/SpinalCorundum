@@ -43,8 +43,10 @@ object CorundumFrameFilterSim {
         if (valid0) tkeep0 = 1
 
         if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean & dut.io.slave0.last.toBoolean) {
-          data0 = Random.nextInt(0Xff)
+          data0 = Random.nextInt(255)
         }
+        data0 &= 255
+        
         dut.io.slave0.valid #= valid0
         dut.io.slave0.payload.tdata #= data0
         dut.io.slave0.last #= last0
