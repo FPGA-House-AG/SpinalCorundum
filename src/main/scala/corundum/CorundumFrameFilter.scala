@@ -11,18 +11,23 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   val io = new Bundle {
     val slave0 = slave Stream Fragment(CorundumFrame(dataWidth))
     val master0 = master Stream Fragment(CorundumFrame(dataWidth))
-    val mask = in Bits(dataWidth bits)
-    val filter = in Bits(dataWidth bits)
+    val keepMask = in Bits(dataWidth bits)
+    val keepFilter = in Bits(dataWidth bits)
+    val dropMask = in Bits(dataWidth bits)
+    val dropFilter = in Bits(dataWidth bits)
   }
-  val mask = RegNext(io.mask)
-  val filter = RegNext(io.filter)
   // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
+  //val is_frame_continuation = RegNextWhen(!io.slave0.last, io.slave0.valid) init(False)
   val is_frame_continuation = RegNextWhen(!io.slave0.last, io.slave0.valid) init(False)
-  val first_beat_matches = RegNextWhen((io.slave0.payload.tdata & mask) === (filter & mask), !is_frame_continuation) init(False)
+  val keep_matches = (io.slave0.payload.tdata & io.keepMask) === (io.keepFilter & io.keepMask);
+  val drop_matches = (io.slave0.payload.tdata & io.dropMask) === (io.dropFilter & io.dropMask);
+  val first_beat_keep_matches = RegNextWhen(keep_matches, !is_frame_continuation) init(False)
+  val first_beat_drop_matches = RegNextWhen(drop_matches, !is_frame_continuation) init(False)
   // purely for manual debug
   val is_first_beat = io.slave0.ready & io.slave0.valid & !is_frame_continuation
-  val y = x.stage().takeWhen(first_beat_matches)
+  val keep_frame = first_beat_keep_matches & !first_beat_drop_matches
+  val y = x.stage().takeWhen(keep_frame)
   x << io.slave0
   io.master0 << y
 }
