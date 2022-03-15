@@ -8,7 +8,7 @@ import scala.util.Random
 
 object CorundumFrameStashSim {
   def main(args: Array[String]) {
-    SimConfig.withWave.doSim(new CorundumFrameStash(8)){dut =>
+    SimConfig.withFstWave.doSim(new CorundumFrameStash(8)){dut =>
       //Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
