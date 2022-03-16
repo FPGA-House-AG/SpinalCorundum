@@ -25,6 +25,7 @@ sim_repl:
 # run in background
 	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst   -a ./CorundumFrameStash.gtkw   &
 	gtkwave -F -f ./simWorkspace/CorundumFrameMuxPrio/test.fst -a ./CorundumFrameMuxPrio.gtkw &
+	gtkwave -F -f ./simWorkspace/CorundumFrameFilter/test.fst -a ./CorundumFrameFilter.gtkw &
 # continuous build/simulate on saved source code changes
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ test:runMain corundum.CorundumFrameMuxPrioSim; \
