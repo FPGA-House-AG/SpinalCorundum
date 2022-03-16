@@ -8,7 +8,13 @@ import scala.util.Random
 
 object CorundumFrameFilterSim {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new CorundumFrameFilter(8)){dut =>
+    val dataWidth = 24
+    val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
+    val keepWidth = dataWidth/8
+
+    printf("keepWidth=%d\n", keepWidth)
+
+    SimConfig.withFstWave.doSim(new CorundumFrameFilter(dataWidth)){dut =>
       //Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
@@ -23,11 +29,11 @@ object CorundumFrameFilterSim {
       var valid0 = false
       var tkeep0 = 0
 
-      dut.io.keepMask #= 0x80
-      dut.io.keepFilter #= 0x80
+      dut.io.keepMask #= 0x800000
+      dut.io.keepFilter #= 0x800000
 
-      dut.io.dropMask #= 0x01
-      dut.io.dropFilter #= 0x01
+      dut.io.dropMask #= 0x000100
+      dut.io.dropFilter #= 0x000100
 
 
       for (idx <- 0 to 499){
@@ -37,16 +43,20 @@ object CorundumFrameFilterSim {
         // active beat, or slave was not active yet?
         if ((dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) || !valid0) {
           valid0 = (Random.nextInt(8) > 6) | (idx > 300)
-          last0 = (Random.nextInt(8) == 7) & valid0
+          last0 = (Random.nextInt(8) >= 4) & valid0 
         }
         tkeep0 = 0
-        if (valid0) tkeep0 = 1
-
-        if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean & dut.io.slave0.last.toBoolean) {
-          data0 = Random.nextInt(255)
+        if (valid0) {
+          var tkeep_len = if (!last0) keepWidth else 1 + Random.nextInt(keepWidth-1);
+          for (i <- 0 until tkeep_len) {
+            tkeep0 = (tkeep0 << 1) | 1
+          }
         }
-        data0 &= 255
-        
+        if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean & dut.io.slave0.last.toBoolean) {
+          data0 = Random.nextInt(maxDataValue)
+        }
+        data0 &= scala.math.pow(2, dataWidth).intValue - 1
+
         dut.io.slave0.valid #= valid0
         dut.io.slave0.payload.tdata #= data0
         dut.io.slave0.last #= last0

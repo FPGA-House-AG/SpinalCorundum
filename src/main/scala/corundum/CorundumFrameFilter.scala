@@ -23,15 +23,31 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   }
   // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
-  //val is_frame_continuation = RegNextWhen(!io.slave0.last, io.slave0.valid) init(False)
-  val is_frame_continuation = RegNextWhen(!io.slave0.last, io.slave0.valid) init(False)
-  val keep_matches = (io.slave0.payload.tdata & io.keepMask) === (io.keepFilter & io.keepMask);
-  val drop_matches = (io.slave0.payload.tdata & io.dropMask) === (io.dropFilter & io.dropMask);
-  val first_beat_keep_matches = RegNextWhen(keep_matches, !is_frame_continuation) init(False)
-  val first_beat_drop_matches = RegNextWhen(drop_matches, !is_frame_continuation) init(False)
+  val is_frame_continuation = RegNextWhen(!x.last, x.valid) init(False)
   // purely for manual debug
-  val is_first_beat = io.slave0.ready & io.slave0.valid & !is_frame_continuation
-  val keep_frame = first_beat_keep_matches & !first_beat_drop_matches
+  val is_first_beat = x.ready & x.valid & !is_frame_continuation
+
+  val is_keepfilter_match = (x.payload.tdata & io.keepMask) === (io.keepFilter & io.keepMask);
+  val is_dropfilter_match = (x.payload.tdata & io.dropMask) === (io.dropFilter & io.dropMask);
+
+  // generate byte enables for the filter masks
+  val keepfilter_tkeep = Reg(Bits(dataWidth/8 bits))
+  val dropfilter_tkeep = Reg(Bits(dataWidth/8 bits))
+  for (i <- 0 until dataWidth/8) {
+    // if any of the bits are in the filter mask, enable the corresponding byte
+    keepfilter_tkeep(i) := io.keepMask((i+1)*8-1 downto i*8).asBits.orR
+    dropfilter_tkeep(i) := io.dropMask((i+1)*8-1 downto i*8).asBits.orR
+  }
+  // all bytes required to match the filters are present in the input data?
+  val are_keepfilter_bytes_present = (x.payload.tkeep & keepfilter_tkeep) === (keepfilter_tkeep);
+  val are_dropfilter_bytes_present = (x.payload.tkeep & dropfilter_tkeep) === (dropfilter_tkeep);
+
+  val is_first_beat_keepfilter_match = RegNextWhen(is_keepfilter_match & are_keepfilter_bytes_present, !is_frame_continuation) init(False)
+  val is_first_beat_dropfilter_match = RegNextWhen(is_dropfilter_match & are_dropfilter_bytes_present, !is_frame_continuation) init(False)
+
+  // keep frame when keep filter matches and drop filter does not match
+  val keep_frame = is_first_beat_keepfilter_match & !is_first_beat_dropfilter_match
+
   val y = x.stage().takeWhen(keep_frame)
   x << io.slave0
   io.master0 << y
@@ -66,11 +82,6 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
     io.dropFilter := dropFilter
     io.dropMask := dropMask
   }
-
-  //val hexHashString = thisSourceFileGitHash(sourcecode.File().toString())
-  //assert(hexHashString.length == 40)
-  //printf("hashString = %s\n", hexHashString)
-  //val rev = B(BigInt(hexHashString.slice(0, 7), 16), 32 bits)
 }
 
 //Generate the CorundumFrameFilter's Verilog
