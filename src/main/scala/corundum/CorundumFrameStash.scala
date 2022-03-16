@@ -1,21 +1,3 @@
-/*
- * SpinalHDL
- * Copyright (c) Dolu, All rights reserved.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3.0 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library.
- */
-
 package corundum
 
 import spinal.core._
@@ -28,39 +10,90 @@ object CorundumFrameStash {
 }
 
 case class CorundumFrameStash(dataWidth : Int) extends Component {
-  val maxFragmentSize = 16
+  val maxFragmentWords = 16
   val minPackets = 1
-  val fifoSize = minPackets * maxFragmentSize
+  val fifoSize = minPackets * maxFragmentWords
   val io = new Bundle {
     val slave0 = slave Stream new Fragment(CorundumFrame(dataWidth))
     val master0 = master Stream new Fragment(CorundumFrame(dataWidth))
     // worst case each packet is one beat
-    val packets = out UInt(log2Up(fifoSize) bit)
+    val packets = out UInt(log2Up(fifoSize) bits)
+    val length = out UInt(12 bits)
+    val length_valid = out Bool()
     val full = out Bool()
-    println(log2Up(fifoSize))
+    //println(log2Up(fifoSize))
   }
-  val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), minPackets * maxFragmentSize)
+  val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), fifoSize)
 
-  // track number of packets in the FIFO
-  val packetsInFifoCounter = CounterUpDown(fifoSize, fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last, fifo.io.pop.ready & fifo.io.pop.valid & fifo.io.pop.last)
-
-  // component sink/slave port to fifo push/sink/slave port
+    // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
   // fifo source/master/pop port to component source/master port
   val y = Stream Fragment(CorundumFrame(dataWidth))
+
+  // track number of packets in the FIFO
+  val packetsInFifoCounter = CounterUpDown(fifoSize)
+
   // gather at least minPackets packet(s) in the FIFO before continuing the pop/output stream
   // however if the FIFO becomes full, also continue, to prevent corruption
-  val z = y.continueWhen((packetsInFifoCounter.value >= minPackets) || (fifo.io.availability < 2)).s2mPipe().m2sPipe()
+  val fifo_holds_complete_packet = (packetsInFifoCounter.value >= minPackets)
+  val fifo_overflow = (fifo.io.availability < 2)
+  val z = y.continueWhen(fifo_holds_complete_packet/* | fifo_overflow*/).stage()
+
+  when (fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last) {
+    packetsInFifoCounter.increment()
+  }
+  /*fifo.io.pop.ready & fifo.io.pop.valid & fifo.io.pop.last)*/
+  when (y.ready & y.valid & y.last) {
+    packetsInFifoCounter.decrement()
+  }
+
 
   io.full := fifo.io.availability < 2
 
-  //fifo.io.push << io.slave0 // @TODO we can remove x, but might want to add stages later
-  x << io.slave0
-  fifo.io.push << x
-  y << fifo.io.pop
+  val is_frame_continuation = RegNextWhen(!x.last, x.valid) init(False)
+  val is_first_beat = x.valid & x.ready & !is_frame_continuation
+
+  printf("%s log2Up(%d/8+1)=%d\n", sourcecode.File(), dataWidth, log2Up(dataWidth/8+1))
+
+  // measure frame length in x
+  val tkeep_count = UInt(/*log2Up(dataWidth/8 + 1) bits*/)
+  tkeep_count := U(dataWidth/8) - LeadingZeroes(x.tkeep)
+
+  val frame_length = Reg(UInt(12 bits))
+  // first beat?
+  when (!is_frame_continuation) {
+    frame_length := tkeep_count.resize(12 bits)
+  // non-first beat(s)
+  } otherwise {
+    frame_length := (frame_length + tkeep_count)/*.resize(12 bits)*/
+  }
+  val length_fifo = new StreamFifo(UInt(12 bits), fifoSize)
+  length_fifo.io.push.valid := RegNext(x.last & x.ready & x.valid) init(False)
+  length_fifo.io.push.payload := frame_length
+  val length_pop = Bool()
+  length_pop := z.last & z.ready & z.valid
+  length_fifo.io.pop.ready := length_pop;
+
+  x << io.slave0/*.m2sPipe().s2mPipe()*/
+  fifo.io.push << x.stage()
+  y << fifo.io.pop.stage()
   io.master0 << z
 
+  io.length := length_fifo.io.pop.payload
+  io.length_valid := length_fifo.io.pop.valid
+
+
+  val diff = (io.master0.valid =/= length_fifo.io.pop.valid)
+  val missing = (io.master0.valid & !length_fifo.io.pop.valid)
+
   io.packets := packetsInFifoCounter.value
+
+  assert(
+    assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
+    message   = "Frame length not available during frame data valid",
+    severity  = ERROR
+  )
+
 }
 
 // @todo PacketStream FIFO using CounterUpDown(0, in.last & in.fire, out.last & out.fire)
