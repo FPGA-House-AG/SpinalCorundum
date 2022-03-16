@@ -18,7 +18,11 @@
 # continuous build (using sbt ~)
 repl:
 	set -e
-	sbt "~ runMain corundum.CorundumFrameMuxPrioVerilog; runMain corundum.CorundumFrameStashVerilog"
+	sbt "~ \
+	runMain corundum.CorundumFrameMuxPrioVerilog; \
+	runMain corundum.CorundumFrameStashVerilog; \
+	runMain corundum.CorundumFrameFilterVerilog; \
+	"
 
 sim_repl:
 	set -e
@@ -32,6 +36,12 @@ sim_repl:
 	test:runMain corundum.CorundumFrameStashSim; \
 	test:runMain corundum.CorundumFrameFilterSim;"
 	# @TODO can we kill gtkwave here?
+
+stash:
+	set -e
+	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst -a ./CorundumFrameStash.gtkw &
+	sbt "~ \
+	test:runMain corundum.CorundumFrameStashSim;"
 
 spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
