@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Wed Mar 16 20:44:10 2022
+[*] Wed Mar 16 21:26:10 2022
 [*]
 [dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumFrameStash/test.fst"
-[dumpfile_mtime] "Wed Mar 16 20:43:41 2022"
-[dumpfile_size] 69786
+[dumpfile_mtime] "Wed Mar 16 21:24:23 2022"
+[dumpfile_size] 19905
 [savefile] "/home/vexriscv/project/SpinalCorundum/CorundumFrameStash.gtkw"
-[timestart] 12427
+[timestart] 3493
 [size] 3486 1601
 [pos] -1 -1
-*-6.000000 12740 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.000000 3820 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.CorundumFrameStash.
 [treeopen] TOP.CorundumFrameStash.length_fifo.
@@ -50,10 +50,10 @@ TOP.CorundumFrameStash.io_master0_valid
 -Frames in FIFO
 @28
 TOP.CorundumFrameStash.fifo.io_push_payload_last
-@22
-TOP.CorundumFrameStash.packetsInFifoCounter_value[3:0]
 @24
-TOP.CorundumFrameStash.length_fifo_io_availability[4:0]
+TOP.CorundumFrameStash.fifo.io_occupancy[4:0]
+TOP.CorundumFrameStash.fifo.io_availability[4:0]
+TOP.CorundumFrameStash.packetsInFifoCounter_value[4:0]
 @200
 -
 -Frame Length FIFO
@@ -76,5 +76,8 @@ TOP.CorundumFrameStash.diff
 TOP.CorundumFrameStash.reset
 @29
 TOP.CorundumFrameStash.missing
+@28
+TOP.CorundumFrameStash.fifo_overflow
+TOP.CorundumFrameStash.length_fifo.logic_full
 [pattern_trace] 1
 [pattern_trace] 0

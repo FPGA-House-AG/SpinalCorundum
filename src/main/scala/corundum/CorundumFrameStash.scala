@@ -17,7 +17,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     val slave0 = slave Stream new Fragment(CorundumFrame(dataWidth))
     val master0 = master Stream new Fragment(CorundumFrame(dataWidth))
     // worst case each packet is one beat
-    val packets = out UInt(log2Up(fifoSize) bits)
+    val packets = out UInt(log2Up(fifoSize * 2) bits)
     val length = out UInt(12 bits)
     val length_valid = out Bool()
     val full = out Bool()
@@ -31,13 +31,12 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   val y = Stream Fragment(CorundumFrame(dataWidth))
 
   // track number of packets in the FIFO
-  val packetsInFifoCounter = CounterUpDown(fifoSize)
+  val packetsInFifoCounter = CounterUpDown(fifoSize * 2)
 
   // gather at least minPackets packet(s) in the FIFO before continuing the pop/output stream
   // however if the FIFO becomes full, also continue, to prevent corruption
   val fifo_holds_complete_packet = (packetsInFifoCounter.value >= minPackets)
-  val fifo_overflow = (fifo.io.availability < 2)
-  val z = y.continueWhen(fifo_holds_complete_packet/* | fifo_overflow*/).stage()
+  val z = y.continueWhen(fifo_holds_complete_packet).m2sPipe().s2mPipe()
 
   when (fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last) {
     packetsInFifoCounter.increment()
@@ -61,22 +60,26 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
 
   val frame_length = Reg(UInt(12 bits))
   // first beat?
-  when (!is_frame_continuation) {
+  when (x.valid & x.ready & !is_frame_continuation) {
     frame_length := tkeep_count.resize(12 bits)
   // non-first beat(s)
-  } otherwise {
+  /*} otherwise {*/
+  } elsewhen (x.valid & x.ready) {
     frame_length := (frame_length + tkeep_count)/*.resize(12 bits)*/
   }
-  val length_fifo = new StreamFifo(UInt(12 bits), fifoSize)
+  val length_fifo = new StreamFifo(UInt(12 bits), fifoSize + 4/*@TODO does this match registers? */)
   length_fifo.io.push.valid := RegNext(x.last & x.ready & x.valid) init(False)
   length_fifo.io.push.payload := frame_length
   val length_pop = Bool()
   length_pop := z.last & z.ready & z.valid
   length_fifo.io.pop.ready := length_pop;
 
-  x << io.slave0/*.m2sPipe().s2mPipe()*/
-  fifo.io.push << x.stage()
-  y << fifo.io.pop.stage()
+  // skid buffer between input and x
+  // at least 1 clock cycle latency
+  // but full throughput
+  x << io.slave0.m2sPipe().s2mPipe()
+  fifo.io.push << x.m2sPipe().s2mPipe()
+  y << fifo.io.pop
   io.master0 << z
 
   io.length := length_fifo.io.pop.payload
@@ -91,6 +94,12 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   assert(
     assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
     message   = "Frame length not available during frame data valid",
+    severity  = ERROR
+  )
+
+  assert(
+    assertion = !(length_fifo.io.push.valid & !length_fifo.io.push.ready),
+    message   = "Pushing Length into Length FIFO, but FIFO is not ready",
     severity  = ERROR
   )
 
