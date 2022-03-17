@@ -51,8 +51,9 @@ object CorundumFrameStashSim {
         while (remaining > 0) {
           val tkeep_len = if (remaining >= keepWidth) keepWidth else remaining;
           valid0 = (Random.nextInt(8) > 2) | (packet_idx > 3000)
-          valid0 &= pause
-          pause ^= (Random.nextInt(16) >= 15)
+          valid0 &= !pause
+          if (pause) pause ^= (Random.nextInt(16) >= 15)
+          if (!pause) pause ^= (Random.nextInt(128) >= 127)
 
           assert(tkeep_len <= keepWidth)
           tkeep0 = 0
