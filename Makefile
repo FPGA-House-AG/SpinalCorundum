@@ -57,6 +57,9 @@ rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 	runMain corundum.CorundumFrameFilterVerilog; \
 	"
 
+formal:
+	set -e
+	sby CorundumFrameStash.sby -f CorundumFrameStash.sby
 
 CorundumFrameMuxPrio.json: CorundumFrameMuxPrio.v CorundumFrameMuxPrio.ys
 	set -e
