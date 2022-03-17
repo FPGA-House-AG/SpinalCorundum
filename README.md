@@ -3,6 +3,11 @@ Fork
 This fork of SpinalTemplateSbt is aimed at learning SpinalHDL designs, building some components
 for Corundum data flow.
 
+SpinalHDL Docker
+================
+git@github.com:likewise/vexriscv-dockerfile.git
+754f14bcec9eef288c46b4e777dd9be147c4e63e
+
 Spinal Base Project
 ============
 This repository is a base SBT project added to help non Scala/SBT native people in their first steps.
