@@ -1,0 +1,20 @@
+[options]
+mode bmc
+depth 100
+
+[engines]
+smtbmc
+
+[script]
+# read_verilog
+#   -formal
+#     Enable support for SystemVerilog assertions and some Yosys extensions
+#     replace the implicit -D SYNTHESIS with -D FORMAL.
+#
+
+read_verilog -sv -formal CorundumFrameStash.sv
+prep -top CorundumFrameStash
+
+[files]
+# should all files be named differently?
+CorundumFrameStash.sv

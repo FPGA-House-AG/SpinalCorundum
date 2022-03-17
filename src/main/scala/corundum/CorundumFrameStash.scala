@@ -20,7 +20,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     val packets = out UInt(log2Up(fifoSize * 2) bits)
     val length = out UInt(12 bits)
     val length_valid = out Bool()
-    val full = out Bool()
+    //val full = out Bool()
     //println(log2Up(fifoSize))
   }
   val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), fifoSize)
@@ -46,8 +46,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     packetsInFifoCounter.decrement()
   }
 
-
-  io.full := fifo.io.availability < 2
+  //io.full := fifo.io.availability < 2
 
   val is_frame_continuation = RegNextWhen(!x.last, x.valid) init(False)
   val is_first_beat = x.valid & x.ready & !is_frame_continuation
@@ -78,6 +77,8 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   // at least 1 clock cycle latency
   // but full throughput
   x << io.slave0.m2sPipe().s2mPipe()
+  /* one cycle latency to match length calculation, to ensure the frame
+   * length is available together with the frame data on the FIFO outputs */
   fifo.io.push << x.m2sPipe().s2mPipe()
   y << fifo.io.pop
   io.master0 << z
@@ -91,18 +92,30 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
 
   io.packets := packetsInFifoCounter.value
 
-  assert(
-    assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
-    message   = "Frame length not available during frame data valid",
-    severity  = ERROR
-  )
+//  assert(
+//    assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
+//    message   = "Frame length not available during frame data valid",
+//    severity  = ERROR
+//  )
+//
+//  assert(
+//    assertion = !(length_fifo.io.push.valid & !length_fifo.io.push.ready),
+//    message   = "Pushing length into Length FIFO, but FIFO is not ready",
+//    severity  = ERROR
+//  )
 
-  assert(
-    assertion = !(length_fifo.io.push.valid & !length_fifo.io.push.ready),
-    message   = "Pushing Length into Length FIFO, but FIFO is not ready",
-    severity  = ERROR
-  )
+  import spinal.core.GenerationFlags._
+  import spinal.core.Formal._
 
+  GenerationFlags.formal {
+    when(initstate()) {
+      assume(clockDomain.isResetActive)
+      assume(io.slave0.ready === False)
+    }.otherwise {
+      assert(!(io.master0.valid & !length_fifo.io.pop.valid))
+      assert(!(length_fifo.io.push.valid & !length_fifo.io.push.ready))
+    }
+  }
 }
 
 // @todo PacketStream FIFO using CounterUpDown(0, in.last & in.fire, out.last & out.fire)
@@ -119,8 +132,14 @@ object CorundumFrameStashVerilog {
       val toplevel = new CorundumFrameStash(512)
       XilinxPatch(toplevel)
     })
-    config.generateVerilog({
-      val toplevel = new CorundumFrameStash(512)
+  }
+}
+//Generate the CorundumFrameStashSystemVerilogWithFormal's Verilog
+object CorundumFrameStashSystemVerilogWithFormal {
+  def main(args: Array[String]) {
+   val config = SpinalConfig()
+    config.includeFormal.generateSystemVerilog({
+      val toplevel = new CorundumFrameStash(16)
       XilinxPatch(toplevel)
     })
   }
