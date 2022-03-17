@@ -13,6 +13,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   val maxFragmentWords = 16
   val minPackets = 1
   val fifoSize = minPackets * maxFragmentWords
+  val keepWidth = dataWidth/8
   val io = new Bundle {
     val slave0 = slave Stream new Fragment(CorundumFrame(dataWidth))
     val master0 = master Stream new Fragment(CorundumFrame(dataWidth))
@@ -25,7 +26,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   }
   val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), fifoSize)
 
-    // component sink/slave port to fifo push/sink/slave port
+  // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
   // fifo source/master/pop port to component source/master port
   val y = Stream Fragment(CorundumFrame(dataWidth))
@@ -58,14 +59,21 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   tkeep_count := U(dataWidth/8) - LeadingZeroes(x.tkeep)
 
   val frame_length = Reg(UInt(12 bits))
-  // first beat?
-  when (x.valid & x.ready & !is_frame_continuation) {
+
+  // first, but not last data beat?
+  when (x.valid & x.ready & !is_frame_continuation & !x.last) {
+    frame_length := keepWidth
+  // first and last data beat?
+  } elsewhen (x.valid & x.ready & !is_frame_continuation & x.last) {
     frame_length := tkeep_count.resize(12 bits)
-  // non-first beat(s)
-  /*} otherwise {*/
-  } elsewhen (x.valid & x.ready) {
-    frame_length := (frame_length + tkeep_count)/*.resize(12 bits)*/
+  // non-first, non-last data beat?
+  } elsewhen (x.valid & x.ready & is_frame_continuation & !x.last) {
+    frame_length := frame_length + keepWidth
+  // non-first, last data beat
+  } elsewhen (x.valid & x.ready & is_frame_continuation & x.last) {
+    frame_length := frame_length + tkeep_count.resize(12 bits)
   }
+
   val length_fifo = new StreamFifo(UInt(12 bits), fifoSize + 4/*@TODO does this match registers? */)
   length_fifo.io.push.valid := RegNext(x.last & x.ready & x.valid) init(False)
   length_fifo.io.push.payload := frame_length
@@ -112,8 +120,17 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
       assume(clockDomain.isResetActive)
       assume(io.slave0.ready === False)
     }.otherwise {
-      assert(!(io.master0.valid & !length_fifo.io.pop.valid))
-      assert(!(length_fifo.io.push.valid & !length_fifo.io.push.ready))
+      assert(
+        assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
+        message   = "Frame length not available during frame data valid",
+        severity  = ERROR
+      )
+
+      assert(
+        assertion = !(length_fifo.io.push.valid & !length_fifo.io.push.ready),
+        message   = "Pushing length into Length FIFO, but FIFO is not ready",
+        severity  = ERROR
+      )
     }
   }
 }
