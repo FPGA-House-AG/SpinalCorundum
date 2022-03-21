@@ -49,7 +49,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
 
   //io.full := fifo.io.availability < 2
 
-  val is_frame_continuation = RegNextWhen(!x.last, x.valid) init(False)
+  val is_frame_continuation = RegNextWhen(!x.last, x.valid & x.ready) init(False)
   val is_first_beat = x.valid & x.ready & !is_frame_continuation
 
   printf("%s log2Up(%d/8+1)=%d\n", sourcecode.File(), dataWidth, log2Up(dataWidth/8+1))
