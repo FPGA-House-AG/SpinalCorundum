@@ -56,6 +56,8 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
 
   val is_frame_continuation = RegNextWhen(!x.last, x.valid & x.ready) init(False)
   val is_first_beat = x.valid & x.ready & !is_frame_continuation
+  val is_last_beat = x.valid & x.ready & x.last
+  val is_intermediate_beat = x.valid & x.ready & is_frame_continuation & !x.last
 
   printf("%s log2Up(%d/8+1)=%d\n", sourcecode.File(), dataWidth, log2Up(dataWidth/8+1))
 
@@ -85,10 +87,10 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     }
   }
 
-  // the frame_length is max_words-1, current beat x.payload.data/tkeep is not yet included,
-  // but the x.last is not set, so next cycle frame_length is max_words, and after the next
-  // beat the frame_length will be > max_words
-  val frame_going_oversize_event = (frame_length === (maxFragmentBytes - keepWidth)) & x.ready & x.valid & !x.last/* & !frame_too_large LEON*/
+  // the frame_length is max_words-1 due to the previous (non-last) beat (length result has 1 cycle latency)
+  // and the current beat is an intermediate beat (resulting in maximum frame length)
+  // thus the next beat will make the frame oversized
+  val frame_going_oversize_event = (frame_length === (maxFragmentBytes - keepWidth)) & !was_last & is_intermediate_beat/* & !frame_too_large LEON*/
   //val frame_going_oversize_event = (frame_length === (maxFragmentBytes - keepWidth)) & previous_beat_was_not_last
 
   // frame_too_large will go high on the last beat that fits in max_words
@@ -253,6 +255,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
       //  ((formal_frame_length === (fifoSize - 1)) & ((!io.slave0.valid | !io.slave0.ready) | !io.slave0.last)) |
       //  (formal_frame_length < (fifoSize - 1))
       //)
+      assume(io.slave0.tdata === 0x01)
     }
   }
 }
