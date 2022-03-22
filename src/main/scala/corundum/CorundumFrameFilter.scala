@@ -40,8 +40,10 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   }
   // all bytes required to match the filters are present in the input data?
   val are_keepfilter_bytes_present = (x.payload.tkeep & keepfilter_tkeep) === (keepfilter_tkeep);
+  // @TODO consider matching any bytes, not all, for the drop filter
   val are_dropfilter_bytes_present = (x.payload.tkeep & dropfilter_tkeep) === (dropfilter_tkeep);
 
+  // the final keep and drop criteria for the frame
   val is_first_beat_keepfilter_match = RegNextWhen(is_keepfilter_match & are_keepfilter_bytes_present, !is_frame_continuation) init(False)
   val is_first_beat_dropfilter_match = RegNextWhen(is_dropfilter_match & are_dropfilter_bytes_present, !is_frame_continuation) init(False)
 
@@ -62,7 +64,7 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
     busCtrlWrapped.read(B"32'bB1F117E5", 0x00, documentation = null)
     // 16'b version and 16'b revision
     busCtrlWrapped.read(B"32'b00010001", 0x04, documentation = null)
-
+    // some strictly increasing (not per se incrementing) build number
     val gitCommits = B(BigInt(SourceCodeGitCommits()), 32 bits)
     busCtrlWrapped.read(gitCommits, 0x08, 0, null)
     val gitHash = B(BigInt(SourceCodeGitHash(), 16), 160 bits)
