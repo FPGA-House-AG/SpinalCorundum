@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Wed Mar 16 21:26:10 2022
+[*] Mon Mar 21 22:14:31 2022
 [*]
 [dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumFrameStash/test.fst"
-[dumpfile_mtime] "Wed Mar 16 21:24:23 2022"
-[dumpfile_size] 19905
+[dumpfile_mtime] "Mon Mar 21 22:14:18 2022"
+[dumpfile_size] 758553532
 [savefile] "/home/vexriscv/project/SpinalCorundum/CorundumFrameStash.gtkw"
-[timestart] 3493
-[size] 3486 1601
+[timestart] 8115
+[size] 3844 1680
 [pos] -1 -1
-*-6.000000 3820 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 8300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.CorundumFrameStash.
 [treeopen] TOP.CorundumFrameStash.length_fifo.
 [sst_width] 590
 [signals_width] 889
 [sst_expanded] 1
-[sst_vpaned_height] 493
+[sst_vpaned_height] 520
 @200
 -
 -Input
@@ -36,13 +36,37 @@ TOP.CorundumFrameStash.x_payload_fragment_tkeep[2:0]
 TOP.CorundumFrameStash.frame_length[11:0]
 @28
 TOP.CorundumFrameStash.length_fifo.io_push_valid
+@29
+[color] 1
+TOP.CorundumFrameStash.frame_going_oversize_event
+@28
+[color] 3
+TOP.CorundumFrameStash.frame_too_large
+TOP.CorundumFrameStash.push_length_on_last
+TOP.CorundumFrameStash.push_length_on_oversize
+TOP.CorundumFrameStash.pushed_length_on_oversize
+TOP.CorundumFrameStash.was_last
 @200
 -
+@22
+TOP.CorundumFrameStash.x2_payload_fragment_tdata[23:0]
+@28
+TOP.CorundumFrameStash.x2_payload_fragment_tkeep[2:0]
+TOP.CorundumFrameStash.x2_payload_fragment_tuser
+TOP.CorundumFrameStash.x2_payload_last
+TOP.CorundumFrameStash.x2_ready
+TOP.CorundumFrameStash.x2_valid
+@200
 -Output
 @28
 TOP.CorundumFrameStash.fifo.io_pop_ready
 TOP.CorundumFrameStash.fifo.io_pop_valid
 TOP.CorundumFrameStash.io_master0_payload_last
+@22
+TOP.CorundumFrameStash.io_master0_payload_fragment_tdata[23:0]
+@28
+TOP.CorundumFrameStash.io_master0_payload_fragment_tkeep[2:0]
+TOP.CorundumFrameStash.io_master0_payload_fragment_tuser
 TOP.CorundumFrameStash.io_master0_ready
 TOP.CorundumFrameStash.io_master0_valid
 @200
@@ -74,10 +98,7 @@ TOP.CorundumFrameStash.length_fifo.io_pop_ready
 TOP.CorundumFrameStash.length_fifo.io_pop_valid
 TOP.CorundumFrameStash.diff
 TOP.CorundumFrameStash.reset
-@29
 TOP.CorundumFrameStash.missing
-@28
-TOP.CorundumFrameStash.fifo_overflow
 TOP.CorundumFrameStash.length_fifo.logic_full
 [pattern_trace] 1
 [pattern_trace] 0

@@ -40,8 +40,8 @@ sim_repl:
 stash:
 	set -e
 	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst -a ./CorundumFrameStash.gtkw &
-	sbt "~ \
-	test:runMain corundum.CorundumFrameStashSim;"
+	sbt "\
+	~test:runMain corundum.CorundumFrameStashSim;"
 
 spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
@@ -60,7 +60,7 @@ rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 formal:
 	set -e
 	sbt "runMain corundum.CorundumFrameStashSystemVerilogWithFormal"
-	sby -f CorundumFrameStash.sby
+	sby -f CorundumFrameStash.sby -d formalWorkdir/CorundumFrameStash
 
 CorundumFrameMuxPrio.json: CorundumFrameMuxPrio.v CorundumFrameMuxPrio.ys
 	set -e

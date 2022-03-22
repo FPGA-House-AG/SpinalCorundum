@@ -1,0 +1,69 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Tue Mar 22 00:12:51 2022
+[*]
+[dumpfile] "/home/vexriscv/project/SpinalCorundum/formalWorkdir/CorundumFrameStash/engine_0/trace.vcd"
+[dumpfile_mtime] "Mon Mar 21 23:59:08 2022"
+[dumpfile_size] 88529
+[savefile] "/home/vexriscv/project/SpinalCorundum/CorundumFrameStash_formal.gtkw"
+[timestart] 0
+[size] 3058 1782
+[pos] -1 -1
+*-5.271887 176 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] CorundumFrameStash.
+[sst_width] 783
+[signals_width] 486
+[sst_expanded] 1
+[sst_vpaned_height] 557
+@22
+CorundumFrameStash.io_slave0_payload_fragment_tdata[15:0]
+@28
+CorundumFrameStash.io_slave0_payload_fragment_tkeep[1:0]
+CorundumFrameStash.io_slave0_payload_fragment_tuser
+CorundumFrameStash.io_slave0_payload_last
+CorundumFrameStash.io_slave0_ready
+CorundumFrameStash.io_slave0_valid
+@200
+-
+@22
+CorundumFrameStash.x_payload_fragment_tdata[15:0]
+@28
+CorundumFrameStash.x_payload_fragment_tkeep[1:0]
+CorundumFrameStash.x_payload_fragment_tuser
+CorundumFrameStash.x_payload_last
+CorundumFrameStash.x_ready
+CorundumFrameStash.x_valid
+@24
+CorundumFrameStash.frame_length[11:0]
+@28
+CorundumFrameStash.frame_too_large
+CorundumFrameStash.frame_going_oversize_event
+@201
+-
+@22
+CorundumFrameStash.x2_payload_fragment_tdata[15:0]
+@28
+CorundumFrameStash.x2_payload_fragment_tkeep[1:0]
+CorundumFrameStash.x2_payload_fragment_tuser
+CorundumFrameStash.x2_payload_last
+CorundumFrameStash.x2_ready
+CorundumFrameStash.x2_valid
+@200
+-
+@22
+CorundumFrameStash.x3_payload_fragment_tdata[15:0]
+@28
+CorundumFrameStash.x3_payload_fragment_tkeep[1:0]
+CorundumFrameStash.x3_payload_fragment_tuser
+CorundumFrameStash.x3_payload_last
+CorundumFrameStash.x3_ready
+CorundumFrameStash.x3_valid
+@200
+-
+@24
+CorundumFrameStash.fifo.io_occupancy[4:0]
+@28
+CorundumFrameStash.fifo.io_push_ready
+CorundumFrameStash.fifo.io_push_valid
+[pattern_trace] 1
+[pattern_trace] 0

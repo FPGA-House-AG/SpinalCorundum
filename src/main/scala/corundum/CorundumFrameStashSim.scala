@@ -13,8 +13,8 @@ object CorundumFrameStashSim {
     val keepWidth = dataWidth/8
     SimConfig.withFstWave.doSim(new CorundumFrameStash(dataWidth)){dut =>
 
-      var maxFrameWords = 8
-      var maxPacketSizeBytes = maxFrameWords * keepWidth
+      var maxFrameWords = 16
+      var maxPacketSizeBytes = (maxFrameWords + 1) * keepWidth
 
       dut.io.slave0.valid #= false
 

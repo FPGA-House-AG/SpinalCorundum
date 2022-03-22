@@ -10,10 +10,11 @@ object CorundumFrameStash {
 }
 
 case class CorundumFrameStash(dataWidth : Int) extends Component {
-  val maxFragmentWords = 16
+  val maxFragmentWords = 8
   val minPackets = 1
   val fifoSize = minPackets * maxFragmentWords
   val keepWidth = dataWidth/8
+  val maxFragmentBytes = maxFragmentWords * keepWidth
   val io = new Bundle {
     val slave0 = slave Stream new Fragment(CorundumFrame(dataWidth))
     val master0 = master Stream new Fragment(CorundumFrame(dataWidth))
@@ -24,10 +25,17 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     //val full = out Bool()
     //println(log2Up(fifoSize))
   }
+  val length_and_truncated = new Bundle {
+    val length = UInt(12 bits)
+    val truncated = Bool()
+  }
+
   val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), fifoSize)
 
   // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
+  val x2 = Stream Fragment(CorundumFrame(dataWidth))
+  val x3 = Stream Fragment(CorundumFrame(dataWidth))
   // fifo source/master/pop port to component source/master port
   val y = Stream Fragment(CorundumFrame(dataWidth))
 
@@ -42,12 +50,9 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   when (fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last) {
     packetsInFifoCounter.increment()
   }
-  /*fifo.io.pop.ready & fifo.io.pop.valid & fifo.io.pop.last)*/
   when (y.ready & y.valid & y.last) {
     packetsInFifoCounter.decrement()
   }
-
-  //io.full := fifo.io.availability < 2
 
   val is_frame_continuation = RegNextWhen(!x.last, x.valid & x.ready) init(False)
   val is_first_beat = x.valid & x.ready & !is_frame_continuation
@@ -58,25 +63,86 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   val tkeep_count = UInt(/*log2Up(dataWidth/8 + 1) bits*/)
   tkeep_count := U(dataWidth/8) - LeadingZeroes(x.tkeep)
 
-  val frame_length = Reg(UInt(12 bits))
+  val frame_too_large = Reg(Bool()) init (False)
 
-  // first, but not last data beat?
-  when (x.valid & x.ready & !is_frame_continuation & !x.last) {
-    frame_length := keepWidth
-  // first and last data beat?
-  } elsewhen (x.valid & x.ready & !is_frame_continuation & x.last) {
-    frame_length := tkeep_count.resize(12 bits)
-  // non-first, non-last data beat?
-  } elsewhen (x.valid & x.ready & is_frame_continuation & !x.last) {
-    frame_length := frame_length + keepWidth
-  // non-first, last data beat
-  } elsewhen (x.valid & x.ready & is_frame_continuation & x.last) {
-    frame_length := frame_length + tkeep_count.resize(12 bits)
+  val was_last = RegNextWhen(x.last, x.valid & x.ready)
+  val previous_beat_was_not_last = RegNext(x.valid & x.ready & !x.last)
+
+  val frame_length = Reg(UInt(12 bits)) init(0)
+  when (x.valid & x.ready) {
+    // first, but not last data beat?
+    when (/*x.valid & x.ready & */!is_frame_continuation & !x.last) {
+      frame_length := keepWidth
+    // first and last data beat?
+    } elsewhen (/*x.valid & x.ready & */!is_frame_continuation & x.last) {
+      frame_length := tkeep_count.resize(12 bits)
+    // non-first, non-last data beat?
+    } elsewhen (/*x.valid & x.ready & */is_frame_continuation & !x.last) {
+      frame_length := frame_length + keepWidth
+    // non-first, last data beat
+    } elsewhen (/*x.valid & x.ready & */is_frame_continuation & x.last) {
+      frame_length := frame_length + tkeep_count.resize(12 bits)
+    }
   }
 
+  // the frame_length is max_words-1, current beat x.payload.data/tkeep is not yet included,
+  // but the x.last is not set, so next cycle frame_length is max_words, and after the next
+  // beat the frame_length will be > max_words
+  val frame_going_oversize_event = (frame_length === (maxFragmentBytes - keepWidth)) & x.ready & x.valid & !x.last/* & !frame_too_large LEON*/
+  //val frame_going_oversize_event = (frame_length === (maxFragmentBytes - keepWidth)) & previous_beat_was_not_last
+
+  // frame_too_large will go high on the last beat that fits in max_words
+  // it indicates the frame has been truncated, and the remainder should be ignored
+  when (is_first_beat/*x.valid & x.ready & !is_frame_continuation*/) {
+    frame_too_large := False
+  } elsewhen (/*!frame_too_large & */frame_going_oversize_event) {
+    frame_too_large := True 
+  }
+
+  //val pushed_length_on_oversize = Reg(Bool()) init (False)
+  //// coincides with the last frame beat that fits within max_words
+  //val push_length_on_oversize = !pushed_length_on_oversize & x.valid & x.ready & (frame_going_oversize_event | frame_too_large)
+  //when (x.valid & x.ready & !is_frame_continuation) {
+  //  pushed_length_on_oversize := False
+  //} elsewhen (push_length_on_oversize) {
+  //  pushed_length_on_oversize := True 
+  //}
+
+  val forced_last_on_oversize = Reg(Bool()) init (False)
+  // coincides with the last frame beat that fits within max_words
+  val force_last_on_oversize = !forced_last_on_oversize & x.valid & x.ready & (frame_going_oversize_event/* | frame_too_large LEON*/)
+  when (is_first_beat/*x.valid & x.ready & !is_frame_continuation*/) {
+    forced_last_on_oversize := False
+  } elsewhen (force_last_on_oversize) {
+    forced_last_on_oversize := True 
+  }
+
+  val push_length_on_oversize = force_last_on_oversize
+
+//  var frame_length_next = UInt(12 bits)
+//  val frame_length = Reg(UInt(12 bits))
+//
+//  frame_length_next = frame_length
+//  when (x.valid & x.ready) {
+//    // first data beat?
+//    when (!is_frame_continuation) {
+//      frame_length_next = 0
+//    }
+//    // non-last data beat?
+//    when (!x.last) {
+//      frame_length_next += keepWidth
+//    // last data beat
+//    } elsewhen (x.last) {
+//      frame_length_next += tkeep_count.resize(12 bits)
+//    }
+//  }
+//  frame_length := frame_length_next
+
   val length_fifo = new StreamFifo(UInt(12 bits), fifoSize + 4/*@TODO does this match registers? */)
-  length_fifo.io.push.valid := RegNext(x.last & x.ready & x.valid) init(False)
-  length_fifo.io.push.payload := frame_length
+
+  val push_length_on_last = RegNext(x.last & x.ready & x.valid & !frame_too_large) init(False)
+  length_fifo.io.push.valid := push_length_on_last | push_length_on_oversize
+  length_fifo.io.push.payload := frame_length | (push_length_on_oversize.asUInt << 11)
   val length_pop = Bool()
   length_pop := z.last & z.ready & z.valid
   length_fifo.io.pop.ready := length_pop;
@@ -85,15 +151,25 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   // at least 1 clock cycle latency
   // but full throughput
   x << io.slave0.m2sPipe().s2mPipe()
+  // do not push data beyond truncation */
+  x2.valid := x.valid & (!frame_too_large | force_last_on_oversize/*push_length_on_oversize*/)
+  x2.payload.tuser := x.payload.tuser
+  x2.payload.tdata := x.payload.tdata
+  x2.payload.tkeep := x.payload.tkeep
+  x2.last := (x.last & !frame_too_large) | force_last_on_oversize/*push_length_on_oversize*/
+  //x2.last := (x.last & !frame_too_large) | push_length_on_oversize
+  x.ready := x2.ready
   /* one cycle latency to match length calculation, to ensure the frame
    * length is available together with the frame data on the FIFO outputs */
-  fifo.io.push << x.m2sPipe().s2mPipe()
+  x3 << x2.m2sPipe().s2mPipe()
+  fifo.io.push << x3
   y << fifo.io.pop
-  io.master0 << z
+  // highest bit indicates truncated packet
+  val drop_on_truncate = length_fifo.io.pop.payload >= 0x800
+  io.master0 << z.throwWhen(drop_on_truncate)
 
-  io.length := length_fifo.io.pop.payload
+  io.length := length_fifo.io.pop.payload & 0xEFF
   io.length_valid := length_fifo.io.pop.valid
-
 
   val diff = (io.master0.valid =/= length_fifo.io.pop.valid)
   val missing = (io.master0.valid & !length_fifo.io.pop.valid)
@@ -131,6 +207,52 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
         message   = "Pushing length into Length FIFO, but FIFO is not ready",
         severity  = ERROR
       )
+
+      assert(
+        assertion = (
+          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy) |
+          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy - 1) |
+          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy + 1)
+        ),
+        message   = "Length FIFO occupancy should change by at most 1",
+        severity  = ERROR
+      )
+
+      assert(
+        assertion = (
+          (past(fifo.io.occupancy) === fifo.io.occupancy) |
+          (past(fifo.io.occupancy) === fifo.io.occupancy - 1) |
+          (past(fifo.io.occupancy) === fifo.io.occupancy + 1)
+        ),
+        message   = "Frame FIFO occupancy should change by at most 1",
+        severity  = ERROR
+      )
+
+      assert(
+        assertion = (
+          !( (past(fifo.io.occupancy === fifoSize, 1) & past(io.packets === 0, 1)) &&
+             (past(fifo.io.occupancy === fifoSize, 2) & past(io.packets === 0, 2))
+          )
+        ),
+        message   = "Frame FIFO full but holds no complete frame.",
+        severity  = ERROR
+      )
+
+      val formal_frame_length = Reg(UInt(12 bits)) init(0)
+      val formal_is_frame_continuation = RegNextWhen(!io.slave0.last, io.slave0.valid & io.slave0.ready) init(False)
+      val formal_is_first_beat = io.slave0.valid & io.slave0.ready & !formal_is_frame_continuation
+      when (io.slave0.valid & io.slave0.ready) {
+        // first, but not last data beat?
+        when (formal_is_first_beat) {
+          formal_frame_length := 1
+        } otherwise {
+          formal_frame_length := formal_frame_length + 1
+        }
+      }
+      //assume(
+      //  ((formal_frame_length === (fifoSize - 1)) & ((!io.slave0.valid | !io.slave0.ready) | !io.slave0.last)) |
+      //  (formal_frame_length < (fifoSize - 1))
+      //)
     }
   }
 }
