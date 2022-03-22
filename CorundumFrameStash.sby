@@ -1,9 +1,17 @@
-[options]
-mode bmc
-depth 30
+[tasks]
+task_proof
+task_cover
 
 [engines]
 smtbmc
+
+[options]
+task_proof:
+mode bmc
+depth 18
+task_cover:
+mode cover
+--
 
 [script]
 # read_verilog

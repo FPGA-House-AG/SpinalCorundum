@@ -60,7 +60,8 @@ rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 formal:
 	set -e
 	sbt "runMain corundum.CorundumFrameStashSystemVerilogWithFormal"
-	sby -f CorundumFrameStash.sby -d formalWorkdir/CorundumFrameStash
+	sby -f CorundumFrameStash.sby task_proof -d formalWorkdir/CorundumFrameStash 
+	sby -f CorundumFrameStash.sby task_cover -d formalWorkdir/CorundumFrameStash/cover 
 
 CorundumFrameMuxPrio.json: CorundumFrameMuxPrio.v CorundumFrameMuxPrio.ys
 	set -e
