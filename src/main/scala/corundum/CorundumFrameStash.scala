@@ -250,12 +250,11 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
       cover(is_first_beat)
       cover(is_last_beat)
       cover(is_intermediate_beat)
+      // this state cannot be reached, expect failure
+      //cover((io.length === 0x7FF) & (io.length_valid))
     }
   }
 }
-
-// @todo PacketStream FIFO using CounterUpDown(0, in.last & in.fire, out.last & out.fire)
-// out.valid := (counter > 0)
 
 //Generate the CorundumFrameStash's Verilog
 object CorundumFrameStashVerilog {
