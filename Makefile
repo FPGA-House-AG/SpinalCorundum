@@ -51,7 +51,7 @@ rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameStash.scala
 rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 	set -e
-	sbt "
+	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
