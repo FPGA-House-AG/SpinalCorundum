@@ -97,10 +97,6 @@ object CorundumFrameFilterVerilog {
       val toplevel = new CorundumFrameFilter(512)
       XilinxPatch(toplevel)
     })
-    config.generateVerilog({
-      val toplevel = new CorundumFrameFilter(512)
-      XilinxPatch(toplevel)
-    })
   }
 }
 

@@ -22,6 +22,7 @@ repl:
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
+	runMain corundum.CorundumFrameWriterVerilog; \
 	"
 
 sim_repl:
@@ -37,6 +38,16 @@ sim_repl:
 	test:runMain corundum.CorundumFrameFilterSim;"
 	# @TODO can we kill gtkwave here?
 
+sim_writer:
+	set -e
+# run sim once
+	#sbt "test:runMain corundum.CorundumFrameWriterSim"
+# run in background
+	gtkwave -F -f ./simWorkspace/CorundumFrameWriterDut/test.fst   -a ./CorundumFrameWriterDut.gtkw   &
+# continuous build/simulate on saved source code changes
+# press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+	sbt "~ test:runMain corundum.CorundumFrameWriterSim"
+
 stash:
 	set -e
 	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst -a ./CorundumFrameStash.gtkw &
@@ -47,14 +58,17 @@ spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
 	sbt "runMain corundum.CorundumFrameMuxPrioVerilog"
 
+# generate Verilog
 rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameStash.scala
 rtl: src/main/scala/corundum/CorundumFrameFilter.scala
+rtl: src/main/scala/corundum/CorundumFrameWriter.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
+	runMain corundum.CorundumFrameWriterVerilog; \
 	"
 
 formal:
