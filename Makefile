@@ -40,13 +40,17 @@ sim_repl:
 
 sim_writer:
 	set -e
-# run sim once
-	#sbt "test:runMain corundum.CorundumFrameWriterSim"
+# run sim once, so that we have a wavefile to start with
+	sbt "test:runMain corundum.CorundumFrameWriterSim"
 # run in background
+	mkdir -p ./simWorkspace/CorundumFrameWriterDut
+	touch ./simWorkspace/CorundumFrameWriterDut/test.fst
+	./gtkwave_trigger_reload.sh ./simWorkspace/CorundumFrameWriterDut/test.fst &
 	gtkwave -F -f ./simWorkspace/CorundumFrameWriterDut/test.fst   -a ./CorundumFrameWriterDut.gtkw   &
 # continuous build/simulate on saved source code changes
-# press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+# press Shift-Ctrl-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ test:runMain corundum.CorundumFrameWriterSim"
+	killall gtkwave_trigger_reload.sh
 
 stash:
 	set -e

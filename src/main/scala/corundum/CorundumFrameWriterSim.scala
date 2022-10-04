@@ -30,7 +30,7 @@ object CorundumFrameWriterDutVerilog {
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameWriterDut(512)
+      val toplevel = new CorundumFrameWriterDut(32)
       XilinxPatch(toplevel)
     })
   }
@@ -39,7 +39,7 @@ object CorundumFrameWriterDutVerilog {
 object CorundumFrameWriterSim {
 
   def main(args: Array[String]) {
-    val dataWidth = 32
+    val dataWidth = 64
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
 
@@ -51,6 +51,8 @@ object CorundumFrameWriterSim {
 
     compiled.doSim { dut =>
 
+      dut.io.slave0.w.last #= true
+      dut.io.slave0.b.ready #= true
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
       dut.io.output.ready #= true
@@ -76,7 +78,7 @@ object CorundumFrameWriterSim {
       dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
   
       dut.io.slave0.w.valid #= true
-      dut.io.slave0.w.payload.data.assignBigInt(43)
+      dut.io.slave0.w.payload.data.assignBigInt(0x00112233)
   
       dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
   
@@ -85,50 +87,81 @@ object CorundumFrameWriterSim {
   
       //Wait a rising edge on the clock
       dut.clockDomain.waitRisingEdge()
+      dut.clockDomain.waitRisingEdge()
+      dut.clockDomain.waitRisingEdge()
+      dut.clockDomain.waitRisingEdge()
+      dut.clockDomain.waitRisingEdge()
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x104) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x44556677)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+      //dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
 
 
 
       dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
       dut.io.slave0.w.valid #= true
-      dut.io.slave0.w.payload.data.assignBigInt(56)
-  
+      dut.io.slave0.w.payload.data.assignBigInt(0x0899AABB)
       dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
-  
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
 
-      dut.clockDomain.waitRisingEdge()
-
-      dut.io.slave0.aw.valid #= true
-      dut.io.slave0.w.valid #= true
-      dut.io.slave0.w.payload.data.assignBigInt(56)
-  
-      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
-  
-      dut.io.slave0.aw.valid #= false
-      dut.io.slave0.w.valid #= false
-
-      dut.clockDomain.waitRisingEdge()
-
-
+      //dut.clockDomain.waitRisingEdge()
 
 
       dut.io.slave0.aw.valid #= true
       dut.io.slave0.w.valid #= true
-      dut.io.slave0.w.payload.data.assignBigInt(56)
-  
+      dut.io.slave0.w.payload.data.assignBigInt(1)
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x140) // assert TLAST
       dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
-  
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+      //dut.clockDomain.waitRisingEdge()
+
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x104) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x0CDDEEFF)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+      // dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
+      //dut.clockDomain.waitRisingEdge()
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(1)
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x140) // assert TLAST
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
 
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x11112222)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+
+       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
-
-
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
-
-
+      dut.clockDomain.waitRisingEdge()
     }
   }
 }

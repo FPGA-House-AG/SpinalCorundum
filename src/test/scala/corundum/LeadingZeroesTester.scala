@@ -1,6 +1,7 @@
 package corundum
 
-import org.scalatest.FunSuite
+//import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import spinal.sim._
 import spinal.core._
@@ -19,7 +20,7 @@ object LeadingZeroesTester {
 
 }
 
-class LeadingZeroesTester extends FunSuite {
+class LeadingZeroesTester extends AnyFunSuite {
 
     test("LeadingZeros") { 
 
