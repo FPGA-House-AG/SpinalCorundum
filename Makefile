@@ -43,14 +43,14 @@ sim_writer:
 # run sim once, so that we have a wavefile to start with
 	sbt "test:runMain corundum.CorundumFrameWriterSim"
 # run in background
-	mkdir -p ./simWorkspace/CorundumFrameWriterDut
-	touch ./simWorkspace/CorundumFrameWriterDut/test.fst
-	./gtkwave_trigger_reload.sh ./simWorkspace/CorundumFrameWriterDut/test.fst &
+	#mkdir -p ./simWorkspace/CorundumFrameWriterDut
+	#touch ./simWorkspace/CorundumFrameWriterDut/test.fst
+	#./gtkwave_trigger_reload.sh ./simWorkspace/CorundumFrameWriterDut/test.fst &
 	gtkwave -F -f ./simWorkspace/CorundumFrameWriterDut/test.fst   -a ./CorundumFrameWriterDut.gtkw   &
 # continuous build/simulate on saved source code changes
 # press Shift-Ctrl-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ test:runMain corundum.CorundumFrameWriterSim"
-	killall gtkwave_trigger_reload.sh
+	#killall gtkwave_trigger_reload.sh
 
 stash:
 	set -e
@@ -66,13 +66,14 @@ spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameStash.scala
 rtl: src/main/scala/corundum/CorundumFrameFilter.scala
-rtl: src/main/scala/corundum/CorundumFrameWriter.scala
+rtl: src/main/scala/corundum/CorundumFrameWriterSim.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
-	runMain corundum.CorundumFrameWriterVerilog; \
+	runMain corundum.CorundumFrameWriterAxi4Verilog; \
+	runMain corundum.CorundumFrameWriterDutVerilog; \
 	"
 
 formal:

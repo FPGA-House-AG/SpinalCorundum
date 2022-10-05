@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Tue Oct  4 20:43:41 2022
+[*] Tue Oct  4 22:28:31 2022
 [*]
 [dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumFrameWriterDut/test.fst"
-[dumpfile_mtime] "Tue Oct  4 20:42:09 2022"
-[dumpfile_size] 4598
+[dumpfile_mtime] "Tue Oct  4 22:12:34 2022"
+[dumpfile_size] 4609
 [savefile] "/home/vexriscv/project/SpinalCorundum/CorundumFrameWriterDut.gtkw"
-[timestart] 57
+[timestart] 120
 [size] 3577 1636
-[pos] -295 -36
-*-5.000000 210 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-4.000000 220 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.CorundumFrameWriterDut.
 [sst_width] 644
@@ -26,6 +26,8 @@ TOP.CorundumFrameWriterDut.io_output_ready
 TOP.CorundumFrameWriterDut.io_output_valid
 @200
 -
+@201
+-W
 @28
 TOP.CorundumFrameWriterDut.io_slave0_w_payload_last
 @22
@@ -33,10 +35,11 @@ TOP.CorundumFrameWriterDut.io_slave0_w_payload_strb[3:0]
 @28
 TOP.CorundumFrameWriterDut.io_slave0_w_ready
 TOP.CorundumFrameWriterDut.io_slave0_w_valid
-@22
-TOP.CorundumFrameWriterDut.io_slave0_aw_payload_addr[31:0]
 @200
 -
+-AW
+@22
+TOP.CorundumFrameWriterDut.io_slave0_aw_payload_addr[31:0]
 @28
 TOP.CorundumFrameWriterDut.io_slave0_aw_payload_burst[1:0]
 @22
@@ -55,14 +58,41 @@ TOP.CorundumFrameWriterDut.io_slave0_aw_valid
 TOP.CorundumFrameWriterDut.bridge_reg_idx[31:0]
 @28
 TOP.CorundumFrameWriterDut.bridge_corundum_valid
-TOP.CorundumFrameWriterDut.bridge_fifo_io_occupancy[2:0]
-TOP.CorundumFrameWriterDut.bridge_fifo_io_availability[2:0]
-TOP.CorundumFrameWriterDut.bridge_fifo_io_push_ready
 @22
 TOP.CorundumFrameWriterDut.bridge_gitCommits[31:0]
 TOP.CorundumFrameWriterDut.bridge_gitHash[159:0]
 TOP.CorundumFrameWriterDut.bridge_tkeep[7:0]
 @28
 TOP.CorundumFrameWriterDut.bridge_tlast
+@200
+-
+-AR
+@22
+TOP.io_slave0_ar_payload_addr[31:0]
+@28
+TOP.io_slave0_ar_payload_burst[1:0]
+@22
+TOP.io_slave0_ar_payload_cache[3:0]
+@28
+TOP.io_slave0_ar_payload_id[1:0]
+@22
+TOP.io_slave0_ar_payload_len[7:0]
+@28
+TOP.io_slave0_ar_payload_lock
+TOP.io_slave0_ar_payload_prot[2:0]
+TOP.io_slave0_ar_payload_size[2:0]
+TOP.io_slave0_ar_ready
+TOP.io_slave0_ar_valid
+@200
+-
+-R
+@22
+TOP.io_slave0_r_payload_data[31:0]
+@28
+TOP.io_slave0_r_payload_id[1:0]
+TOP.io_slave0_r_payload_last
+TOP.io_slave0_r_payload_resp[1:0]
+TOP.io_slave0_r_ready
+TOP.io_slave0_r_valid
 [pattern_trace] 1
 [pattern_trace] 0

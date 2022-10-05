@@ -30,7 +30,7 @@ object CorundumFrameWriterDutVerilog {
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameWriterDut(32)
+      val toplevel = new CorundumFrameWriterDut(512)
       XilinxPatch(toplevel)
     })
   }
@@ -41,7 +41,7 @@ object CorundumFrameWriterSim {
   def main(args: Array[String]) {
     val dataWidth = 64
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
-    val keepWidth = dataWidth/8
+    val keepWidth = dataWidth / 8
 
     printf("keepWidth=%d\n", keepWidth)
 
@@ -52,9 +52,11 @@ object CorundumFrameWriterSim {
     compiled.doSim { dut =>
 
       dut.io.slave0.w.last #= true
+      dut.io.slave0.r.ready #= true
       dut.io.slave0.b.ready #= true
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
+
       dut.io.output.ready #= true
 
       //Fork a process to generate the reset and the clock on the dut
@@ -72,25 +74,35 @@ object CorundumFrameWriterSim {
       dut.io.slave0.aw.payload.len.assignBigInt(0) // 1 beat per burst
       dut.io.slave0.aw.payload.size.assignBigInt(2) // 4 bytes per beat
 
+      dut.io.slave0.ar.payload.id.assignBigInt(0)
+      dut.io.slave0.ar.payload.lock.assignBigInt(0) // normal
+      dut.io.slave0.ar.payload.prot.assignBigInt(2) // normal non-secure data access
+      dut.io.slave0.ar.payload.burst.assignBigInt(1) // fixed address burst
+      dut.io.slave0.ar.payload.len.assignBigInt(0) // 1 beat per burst
+      dut.io.slave0.ar.payload.size.assignBigInt(2) // 4 bytes per beat
+
       dut.io.slave0.w.payload.strb.assignBigInt(0xF) // 4 bytes active per beat
-      
-      dut.io.slave0.aw.valid #= true
-      dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
-  
-      dut.io.slave0.w.valid #= true
-      dut.io.slave0.w.payload.data.assignBigInt(0x00112233)
-  
-      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
-  
-      dut.io.slave0.aw.valid #= false
-      dut.io.slave0.w.valid #= false
+
+      dut.io.slave0.ar.valid #= true
+      dut.io.slave0.ar.payload.addr.assignBigInt(0x08) // read GIT build number 
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.ar.ready.toBoolean)
+      dut.io.slave0.ar.valid #= false
   
       //Wait a rising edge on the clock
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
-      dut.clockDomain.waitRisingEdge()
+      
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x00112233)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+      //dut.clockDomain.waitRisingEdge()
+
 
       dut.io.slave0.aw.valid #= true
       dut.io.slave0.aw.payload.addr.assignBigInt(0x104) // driveFrom() stream 
@@ -157,7 +169,7 @@ object CorundumFrameWriterSim {
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
 
-       dut.clockDomain.waitRisingEdge()
+      dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
