@@ -10,6 +10,7 @@ import scala.math._
 
 // companion object
 object CorundumFrameWriter {
+  val addressWidth = 10
 }
 
 // Write a stream of fragments (i.e. generate a packet stream)
@@ -25,20 +26,27 @@ object CorundumFrameWriter {
 // For our purpose, not yet a limitation. Limitation is mostly due to tkeep updates.
 
 case class CorundumFrameWriter(dataWidth : Int) extends Component {
+  //val slaveAddressWidth = 10
+
   //require(dataWidth == 64)
   val io = new Bundle {
     // this is where driveFrom() drives into
     val input = slave(Stream(Fragment(CorundumFrame(dataWidth))))
     // and we simply pass it on the output
     val output = master(Stream(Fragment(CorundumFrame(dataWidth))))
+
+    //val slaveAddrWidth = 10
   }
   io.output << io.input
 
   def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
+    // address decoding assumes slave-local addresses
+    //assert(busCtrl.busAddressWidth == addressWidth)
     // mostly tkeep is still hardcoded for 32-bit bus controller
-    require(busCtrl.busDataWidth == 32)
+    assert(busCtrl.busDataWidth == 32)
 
-    val busCtrlWrapped = new BusSlaveFactoryAddressWrapper(busCtrl, baseAddress)
+    //val busCtrlWrapped = new BusSlaveFactoryAddressWrapper(busCtrl, baseAddress)
+    val busCtrlWrapped = busCtrl
 
     // will be used for identification purposes
     busCtrlWrapped.read(B"32'hAABBCCDD", 0x000, documentation = null)
@@ -113,8 +121,8 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 
     val fifoDepth = 1
     // @TODO must be push size Availability
-    val (fifo, fifoOccupancy) = corundum.queueWithOccupancy(fifoDepth) //.init(0)
-    busCtrlWrapped.read(fifoDepth - fifoOccupancy, address = 0x40)
+    val (fifo, fifoAvailability) = corundum.queueWithAvailability(fifoDepth) //.init(0)
+    busCtrlWrapped.read(fifoAvailability, address = 0x40)
     io.input << fifo
 
     // drive stream from 0x100
@@ -136,16 +144,21 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 object CorundumFrameWriterAxi4 {
 }
 
-// axi4Cfg = Axi4Config(32, 32, 2, useQos = false, useRegion = false)
-case class CorundumFrameWriterAxi4(dataWidth : Int, axi4Cfg : Axi4Config, baseAddress : BigInt) extends Component {
+// slave must be naturally aligned
+case class CorundumFrameWriterAxi4(dataWidth : Int, busCfg : Axi4Config) extends Component {
+
+  // copy AXI4 properties from bus, but override address with from slave
+  //val slaveCfg = busCfg.copy(addressWidth = writer.slaveAddressWidth/*writer.io.slaveAddrWidth*/)
+  val slaveCfg = busCfg.copy(addressWidth = CorundumFrameWriter.addressWidth)
+  
   val io = new Bundle {
     val output = master(Stream(Fragment(CorundumFrame(dataWidth))))
-    val slave0 = slave(Axi4(axi4Cfg))
+    val ctrlbus = slave(Axi4(slaveCfg))
   }
 
-  val ctrl = new Axi4SlaveFactory(io.slave0)
   val writer = CorundumFrameWriter(dataWidth)
-  val bridge = writer.driveFrom(ctrl, baseAddress)
+  val ctrl = new Axi4SlaveFactory(io.ctrlbus)
+  val bridge = writer.driveFrom(ctrl, 0)
   io.output << writer.io.output
 }
 
@@ -165,7 +178,7 @@ object CorundumFrameWriterAxi4Verilog {
   def main(args: Array[String]) {
     val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameWriterAxi4(512, Axi4Config(32, 32, 2, useQos = false, useRegion = false), 0 )
+      val toplevel = new CorundumFrameWriterAxi4(512, Axi4Config(CorundumFrameWriter.addressWidth, 32, 2, useQos = false, useRegion = false))
       XilinxPatch(toplevel)
     })
   }
