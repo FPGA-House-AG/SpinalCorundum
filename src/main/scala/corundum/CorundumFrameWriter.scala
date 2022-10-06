@@ -83,42 +83,38 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
       ret
     }
 
-    val commit2 = RegNext(isAddressed())
+    val addressed = isAddressed()
 
     // set (per-byte) tkeep bits for all 32-bit registers being written
-    val tkeep = Reg(Bits(dataWidth / 8 bits))
+    val tkeep = Reg(Bits(dataWidth / 8 bits)) init(0)
     // valid will push the current packet word out
     val valid = Reg(Bool) init(False)
     // tlast indicates if the next write on the bus completes the packet
     val tlast = Reg(Bool) init(False)
 
-    val reg_idx = ((busCtrlWrapped.writeAddress - 0x100) / 4)
+    val reg_idx = busCtrlWrapped.writeAddress.resize(log2Up(dataWidth / 8)) / (busCtrl.busDataWidth / 8)
 
     valid := False
 
-
-
     when (isAddressed()) {
-      val reg_idx = busCtrlWrapped.writeAddress % (dataWidth / busCtrl.busDataWidth)
 
-      {
-        assert(busCtrl.busDataWidth == 32)
+      val tkeep_full_busword = Bits(busCtrl.busDataWidth / 8 bits) // 4'b
+      tkeep_full_busword := (default -> true) // 4'b1111
 
-        val tkeep_all = Bits(busCtrl.busDataWidth / 8 bits)
-        tkeep_all := (default -> true)
-        val tkeep_new = Bits(busCtrl.busDataWidth / 8 bits)
-        tkeep_new := tkeep_all |>> empty_bytes
-
-        tkeep := (tkeep |<< (busCtrl.busDataWidth / 8)) | tkeep_new.resize(keepWidth)
+      when (reg_idx === 0) {
+        tkeep := (tkeep_full_busword |>> empty_bytes).resize(keepWidth) 
+      } otherwise {
+        tkeep := (tkeep |<< (busCtrl.busDataWidth / 8 - empty_bytes)) | tkeep_full_busword.resize(keepWidth)
       }
+
       // indicated last write, or writing last word?
       when (tlast || (reg_idx === (dataWidth / busCtrl.busDataWidth - 1))) {
-         valid := True
-         empty_bytes := 0
+        valid := True
+        empty_bytes := 0
       }
     }
     when (valid) {
-       tlast := False
+      tlast := False
     }
     busCtrlWrapped.onWrite(0x80, null){
       tlast := True
@@ -132,7 +128,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     corundum.payload.tkeep := tkeep
     corundum.payload.tuser := 0
 
-    val fifoDepth = 1
+    val fifoDepth = 4
     // @TODO must be push size Availability
     val (fifo, fifoAvailability) = corundum.queueWithAvailability(fifoDepth) //.init(0)
     busCtrlWrapped.read(fifoAvailability, address = 0x40)
