@@ -132,8 +132,8 @@ object CorundumFrameWriterSim {
 
       dut.io.slave0.aw.valid #= true
       dut.io.slave0.w.valid #= true
-      dut.io.slave0.w.payload.data.assignBigInt(1)
-      dut.io.slave0.aw.payload.addr.assignBigInt(0x140) // assert TLAST
+      dut.io.slave0.w.payload.data.assignBigInt(3)
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x080) // assert TLAST
       dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
@@ -147,6 +147,48 @@ object CorundumFrameWriterSim {
       dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
+
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x11111111)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x104) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x22222222)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x33333333)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x104) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x44444444)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+
+      dut.io.slave0.aw.valid #= true
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x100) // driveFrom() stream 
+      dut.io.slave0.w.valid #= true
+      dut.io.slave0.w.payload.data.assignBigInt(0x0899AABB)
+      dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
+      dut.io.slave0.aw.valid #= false
+      dut.io.slave0.w.valid #= false
+
       // dut.clockDomain.waitRisingEdge()
       //dut.clockDomain.waitRisingEdge()
       //dut.clockDomain.waitRisingEdge()
@@ -155,8 +197,8 @@ object CorundumFrameWriterSim {
 
       dut.io.slave0.aw.valid #= true
       dut.io.slave0.w.valid #= true
-      dut.io.slave0.w.payload.data.assignBigInt(1)
-      dut.io.slave0.aw.payload.addr.assignBigInt(0x140) // assert TLAST
+      dut.io.slave0.w.payload.data.assignBigInt(0)
+      dut.io.slave0.aw.payload.addr.assignBigInt(0x080) // assert TLAST
       dut.clockDomain.waitSamplingWhere(dut.io.slave0.aw.ready.toBoolean && dut.io.slave0.w.ready.toBoolean)
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false

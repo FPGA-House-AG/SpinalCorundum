@@ -48,6 +48,8 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     //val busCtrlWrapped = new BusSlaveFactoryAddressWrapper(busCtrl, baseAddress)
     val busCtrlWrapped = busCtrl
 
+    val keepWidth = dataWidth / 8
+
     // will be used for identification purposes
     busCtrlWrapped.read(B"32'hAABBCCDD", 0x000, documentation = null)
     // 16'b version and 16'b revision
@@ -62,8 +64,8 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     val instanceDataWidth = B(BigInt(dataWidth), 32 bits)
     busCtrlWrapped.read(instanceDataWidth, 0x020, 0, null)
 
-    //val tkeep_last_bits = Reg(Bits(32 bits))
-    //busCtrlWrapped.writeMultiWord(tkeep_last_bits, 0x100, documentation = null)
+    val empty_bytes = Reg(UInt(log2Up(busCtrl.busDataWidth / 8 - 1) bits)) init (0)
+    busCtrlWrapped.write(empty_bytes, 0x080, documentation = null)
 
     // 0x100.. write into wide (512-bits?) register
     val stream_word = Reg(Bits(dataWidth bits))
@@ -84,7 +86,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     val commit2 = RegNext(isAddressed())
 
     // set (per-byte) tkeep bits for all 32-bit registers being written
-    val tkeep = Reg(Bits(dataWidth / 8 bits)) //init (0)
+    val tkeep = Reg(Bits(dataWidth / 8 bits))
     // valid will push the current packet word out
     val valid = Reg(Bool) init(False)
     // tlast indicates if the next write on the bus completes the packet
@@ -94,19 +96,27 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 
     valid := False
 
+
+
     when (isAddressed()) {
-      val reg_idx = (busCtrlWrapped.writeAddress - 0x100) / 4
+      val reg_idx = busCtrlWrapped.writeAddress % (dataWidth / busCtrl.busDataWidth)
+
+      {
+        assert(busCtrl.busDataWidth == 32)
+
+        val tkeep_all = Bits(busCtrl.busDataWidth / 8 bits)
+        tkeep_all := (default -> true)
+        val tkeep_new = Bits(busCtrl.busDataWidth / 8 bits)
+        tkeep_new := tkeep_all |>> empty_bytes
+
+        tkeep := (tkeep |<< (busCtrl.busDataWidth / 8)) | tkeep_new.resize(keepWidth)
+      }
       // indicated last write, or writing last word?
       when (tlast || (reg_idx === (dataWidth / busCtrl.busDataWidth - 1))) {
          valid := True
+         empty_bytes := 0
       }
-      when (reg_idx === 0) {
-        tkeep := 0
-      }
-      //tkeep(reg_idx * 4, 4 bits) := tkeep(reg_idx * 4, 4 bits) | ctrl.writeByteEnable
-      tkeep(reg_idx * 4, 4 bits) := B"1111"
     }
-    // reset TLAST after VALID
     when (valid) {
        tlast := False
     }
