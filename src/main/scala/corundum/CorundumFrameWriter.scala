@@ -62,6 +62,9 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     val instanceDataWidth = B(BigInt(dataWidth), 32 bits)
     busCtrlWrapped.read(instanceDataWidth, 0x020, 0, null)
 
+    //val tkeep_last_bits = Reg(Bits(32 bits))
+    //busCtrlWrapped.writeMultiWord(tkeep_last_bits, 0x100, documentation = null)
+
     // 0x100.. write into wide (512-bits?) register
     val stream_word = Reg(Bits(dataWidth bits))
     busCtrlWrapped.writeMultiWord(stream_word, 0x100, documentation = null)
