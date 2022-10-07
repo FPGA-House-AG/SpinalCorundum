@@ -105,3 +105,6 @@ clean:
 %.svg: %.json
 	set -e
 	netlistsvg $< -o $@
+
+fix_gtkw:
+	sed -i -e "s@$PWD@.@" -e "s@/home/vexriscv/project@.@" *.gtkw

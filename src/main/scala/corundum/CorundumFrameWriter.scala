@@ -10,7 +10,7 @@ import scala.math._
 
 // companion object
 object CorundumFrameWriter {
-  val addressWidth = 10
+  final val addressWidth = 10
 }
 
 // Write a stream of fragments (i.e. generate a packet stream)
@@ -98,9 +98,12 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 
     when (isAddressed()) {
 
-      val tkeep_full_busword = Bits(busCtrl.busDataWidth / 8 bits) // 4'b
-      tkeep_full_busword := (default -> true) // 4'b1111
+      val tkeep_full_busword = Bits(busCtrl.busDataWidth / 8 bits) // 4'b for 32-bit data bus
+      tkeep_full_busword := (default -> true) // 4'b1111 for 32-bit data bus
 
+      // to minimize timing, limit the range of possible shifts per clock cycle
+      // update tkeep on every bus write, compensate for empty_bytes in last bus write
+      // empty_bytes is in range [busCtrl.busDataWidth / 8 - 1, 0], so [3, 0] for a 32-bit data bus
       when (reg_idx === 0) {
         tkeep := (tkeep_full_busword |>> empty_bytes).resize(keepWidth) 
       } otherwise {
@@ -119,7 +122,6 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     busCtrlWrapped.onWrite(0x80, null){
       tlast := True
     }
-    //val strb = RegNext(busCtrlWrapped.writeByteEnable);
 
     val corundum = Stream Fragment(CorundumFrame(dataWidth))
     corundum.last := tlast
@@ -129,23 +131,9 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     corundum.payload.tuser := 0
 
     val fifoDepth = 4
-    // @TODO must be push size Availability
     val (fifo, fifoAvailability) = corundum.queueWithAvailability(fifoDepth) //.init(0)
     busCtrlWrapped.read(fifoAvailability, address = 0x40)
     io.input << fifo
-
-    // drive stream from 0x100
-    //val outputStreamLogic = new Area {
-    //  val streamUnbuffered = busCtrlWrapped.createAndDriveFlow(Fragment(CorundumFrame(widthOf(io.input.fragment.tdata))), address = 0x100).toStream
-    //  val (streamBuffered, fifoAvailability) = streamUnbuffered.queueWithAvailability(4)
-    //  io.input << streamBuffered
-    //}
-
-
-    //val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), 4)
-    //fifo.io.push << corundum
-    //io.input << fifo.io.pop
-    //io.input << corundum
   }
 }
 
@@ -157,7 +145,6 @@ object CorundumFrameWriterAxi4 {
 case class CorundumFrameWriterAxi4(dataWidth : Int, busCfg : Axi4Config) extends Component {
 
   // copy AXI4 properties from bus, but override address with from slave
-  //val slaveCfg = busCfg.copy(addressWidth = writer.slaveAddressWidth/*writer.io.slaveAddrWidth*/)
   val slaveCfg = busCfg.copy(addressWidth = CorundumFrameWriter.addressWidth)
   
   val io = new Bundle {

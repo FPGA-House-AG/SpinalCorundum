@@ -1,21 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Tue Oct  4 22:28:31 2022
+[*] Thu Oct  6 21:53:07 2022
 [*]
-[dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumFrameWriterDut/test.fst"
-[dumpfile_mtime] "Tue Oct  4 22:12:34 2022"
-[dumpfile_size] 4609
-[savefile] "/home/vexriscv/project/SpinalCorundum/CorundumFrameWriterDut.gtkw"
-[timestart] 120
-[size] 3577 1636
-[pos] -1 -1
-*-4.000000 220 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "./SpinalCorundum/simWorkspace/CorundumFrameWriterDut/test.fst"
+[dumpfile_mtime] "Thu Oct  6 21:52:39 2022"
+[dumpfile_size] 4533
+[savefile] "./SpinalCorundum/CorundumFrameWriterDut.gtkw"
+[timestart] 264
+[size] 3577 1269
+[pos] 50 -206
+*-4.000000 1710 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.CorundumFrameWriterDut.
 [sst_width] 644
-[signals_width] 608
+[signals_width] 911
 [sst_expanded] 1
-[sst_vpaned_height] 506
+[sst_vpaned_height] 377
 @22
 TOP.CorundumFrameWriterDut.io_output_payload_fragment_tdata[63:0]
 TOP.CorundumFrameWriterDut.io_output_payload_fragment_tkeep[7:0]
@@ -26,7 +26,28 @@ TOP.CorundumFrameWriterDut.io_output_ready
 TOP.CorundumFrameWriterDut.io_output_valid
 @200
 -
-@201
+-PUSH
+@22
+TOP.CorundumFrameWriterDut.bridge_corundum_queueWithAvailability.io_push_m2sPipe_payload_fragment_tdata[63:0]
+TOP.CorundumFrameWriterDut.bridge_corundum_queueWithAvailability.io_push_m2sPipe_payload_fragment_tkeep[7:0]
+@28
+TOP.CorundumFrameWriterDut.bridge_corundum_queueWithAvailability.io_push_m2sPipe_payload_fragment_tuser
+TOP.CorundumFrameWriterDut.bridge_corundum_queueWithAvailability.io_push_m2sPipe_payload_last
+TOP.CorundumFrameWriterDut.bridge_corundum_queueWithAvailability.io_push_ready
+TOP.CorundumFrameWriterDut.bridge_corundum_queueWithAvailability.io_push_valid
+TOP.CorundumFrameWriterDut.bridge_tlast
+@200
+-
+@29
+TOP.CorundumFrameWriterDut.bridge_addressed
+@22
+TOP.CorundumFrameWriterDut.bridge_reg_idx[31:0]
+@28
+TOP.CorundumFrameWriterDut.bridge_empty_bytes[1:0]
+@22
+TOP.CorundumFrameWriterDut.bridge_tkeep[7:0]
+@200
+-
 -W
 @28
 TOP.CorundumFrameWriterDut.io_slave0_w_payload_last
@@ -62,8 +83,6 @@ TOP.CorundumFrameWriterDut.bridge_corundum_valid
 TOP.CorundumFrameWriterDut.bridge_gitCommits[31:0]
 TOP.CorundumFrameWriterDut.bridge_gitHash[159:0]
 TOP.CorundumFrameWriterDut.bridge_tkeep[7:0]
-@28
-TOP.CorundumFrameWriterDut.bridge_tlast
 @200
 -
 -AR

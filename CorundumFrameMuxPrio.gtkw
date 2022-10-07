@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Tue Mar  8 22:04:50 2022
 [*]
-[dumpfile] "/home/vexriscv/project/simWorkspace/CorundumFrameMuxPrio/test.vcd"
+[dumpfile] "./simWorkspace/CorundumFrameMuxPrio/test.vcd"
 [dumpfile_mtime] "Tue Mar  8 22:01:01 2022"
 [dumpfile_size] 23329
-[savefile] "/home/vexriscv/project/CorundumFrameMuxPrio.gtkw"
+[savefile] "./CorundumFrameMuxPrio.gtkw"
 [timestart] 65
 [size] 3179 1184
 [pos] 433 494
