@@ -52,8 +52,9 @@ object CorundumFrameWriterSim {
     compiled.doSim { dut =>
 
       dut.io.slave0.w.last #= true
-      dut.io.slave0.r.ready #= true
+      dut.io.slave0.r.ready #= false
       dut.io.slave0.b.ready #= true
+      dut.io.slave0.ar.valid #= false
       dut.io.slave0.aw.valid #= false
       dut.io.slave0.w.valid #= false
 
