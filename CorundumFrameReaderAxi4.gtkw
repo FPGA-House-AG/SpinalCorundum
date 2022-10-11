@@ -1,0 +1,46 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Fri Oct  7 10:53:05 2022
+[*]
+[dumpfile] "./SpinalCorundum/simWorkspace/CorundumFrameReaderAxi4/test.fst"
+[dumpfile_mtime] "Fri Oct  7 10:52:59 2022"
+[dumpfile_size] 5024
+[savefile] "./SpinalCorundum/CorundumFrameReaderAxi4.gtkw"
+[timestart] 0
+[size] 2664 1633
+[pos] -1 -1
+*-7.000000 42 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.CorundumFrameReaderAxi4.
+[sst_width] 671
+[signals_width] 486
+[sst_expanded] 1
+[sst_vpaned_height] 505
+@22
+TOP.CorundumFrameReaderAxi4.reader.io_output_payload_fragment_tdata[63:0]
+TOP.CorundumFrameReaderAxi4.reader.io_output_payload_fragment_tkeep[7:0]
+@28
+TOP.CorundumFrameReaderAxi4.reader.io_output_payload_fragment_tuser
+TOP.CorundumFrameReaderAxi4.reader.io_output_payload_last
+TOP.CorundumFrameReaderAxi4.reader.io_output_ready
+TOP.CorundumFrameReaderAxi4.reader.io_output_valid
+@200
+-
+-AR
+@22
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_ar_payload_addr[9:0]
+@28
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_ar_ready
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_ar_valid
+@200
+-
+-R
+@22
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_r_payload_data[31:0]
+@28
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_r_payload_last
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_r_payload_resp[1:0]
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_r_ready
+TOP.CorundumFrameReaderAxi4.io_ctrlbus_r_valid
+[pattern_trace] 1
+[pattern_trace] 0

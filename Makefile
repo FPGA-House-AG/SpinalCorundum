@@ -22,7 +22,8 @@ repl:
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
-	runMain corundum.CorundumFrameWriterVerilog; \
+	runMain corundum.CorundumFrameWriterAxi4Verilog; \
+	runMain corundum.CorundumFrameReaderAxi4Verilog; \
 	"
 
 sim_repl:
@@ -52,6 +53,13 @@ sim_writer:
 	sbt "~ test:runMain corundum.CorundumFrameWriterSim"
 	#killall gtkwave_trigger_reload.sh
 
+sim_reader:
+	set -e
+# run sim once, so that we have a wavefile to start with
+	sbt "test:runMain corundum.CorundumFrameReaderSim"
+	gtkwave -F -f ./simWorkspace/CorundumFrameReaderAxi4/test.fst   -a ./CorundumFrameWriterAxi4.gtkw   &
+	sbt "~ test:runMain corundum.CorundumFrameReaderSim"
+
 stash:
 	set -e
 	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst -a ./CorundumFrameStash.gtkw &
@@ -73,7 +81,7 @@ rtl: src/main/scala/corundum/CorundumFrameWriterSim.scala
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
-	runMain corundum.CorundumFrameWriterDutVerilog; \
+	runMain corundum.CorundumFrameReaderAxi4Verilog; \
 	"
 
 formal:
