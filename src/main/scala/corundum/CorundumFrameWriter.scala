@@ -61,7 +61,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     val gitHash = B(BigInt(SourceCodeGitHash(), 16), 160 bits)
     busCtrlWrapped.readMultiWord(gitHash, 0x00c, documentation = null)
     // dataWidth
-    val instanceDataWidth = B(BigInt(dataWidth), 32 bits)
+    val instanceDataWidth = U(dataWidth, 32 bits)
     busCtrlWrapped.read(instanceDataWidth, 0x020, 0, null)
 
     val empty_bytes = Reg(UInt(log2Up(busCtrl.busDataWidth / 8 - 1) bits)) init (0)
