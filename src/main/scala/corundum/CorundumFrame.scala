@@ -1,25 +1,12 @@
-/*
- * SpinalHDL
- * Copyright (c) Dolu, All rights reserved.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3.0 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library.
- */
-
 package corundum
 
 import spinal.core._
 import spinal.lib._
+
+// this is actually a frame word, intended as part of AXI Stream
+// packet boundaries (TLAST) last signal is added by the Fragment() class
+// AXI Stream handschake valid and ready are added by the Stream() class
+// @TODO rename
 
 object CorundumFrame {
   def apply(dataWidth : Int, userWidth : Int): CorundumFrame = new CorundumFrame(dataWidth, userWidth)
