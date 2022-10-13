@@ -62,6 +62,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     packetsInFifoCounter.decrement()
   }
 
+  // remember if current beat is not last; then next beat is not first
   val is_frame_continuation = RegNextWhen(!x.last, x.valid & x.ready) init(False)
   val is_first_beat = x.valid & x.ready & !is_frame_continuation
   val is_last_beat = x.valid & x.ready & x.last

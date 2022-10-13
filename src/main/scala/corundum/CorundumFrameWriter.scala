@@ -50,7 +50,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 
     val keepWidth = dataWidth / 8
 
-    // will be used for identification purposes
+    // will be used for identification purposes @TODO
     busCtrlWrapped.read(B"32'hAABBCCDD", 0x000, documentation = null)
     // 16'b version and 16'b revision
     busCtrlWrapped.read(B"32'b00010001", 0x004, documentation = null)
