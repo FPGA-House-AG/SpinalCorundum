@@ -61,14 +61,14 @@ TOP.CorundumFrameStash.x2_valid
 @28
 TOP.CorundumFrameStash.fifo.io_pop_ready
 TOP.CorundumFrameStash.fifo.io_pop_valid
-TOP.CorundumFrameStash.io_master0_payload_last
+TOP.CorundumFrameStash.io_source_payload_last
 @22
-TOP.CorundumFrameStash.io_master0_payload_fragment_tdata[23:0]
+TOP.CorundumFrameStash.io_source_payload_fragment_tdata[23:0]
 @28
-TOP.CorundumFrameStash.io_master0_payload_fragment_tkeep[2:0]
-TOP.CorundumFrameStash.io_master0_payload_fragment_tuser
-TOP.CorundumFrameStash.io_master0_ready
-TOP.CorundumFrameStash.io_master0_valid
+TOP.CorundumFrameStash.io_source_payload_fragment_tkeep[2:0]
+TOP.CorundumFrameStash.io_source_payload_fragment_tuser
+TOP.CorundumFrameStash.io_source_ready
+TOP.CorundumFrameStash.io_source_valid
 @200
 -
 -Frames in FIFO

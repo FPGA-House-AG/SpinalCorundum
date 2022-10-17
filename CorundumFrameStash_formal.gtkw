@@ -16,13 +16,13 @@
 [sst_expanded] 1
 [sst_vpaned_height] 557
 @22
-CorundumFrameStash.io_slave0_payload_fragment_tdata[15:0]
+CorundumFrameStash.io_sink_payload_fragment_tdata[15:0]
 @28
-CorundumFrameStash.io_slave0_payload_fragment_tkeep[1:0]
-CorundumFrameStash.io_slave0_payload_fragment_tuser
-CorundumFrameStash.io_slave0_payload_last
-CorundumFrameStash.io_slave0_ready
-CorundumFrameStash.io_slave0_valid
+CorundumFrameStash.io_sink_payload_fragment_tkeep[1:0]
+CorundumFrameStash.io_sink_payload_fragment_tuser
+CorundumFrameStash.io_sink_payload_last
+CorundumFrameStash.io_sink_ready
+CorundumFrameStash.io_sink_valid
 @200
 -
 @22

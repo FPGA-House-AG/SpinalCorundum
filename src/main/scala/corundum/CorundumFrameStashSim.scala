@@ -16,7 +16,7 @@ object CorundumFrameStashSim {
       var maxFrameWords = 16
       var maxPacketSizeBytes = (maxFrameWords + 1) * keepWidth
 
-      dut.io.slave0.valid #= false
+      dut.io.sink.valid #= false
 
       //Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
@@ -68,17 +68,17 @@ object CorundumFrameStashSim {
             }
           }
 
-          dut.io.slave0.valid #= valid0
-          dut.io.slave0.payload.tdata #= data0
-          dut.io.slave0.last #= last0
-          dut.io.slave0.payload.tkeep #= tkeep0
+          dut.io.sink.valid #= valid0
+          dut.io.sink.payload.tdata #= data0
+          dut.io.sink.last #= last0
+          dut.io.sink.payload.tkeep #= tkeep0
 
-          dut.io.master0.ready #= (Random.nextInt(8) > 1) | (packet_idx > 4000)
+          dut.io.source.ready #= (Random.nextInt(8) > 1) | (packet_idx > 4000)
 
           // Wait a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
 
-          if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) {
+          if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
             //byte_counter += tkeep_len
             remaining -= tkeep_len
           }
@@ -95,8 +95,8 @@ object CorundumFrameStashSim {
           //}
         }
       }
-      dut.io.slave0.valid #= false
-      while (dut.io.master0.valid.toBoolean) {
+      dut.io.sink.valid #= false
+      while (dut.io.source.valid.toBoolean) {
           // Wait a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
       }
