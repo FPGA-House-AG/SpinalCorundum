@@ -147,114 +147,93 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
 
   io.packets := packetsInFifoCounter.value
 
-//  assert(
-//    assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
-//    message   = "Frame length not available during frame data valid",
-//    severity  = ERROR
-//  )
-//
-//  assert(
-//    assertion = !(length_fifo.io.push.valid & !length_fifo.io.push.ready),
-//    message   = "Pushing length into Length FIFO, but FIFO is not ready",
-//    severity  = ERROR
-//  )
+  import spinal.core.GenerationFlags._
+  import spinal.core.formal._
 
-//  import spinal.core.GenerationFlags._
-//  import spinal.core.Formal._
-//
-//  GenerationFlags.formal {
-//    when(initstate()) {
-//      assume(clockDomain.isResetActive)
-//      assume(io.slave0.ready === False)
-//    }.otherwise {
-//      assert(
-//        assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
-//        message   = "Frame length not available during frame data valid",
-//        severity  = ERROR
-//      )
-//
-//      assert(
-//        assertion = !(length_fifo.io.push.valid & !length_fifo.io.push.ready),
-//        message   = "Pushing length into Length FIFO, but FIFO is not ready",
-//        severity  = ERROR
-//      )
-//
-//      assert(
-//        assertion = (
-//          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy) |
-//          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy - 1) |
-//          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy + 1)
-//        ),
-//        message   = "Length FIFO occupancy should change by at most 1",
-//        severity  = ERROR
-//      )
-//
-//      assert(
-//        assertion = (
-//          (past(fifo.io.occupancy) === fifo.io.occupancy) |
-//          (past(fifo.io.occupancy) === fifo.io.occupancy - 1) |
-//          (past(fifo.io.occupancy) === fifo.io.occupancy + 1)
-//        ),
-//        message   = "Frame FIFO occupancy should change by at most 1",
-//        severity  = ERROR
-//      )
-//
-//      assert(
-//        assertion = (
-//          !( (past(fifo.io.occupancy === fifoSize, 1) & past(io.packets === 0, 1)) &&
-//             (past(fifo.io.occupancy === fifoSize, 2) & past(io.packets === 0, 2))
-//          )
-//        ),
-//        message   = "Frame FIFO full but holds no complete frame.",
-//        severity  = ERROR
-//      )
-//
-//      assert(
-//        assertion = !(frame_too_large & frame_going_oversize_event),
-//        message = "Truncated last beat and truncated tail do not overlap",
-//        severity  = ERROR
-//      )
-//
-//      assert(
-//        assertion = (!io.length_valid | io.length <= fmaxFrameBytes),
-//        message = "Passed frame lengths are within maximum length bound.",
-//        severity  = ERROR
-//      )
-//
-//      val formal_frame_length = Reg(UInt(12 bits)) init(0)
-//      val formal_is_frame_continuation = RegNextWhen(!io.slave0.last, io.slave0.valid & io.slave0.ready) init(False)
-//      val formal_is_first_beat = io.slave0.valid & io.slave0.ready & !formal_is_frame_continuation
-//      when (io.slave0.valid & io.slave0.ready) {
-//        // first, but not last data beat?
-//        when (formal_is_first_beat) {
-//          formal_frame_length := 1
-//        } otherwise {
-//          formal_frame_length := formal_frame_length + 1
-//        }
-//      }
-//      //assume(
-//      //  ((formal_frame_length === (fifoSize - 1)) & ((!io.slave0.valid | !io.slave0.ready) | !io.slave0.last)) |
-//      //  (formal_frame_length < (fifoSize - 1))
-//      //)
-//      assume(io.slave0.tdata === 0x01)
-//      cover(io.packets === fifoSize)
-//      cover(io.packets === 0)
-//      cover(io.packets === minPackets)
-//      cover(fifo.io.occupancy === fifoSize)
-//      cover(fifo_holds_complete_packet)
-//      cover(frame_going_oversize_event)
-//      cover(frame_too_large)
-//      cover(push_length_on_last)
-//      cover(io.length_valid)
-//      cover(io.master0.valid)
-//      cover(drop_on_truncate)
-//      cover(is_first_beat)
-//      cover(is_last_beat)
-//      cover(is_intermediate_beat)
-//      // this state cannot be reached, expect failure
-//      //cover((io.length === 0x7FF) & (io.length_valid))
-//    }
-//  }
+  GenerationFlags.formal {
+    assumeInitial(clockDomain.isResetActive)
+
+    // assert, assume and cover are only active during clocks
+    assert(
+      assertion = !(io.master0.valid & !length_fifo.io.pop.valid),
+      message   = "Frame length not available during frame data valid",
+      severity  = ERROR
+    )
+    assert(
+      assertion = !(length_fifo.io.push.valid & !length_fifo.io.push.ready),
+      message   = "Pushing length into Length FIFO, but FIFO is not ready",
+      severity  = ERROR
+    )
+    assert(
+      assertion = (
+        (past(length_fifo.io.occupancy) === length_fifo.io.occupancy) |
+        (past(length_fifo.io.occupancy) === length_fifo.io.occupancy - 1) |
+        (past(length_fifo.io.occupancy) === length_fifo.io.occupancy + 1)
+      ),
+      message   = "Length FIFO occupancy should change by at most 1",
+      severity  = ERROR
+    )
+    assert(
+      assertion = (
+        (past(fifo.io.occupancy) === fifo.io.occupancy) |
+        (past(fifo.io.occupancy) === fifo.io.occupancy - 1) |
+        (past(fifo.io.occupancy) === fifo.io.occupancy + 1)
+      ),
+      message   = "Frame FIFO occupancy should change by at most 1",
+      severity  = ERROR
+    )
+    assert(
+      assertion = (
+        !( (past(fifo.io.occupancy === fifoSize, 1) & past(io.packets === 0, 1)) &&
+           (past(fifo.io.occupancy === fifoSize, 2) & past(io.packets === 0, 2))
+        )
+      ),
+      message   = "Frame FIFO full but holds no complete frame.",
+      severity  = ERROR
+    )
+    assert(
+      assertion = !(frame_too_large & frame_going_oversize_event),
+      message = "Truncated last beat and truncated tail do not overlap",
+      severity  = ERROR
+    )
+    assert(
+      assertion = (!io.length_valid | io.length <= fmaxFrameBytes),
+      message = "Passed frame lengths are within maximum length bound.",
+      severity  = ERROR
+    )
+    val formal_frame_length = Reg(UInt(12 bits)) init(0)
+    val formal_is_frame_continuation = RegNextWhen(!io.slave0.last, io.slave0.valid & io.slave0.ready) init(False)
+    val formal_is_first_beat = io.slave0.valid & io.slave0.ready & !formal_is_frame_continuation
+    when (io.slave0.valid & io.slave0.ready) {
+      // first, but not last data beat?
+      when (formal_is_first_beat) {
+        formal_frame_length := 1
+      } otherwise {
+        formal_frame_length := formal_frame_length + 1
+      }
+    }
+    //assume(
+    //  ((formal_frame_length === (fifoSize - 1)) & ((!io.slave0.valid | !io.slave0.ready) | !io.slave0.last)) |
+    //  (formal_frame_length < (fifoSize - 1))
+    //)
+    assume(io.slave0.tdata === 0x01)
+    cover(io.packets === fifoSize)
+    cover(io.packets === 0)
+    cover(io.packets === minPackets)
+    cover(fifo.io.occupancy === fifoSize)
+    cover(fifo_holds_complete_packet)
+    cover(frame_going_oversize_event)
+    cover(frame_too_large)
+    cover(push_length_on_last)
+    cover(io.length_valid)
+    cover(io.master0.valid)
+    cover(drop_on_truncate)
+    cover(is_first_beat)
+    cover(is_last_beat)
+    cover(is_intermediate_beat)
+    // leave following state commented out, it cannot be reached, expect failure when uncommented
+    //cover((io.length === 0x7FF) & (io.length_valid))
+  }
 }
 
 //Generate the CorundumFrameStash's Verilog
