@@ -39,6 +39,8 @@ bin/
 !tester/src/test/resources/*.vhd
 /*.svg
 
+# SpinalHDL
 simWorkspace/
+formalWorkdir/
 tmp/
 null
