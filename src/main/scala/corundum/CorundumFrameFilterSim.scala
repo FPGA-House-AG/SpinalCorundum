@@ -39,9 +39,9 @@ object CorundumFrameFilterSim {
       for (idx <- 0 to 499){
 
         // active beat
-        if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) data0 += 1
+        if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) data0 += 1
         // active beat, or slave was not active yet?
-        if ((dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) || !valid0) {
+        if ((dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) || !valid0) {
           valid0 = (Random.nextInt(8) > 6) | (idx > 300)
           last0 = (Random.nextInt(8) >= 4) & valid0 
         }
@@ -52,17 +52,17 @@ object CorundumFrameFilterSim {
             tkeep0 = (tkeep0 << 1) | 1
           }
         }
-        if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean & dut.io.slave0.last.toBoolean) {
+        if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean & dut.io.sink.last.toBoolean) {
           data0 = Random.nextInt(maxDataValue)
         }
         data0 &= scala.math.pow(2, dataWidth).intValue - 1
 
-        dut.io.slave0.valid #= valid0
-        dut.io.slave0.payload.tdata #= data0
-        dut.io.slave0.last #= last0
-        dut.io.slave0.payload.tkeep #= tkeep0
+        dut.io.sink.valid #= valid0
+        dut.io.sink.payload.tdata #= data0
+        dut.io.sink.last #= last0
+        dut.io.sink.payload.tkeep #= tkeep0
 
-        dut.io.master0.ready #= (Random.nextInt(8) > 1)
+        dut.io.source.ready #= (Random.nextInt(8) > 1)
 
         //Wait a rising edge on the clock
         dut.clockDomain.waitRisingEdge()

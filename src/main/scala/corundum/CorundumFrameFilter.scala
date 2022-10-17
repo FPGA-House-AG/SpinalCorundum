@@ -14,8 +14,8 @@ object CorundumFrameFilter {
 
 case class CorundumFrameFilter(dataWidth : Int) extends Component {
   val io = new Bundle {
-    val slave0 = slave Stream Fragment(CorundumFrame(dataWidth))
-    val master0 = master Stream Fragment(CorundumFrame(dataWidth))
+    val sink = slave Stream Fragment(CorundumFrame(dataWidth))
+    val source = master Stream Fragment(CorundumFrame(dataWidth))
     val keepMask = in Bits(dataWidth bits)
     val keepFilter = in Bits(dataWidth bits)
     val dropMask = in Bits(dataWidth bits)
@@ -51,8 +51,8 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   val keep_frame = is_first_beat_keepfilter_match & !is_first_beat_dropfilter_match
 
   val y = x.stage().takeWhen(keep_frame)
-  x << io.slave0
-  io.master0 << y
+  x << io.sink
+  io.source << y
 
   //printf("hashString = %s\n", SourceCodeGitHash())
   //printf("commitCount = %d\n", SourceCodeGitCommits())
