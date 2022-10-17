@@ -28,7 +28,8 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     val source = master Stream new Fragment(CorundumFrame(dataWidth))
     // worst case each packet is one beat
     val packets = out UInt(log2Up(fifoSize * 2) bits)
-    val length = master Stream(UInt(12 bits))
+    val length = out UInt(12 bits)
+    val length_valid = out Bool()
     //val full = out Bool()
     //println(log2Up(fifoSize))
   }
@@ -62,10 +63,10 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   }
 
   // remember if current beat is not last; then next beat is not first
-  val is_frame_continuation = RegNextWhen(!x.last, x.valid & x.ready) init(False)
-  val is_first_beat = x.valid & x.ready & !is_frame_continuation
-  val is_last_beat = x.valid & x.ready & x.last
-  val is_intermediate_beat = x.valid & x.ready & is_frame_continuation & !x.last
+  val is_frame_continuation = RegNextWhen(!x.last, x.fire) init(False)
+  val is_first_beat = x.fire & !is_frame_continuation
+  val is_last_beat = x.fire & x.last
+  val is_intermediate_beat = x.fire & is_frame_continuation & !x.last
 
   printf("%s log2Up(%d/8+1)=%d\n", sourcecode.File(), dataWidth, log2Up(dataWidth/8+1))
 
@@ -73,24 +74,23 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   val tkeep_count = UInt(/*log2Up(dataWidth/8 + 1) bits*/)
   tkeep_count := U(dataWidth/8) - LeadingZeroes(x.tkeep)
 
-  val frame_too_large = Reg(Bool()) init (False)
+  val was_last = RegNextWhen(x.last, x.fire)
+  val previous_beat_was_not_last = RegNext(x.fire & !x.last)
 
-  val was_last = RegNextWhen(x.last, x.valid & x.ready)
-  val previous_beat_was_not_last = RegNext(x.valid & x.ready & !x.last)
-
+  // update frame length of current packet on x
   val frame_length = Reg(UInt(12 bits)) init(0)
-  when (x.valid & x.ready) {
+  when (x.fire) {
     // first, but not last data beat?
-    when (/*x.valid & x.ready & */!is_frame_continuation & !x.last) {
+    when (!is_frame_continuation & !x.last) {
       frame_length := keepWidth
     // first and last data beat?
-    } elsewhen (/*x.valid & x.ready & */!is_frame_continuation & x.last) {
+    } elsewhen (!is_frame_continuation & x.last) {
       frame_length := tkeep_count.resize(12 bits)
     // non-first, non-last data beat?
-    } elsewhen (/*x.valid & x.ready & */is_frame_continuation & !x.last) {
+    } elsewhen (is_frame_continuation & !x.last) {
       frame_length := frame_length + keepWidth
     // non-first, last data beat
-    } elsewhen (/*x.valid & x.ready & */is_frame_continuation & x.last) {
+    } elsewhen (is_frame_continuation & x.last) {
       frame_length := frame_length + tkeep_count.resize(12 bits)
     }
   }
@@ -98,14 +98,14 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   // the frame_length is max_words-1 due to the previous (non-last) beat (length result has 1 cycle latency)
   // and the current beat is an intermediate beat (resulting in maximum frame length)
   // thus the next beat will make the frame oversized
-  val frame_going_oversize_event = (frame_length === (fmaxFrameBytes - keepWidth)) & !was_last & is_intermediate_beat/* & !frame_too_large LEON*/
-  //val frame_going_oversize_event = (frame_length === (fmaxFrameBytes - keepWidth)) & previous_beat_was_not_last
-
+  val frame_going_oversize_event = (frame_length === (fmaxFrameBytes - keepWidth)) & !was_last & is_intermediate_beat
+  
   // frame_too_large will go high on the last beat that fits in max_words
   // it indicates the frame has been truncated, and the remainder should be ignored
-  when (is_first_beat/*x.valid & x.ready & !is_frame_continuation*/) {
+    val frame_too_large = Reg(Bool()) init (False)
+    when (is_first_beat) {
     frame_too_large := False
-  } elsewhen (/*!frame_too_large & */frame_going_oversize_event) {
+  } elsewhen (frame_going_oversize_event) {
     frame_too_large := True 
   }
 
@@ -115,7 +115,8 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   length_fifo.io.push.valid := push_length_on_last | frame_going_oversize_event
   length_fifo.io.push.payload := frame_length | (frame_going_oversize_event.asUInt << 11)
   val length_pop = Bool()
-  length_pop := z.last & z.ready & z.valid
+  /* pop length from length FIFO on last packet word */
+  length_pop := z.last & z.fire
   length_fifo.io.pop.ready := length_pop;
 
   // skid buffer between input and x
@@ -135,26 +136,29 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   fifo.io.push << x3
   y << fifo.io.pop
   // highest bit indicates truncated packet
-  val drop_on_truncate = length_fifo.io.pop.payload >= 0x800
-  io.source << z.throwWhen(drop_on_truncate)
+  val drop_on_truncate = ((length_fifo.io.pop.payload & U(0x800)) === U(0x800)) // length_fifo.io.pop.payload >= 0x800
+  io.source << z.throwWhen(drop_on_truncate) //.haltWhen(!io.length.ready)
 
-  io.length.payload := length_fifo.io.pop.payload & U(0x7FF)
-  io.length.valid := length_fifo.io.pop.valid & !((length_fifo.io.pop.payload & U(0x800)) === U(0x800))
+  // drive length in parallel to packet, unless packet dropped
+  io.length := length_fifo.io.pop.payload & U(0x7FF)
+  io.length_valid := length_fifo.io.pop.valid & !((length_fifo.io.pop.payload & U(0x800)) === U(0x800))
 
   val diff = (io.source.valid =/= length_fifo.io.pop.valid)
   val missing = (io.source.valid & !length_fifo.io.pop.valid)
 
   io.packets := packetsInFifoCounter.value
 
-  import spinal.core.GenerationFlags._
-  import spinal.core.formal._
-
+  // formal verification
   GenerationFlags.formal {
+    import spinal.core.GenerationFlags._
+    import spinal.core.formal._
+
     assumeInitial(clockDomain.isResetActive)
 
     // assert, assume and cover are only active during clocks
     assert(
-      assertion = !(io.source.valid & !length_fifo.io.pop.valid),
+      //assertion = !(io.source.valid & !length_fifo.io.pop.valid),
+      assertion = !(io.source.valid & !io.length_valid),
       message   = "Frame length not available during frame data valid",
       severity  = ERROR
     )
@@ -196,14 +200,14 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
       severity  = ERROR
     )
     assert(
-      assertion = (!io.length.valid | io.length.payload <= fmaxFrameBytes),
+      assertion = (!io.length_valid | io.length <= fmaxFrameBytes),
       message = "Passed frame lengths are within maximum length bound.",
       severity  = ERROR
     )
     val formal_frame_length = Reg(UInt(12 bits)) init(0)
-    val formal_is_frame_continuation = RegNextWhen(!io.sink.last, io.sink.valid & io.sink.ready) init(False)
-    val formal_is_first_beat = io.sink.valid & io.sink.ready & !formal_is_frame_continuation
-    when (io.sink.valid & io.sink.ready) {
+    val formal_is_frame_continuation = RegNextWhen(!io.sink.last, io.sink.fire) init(False)
+    val formal_is_first_beat = io.sink.fire & !formal_is_frame_continuation
+    when (io.sink.fire) {
       // first, but not last data beat?
       when (formal_is_first_beat) {
         formal_frame_length := 1
@@ -224,7 +228,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     cover(frame_going_oversize_event)
     cover(frame_too_large)
     cover(push_length_on_last)
-    cover(io.length.valid)
+    cover(io.length_valid)
     cover(io.source.valid)
     cover(drop_on_truncate)
     cover(is_first_beat)
@@ -253,7 +257,7 @@ object CorundumFrameStashSystemVerilogWithFormal {
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.includeFormal.generateSystemVerilog({
-      val toplevel = new CorundumFrameStash(16)
+      val toplevel = new CorundumFrameStash(512)
       XilinxPatch(toplevel)
     })
   }
