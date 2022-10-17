@@ -20,7 +20,7 @@ lazy val corundum = (project in file("."))
     //spinalCore, spinalLib, spinalIdslPlugin,
     libraryDependencies ++= Seq(SourceCode, ScalaTest)
   )
-.dependsOn(spinalHdlIdslPlugin, spinalHdlSim,spinalHdlCore, spinalHdlLib)
+.dependsOn(spinalHdlIdslPlugin, spinalHdlSim, spinalHdlCore, spinalHdlLib)
 lazy val spinalHdlIdslPlugin = ProjectRef(file(spinalDir), "idslplugin")
 lazy val spinalHdlSim = ProjectRef(file(spinalDir), "sim")
 lazy val spinalHdlCore = ProjectRef(file(spinalDir), "core")
