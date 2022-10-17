@@ -104,7 +104,7 @@ simulate: src/main/scala/corundum/CorundumFrameMuxPrio.scala src/main/scala/coru
 	gtkwave -f ./simWorkspace/CorundumFrameMuxPrio/test.vcd -a ./CorundumFrameMuxPrio.gtkw &
 
 clean:
-	rm -rf simWorkspace *.svg
+	rm -rf simWorkspace *.svg formalWorkdir
 
 %.json: %.ys %.v
 	set -e
