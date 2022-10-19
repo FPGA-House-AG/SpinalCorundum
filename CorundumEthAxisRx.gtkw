@@ -1,0 +1,80 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Wed Oct 19 21:50:41 2022
+[*]
+[dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumEthAxisRx/test.fst"
+[dumpfile_mtime] "Wed Oct 19 21:41:35 2022"
+[dumpfile_size] 1664
+[savefile] "/home/vexriscv/project/SpinalCorundum/CorundumEthAxisRx.gtkw"
+[timestart] 157
+[size] 3454 2054
+[pos] -1 -1
+*-4.000000 195 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 647
+[signals_width] 702
+[sst_expanded] 1
+[sst_vpaned_height] 653
+@28
+TOP.CorundumEthAxisRx.clk
+TOP.CorundumEthAxisRx.reset
+@24
+TOP.CorundumEthAxisRx.io_sink_length[11:0]
+@28
+TOP.CorundumEthAxisRx.io_sink_ready
+@22
+TOP.CorundumEthAxisRx.io_sink_payload_fragment[31:0]
+@200028
+[color] 2
+TOP.CorundumEthAxisRx.io_sink_valid
+@28
+TOP.CorundumEthAxisRx.io_sink_payload_last
+@200
+-
+-Registered Inputs
+@28
+TOP.CorundumEthAxisRx.x_fire
+TOP.CorundumEthAxisRx.x_is_first_beat
+TOP.CorundumEthAxisRx.x_is_frame_continuation
+TOP.CorundumEthAxisRx.x_valid
+TOP.CorundumEthAxisRx.x_payload_last
+@22
+TOP.CorundumEthAxisRx.x_payload_fragment[31:0]
+TOP.CorundumEthAxisRx.x_length[11:0]
+@200
+-
+@420
+TOP.CorundumEthAxisRx.remaining_payload_length[12:0]
+@200
+-
+@22
+TOP.CorundumEthAxisRx.y_fragment[31:0]
+@28
+TOP.CorundumEthAxisRx.y_last
+@200
+-
+@22
+TOP.CorundumEthAxisRx.z_payload_fragment[31:0]
+@28
+[color] 2
+TOP.CorundumEthAxisRx.z_valid
+TOP.CorundumEthAxisRx.z_payload_last
+TOP.CorundumEthAxisRx.z_ready
+@200
+-
+@22
+TOP.CorundumEthAxisRx.io_source_payload_fragment[31:0]
+@29
+[color] 2
+TOP.CorundumEthAxisRx.io_source_valid
+@28
+TOP.CorundumEthAxisRx.io_source_payload_last
+TOP.CorundumEthAxisRx.io_source_ready
+@22
+TOP.io_source_length[11:0]
+@200
+-
+@22
+TOP.CorundumEthAxisRx.io_header[15:0]
+[pattern_trace] 1
+[pattern_trace] 0
