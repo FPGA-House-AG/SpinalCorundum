@@ -38,7 +38,7 @@ object CorundumEthAxisRxSim {
       dut.clockDomain.waitSampling()
 
       // iterate over all frames to generate
-      for (packet_idx <- 6 until 8/*maxPacketSizeBytes*/) {
+      for (packet_idx <- 3 until 8/*maxPacketSizeBytes*/) {
         var packet_length = packet_idx //1 + Random.nextInt(if (packet_idx > 3400) keepWidth else maxPacketSizeBytes)
         //val packet_length = packet_idx match {
         //case (packet_idx > 3400): 1 + Random.nextInt(keepWidth)
@@ -112,8 +112,8 @@ object CorundumEthAxisRxSim {
           //}
         }
         // after each packet, introduce delay for now
-        //dut.io.sink.valid #= false
-        //dut.clockDomain.waitRisingEdge(16)
+        dut.io.sink.valid #= false
+        dut.clockDomain.waitRisingEdge(16)
       }
       dut.io.sink.valid #= false
       while (dut.io.source.valid.toBoolean) {

@@ -58,10 +58,19 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
 //  } otherwise /* { not first beat } */ {
 //    remaining_payload_length := remaining_payload_length - dataWidth / 8
 
-  // y holds only valid x.payload but one clock delayed
-  val y = RegNextWhen(x.payload, x.valid)
-
   val z = Stream(Fragment(Bits(dataWidth bits)))
+
+  // y holds last valid x.payload
+  val y = RegNextWhen(x.payload, x.fire)
+  //val y_valid = RegNextWhen(True, x.fire, False)
+  val y_valid = Reg(Bool).init(False)
+  val y_last = Reg(Bool)
+  when (x.fire) {
+    y_valid := True
+    y_last := x.last
+  } elsewhen (z.fire) {
+    y_valid := False
+  }
 
   // { x holds most recent word (if any) }
   // { y holds previous valid word, if any }
@@ -75,7 +84,8 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
    // .transmuteWith(U(0, dataWidth bits))
   z.payload.fragment := RegNext(x.payload.fragment(headerWidth - 1 downto  0) ## y(dataWidth - 1 downto headerWidth))
   z.payload.last := RegNext((remaining_payload_length > 0) && (remaining_payload_length <= (dataWidth/8)))
-  z.valid := RegNext((x.valid && x.last))
+  // z holds valid word when payload ends in x, or when y is valid also
+  z.valid := RegNext((x.valid && x.last) || (x.valid && y_valid))
   x.ready := z.ready
 
     // drive payload
