@@ -44,3 +44,5 @@ simWorkspace/
 formalWorkdir/
 tmp/
 null
+*.sv
+*.v
