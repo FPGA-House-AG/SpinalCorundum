@@ -15,7 +15,7 @@ val spinalDir = "../SpinalHDL.upstream"
 lazy val corundum = (project in file("."))
   .settings(
     name := "SpinalCorundum",
-    scalacOptions += s"-Xplugin:${new File(baseDirectory.value /*+ spinalDir*/ + s"/../SpinalHDL.upstream/idslplugin/target/scala-2.11/spinalhdl-idsl-plugin_2.11-$spinalVersion.jar")}",
+    scalacOptions += s"-Xplugin:${new File(baseDirectory.value + s"/" + spinalDir + s"/idslplugin/target/scala-2.11/spinalhdl-idsl-plugin_2.11-$spinalVersion.jar")}",
     scalacOptions += s"-Xplugin-require:idsl-plugin",
     //spinalCore, spinalLib, spinalIdslPlugin,
     libraryDependencies ++= Seq(SourceCode, ScalaTest)
