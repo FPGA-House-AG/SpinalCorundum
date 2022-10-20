@@ -28,6 +28,30 @@ object CorundumEthAxisRxSim {
 
       //StreamFragmentGenerator(event: x, packetData: y, dataType: CorundumFrame)
 
+      //Create a new thread
+      val myNewThread = fork {
+        val dw = dataWidth / 4
+        var not_last_seen = false
+        var in_packet_continuation = false
+        var first_beat = false
+        var packet_length = 0
+        var remaining = 0
+        while (true) {
+          dut.clockDomain.waitSamplingWhere(dut.io.source.valid.toBoolean & dut.io.source.ready.toBoolean)
+          first_beat = !in_packet_continuation
+          if (first_beat) {
+            packet_length = dut.io.source_length.toInt
+            remaining = dut.io.source_length.toInt
+          }
+          printf(s"DATA == 0x%0${dw}X %02d/%02d %s%s\n", dut.io.source.payload.fragment.toBigInt,
+           remaining, packet_length,
+           if (first_beat) "*" else s" ",
+           if (dut.io.source.payload.last.toBoolean) "L" else s" ")
+          in_packet_continuation = !dut.io.source.payload.last.toBoolean
+          remaining = if (remaining >= dataWidth/8) remaining - dataWidth/8 else 0
+        }
+      }
+
 
       var data0 = BigInt(0)
       var last0 = false
@@ -56,17 +80,15 @@ object CorundumEthAxisRxSim {
           // simulate source not always valid
           valid0 = (Random.nextInt(8) > 2) | (packet_idx > 3000)
           valid0 &= !pause
-          //valid0 = true
+          valid0 = true
 
           //println(clock_counter + s" pause " + pause + s", valid " + valid0)
           clock_counter += 1
 
-          pause ^= true
-          //if (!pause) pause ^= true
-          //else if (pause) pause ^= (Random.nextInt(16) >= 15)
-          //else if (!pause) pause ^= (Random.nextInt(128) >= 127)
+          if (pause) pause ^= (Random.nextInt(16) >= 15)
+          else if (!pause) pause ^= (Random.nextInt(128) >= 127)
           // limit to single beat activities
-
+          pause = false
 
           assert(tkeep_len <= keepWidth)
           tkeep0 = 0
@@ -92,6 +114,7 @@ object CorundumEthAxisRxSim {
           dut.io.sink_length #= packet_length
 
           dut.io.source.ready #= (Random.nextInt(8) > 1) | (packet_idx > 4000)
+          dut.io.source.ready #= true
 
           // Wait a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
@@ -99,7 +122,6 @@ object CorundumEthAxisRxSim {
           if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
             remaining -= tkeep_len
           }
-
 
           //Check that the dut values match with the reference model ones
           //val modelFlag = modelState == 0 || dut.io.cond1.toBoolean
@@ -113,7 +135,7 @@ object CorundumEthAxisRxSim {
         }
         // after each packet, introduce delay for now
         dut.io.sink.valid #= false
-        dut.clockDomain.waitRisingEdge(16)
+        //dut.clockDomain.waitRisingEdge(16)
       }
       dut.io.sink.valid #= false
       while (dut.io.source.valid.toBoolean) {

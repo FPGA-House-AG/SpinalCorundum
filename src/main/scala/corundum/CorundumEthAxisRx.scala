@@ -45,12 +45,12 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
   val x_header = RegNextWhen(x.payload.resize(headerWidth), x_is_first_beat)
   val x_is_single_beat = x_is_first_beat && x.last
 
-  val remaining_payload_length = Reg(SInt(13 bits))
+  val remaining = Reg(SInt(13 bits))
   val source_payload_length = Reg(SInt(13 bits))
 
 // for production use this
 //  } otherwise /* { not first beat } */ {
-//    remaining_payload_length := remaining_payload_length - dataWidth / 8
+//    remaining := remaining - dataWidth / 8
 
   val z = Stream(Fragment(Bits(dataWidth bits)))
 
@@ -62,32 +62,34 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
 
 
   when (x_is_first_beat) {
-    remaining_payload_length := x_length.asSInt.resize(13 bits) - headerWidthBytes
+    remaining := x_length.asSInt.resize(13 bits) - headerWidthBytes
     source_payload_length := x_length.asSInt.resize(13 bits) - headerWidthBytes
   // can be removed, only for clearity during development cycle
   } elsewhen (y_last & z.fire) {
-    remaining_payload_length := 0
+    remaining := 0
   } elsewhen (z.fire) {
-    remaining_payload_length := remaining_payload_length - dataWidth / 8
+    remaining := remaining - dataWidth / 8
   } otherwise {
-    remaining_payload_length := remaining_payload_length
+    remaining := remaining
   }
 
+  // determine when y becomes valid or invalid
 
-  // x takes new input, but z does not
-  when (x.fire & !z.fire) {
-    // register x in y
+  // x is valid last word, last word for z comes from x and y combined
+  when (x.valid & x.last & (remaining <= 4)) {
+    y_valid := False
+  } elsewhen (x.fire & !z.fire) {
     y_valid := x.valid
-    
-  // z takes y with no new input on x, or 
-  // if x.last, z absorps y immediately
-  // @TODO tricky, this needs more testing
- //} elsewhen (z.fire & (!x.fire | x.last)) {
-  } elsewhen (z.fire & (!x.fire | (remaining_payload_length <= (dataWidth/8)))) {
+  // z takes x, no new x
+  } elsewhen (z.fire & !x.fire) {
     y_valid := False
   }
 
-  z.payload.last := (y_valid & y_last)
+  val y_has_last_data = y_valid & y_last
+  val x_has_last_data = x.valid & x.last
+
+
+  z.payload.last := y_has_last_data | x_has_last_data
   //z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
   z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
   //z.valid := (y_valid & y_is_single_beat) | (x.valid & y_valid)
@@ -98,12 +100,12 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
     // drive payload
     //.translateWith(x.payload(headerWidth - 1 downto  0) ## y.payload(dataWidth - 1 downto headerWidth))
     // drive active
-    //.throwWhen(remaining_payload_length <= 0)
+    //.throwWhen(remaining <= 0)
   // drive last
-  //io.source <-< z.addFragmentLast((remaining_payload_length > 0) && (remaining_payload_length <= (dataWidth/8)))
+  //io.source <-< z.addFragmentLast((remaining > 0) && (remaining <= (dataWidth/8)))
   io.source <-< z
   io.source_length := RegNext(Mux(source_payload_length < 0, U(0), source_payload_length.asUInt.resize(12)))
-  io.source_remaining := RegNext(Mux(remaining_payload_length < 0, U(0), remaining_payload_length.asUInt.resize(12)))
+  io.source_remaining := RegNext(Mux(remaining < 0, U(0), remaining.asUInt.resize(12)))
   io.header := x_header
 }
 
