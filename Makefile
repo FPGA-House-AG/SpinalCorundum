@@ -24,20 +24,35 @@ repl:
 	runMain corundum.CorundumFrameFilterVerilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
+	runMain corundum.CorundumEthAxisRxVerilog \
 	"
 
 sim_repl:
 	set -e
 # run in background
-	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst   -a ./CorundumFrameStash.gtkw   &
-	gtkwave -F -f ./simWorkspace/CorundumFrameMuxPrio/test.fst -a ./CorundumFrameMuxPrio.gtkw &
-	gtkwave -F -f ./simWorkspace/CorundumFrameFilter/test.fst -a ./CorundumFrameFilter.gtkw &
+	#gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst   -a ./CorundumFrameStash.gtkw   &
+	#gtkwave -F -f ./simWorkspace/CorundumFrameMuxPrio/test.fst -a ./CorundumFrameMuxPrio.gtkw &
+	#gtkwave -F -f ./simWorkspace/CorundumFrameFilter/test.fst -a ./CorundumFrameFilter.gtkw &
+	gtkwave -F -f ./simWorkspace/CorundumEthAxisRx/test.fst -a ./CorundumFrameEthAxisRx.gtkw &
 # continuous build/simulate on saved source code changes
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
-	sbt "~ test:runMain corundum.CorundumFrameMuxPrioSim; \
+	sbt "~ \
+	test:runMain corundum.CorundumFrameMuxPrioSim; \
 	test:runMain corundum.CorundumFrameStashSim; \
-	test:runMain corundum.CorundumFrameFilterSim;"
+	test:runMain corundum.CorundumFrameFilterSim; \
+	test:runMain corundum.CorundumEthAxisRxSim; \
+	"
 	# @TODO can we kill gtkwave here?
+
+sim_repl_eth:
+	set -e
+# run in background
+	gtkwave -F -f ./simWorkspace/CorundumEthAxisRx/test.fst -a ./CorundumEthAxisRx.gtkw &
+# continuous build/simulate on saved source code changes
+# press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+	sbt "~ \
+	test:runMain corundum.CorundumEthAxisRxSim; \
+	"
 
 sim_writer:
 	set -e

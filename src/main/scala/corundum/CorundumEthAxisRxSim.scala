@@ -14,10 +14,10 @@ object CorundumEthAxisRxSim {
     SimConfig.withFstWave.doSim(new CorundumEthAxisRx(dataWidth/*bits*/, 2/*bytes header*/)){dut =>
 
 
-      //SimTimeout(100000 * mainClkPeriod)
+      SimTimeout(100000 * 10)
 
       var maxFrameWords = 16
-      var maxPacketSizeBytes = (maxFrameWords + 1) * keepWidth
+      var maxPacketSizeBytes = (maxFrameWords + 2) * keepWidth + keepWidth - 1
 
       dut.io.sink.valid #= false
 
@@ -29,7 +29,7 @@ object CorundumEthAxisRxSim {
       //StreamFragmentGenerator(event: x, packetData: y, dataType: CorundumFrame)
 
 
-      var data0 = 0
+      var data0 = BigInt(0)
       var last0 = false
       var valid0 = false
       var tkeep0 = 0
@@ -38,7 +38,7 @@ object CorundumEthAxisRxSim {
       dut.clockDomain.waitSampling()
 
       // iterate over all frames to generate
-      for (packet_idx <- 3 until 8/*maxPacketSizeBytes*/) {
+      for (packet_idx <- 3 until 15) {
         var packet_length = packet_idx //1 + Random.nextInt(if (packet_idx > 3400) keepWidth else maxPacketSizeBytes)
         //val packet_length = packet_idx match {
         //case (packet_idx > 3400): 1 + Random.nextInt(keepWidth)
