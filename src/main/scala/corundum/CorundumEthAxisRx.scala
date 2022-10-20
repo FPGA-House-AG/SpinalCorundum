@@ -31,6 +31,7 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
     // sink_length is given in bytes
     val sink_length = in UInt(12 bits)
     val source_length = out UInt(12 bits)
+    val source_remaining = out UInt(12 bits)
   }
   val x = Stream(Fragment(Bits(dataWidth bits)))
 
@@ -45,16 +46,8 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
   val x_is_single_beat = x_is_first_beat && x.last
 
   val remaining_payload_length = Reg(SInt(13 bits))
-  when (x_is_first_beat) {
-    remaining_payload_length := x_length.asSInt.resize(13 bits) - headerWidthBytes
-  // can be removed, only for clearity during development cycle
-  } elsewhen (x.last) {
-    remaining_payload_length := 0
-  } elsewhen (x_is_frame_continuation && x.valid) {
-    remaining_payload_length := remaining_payload_length - dataWidth / 8
-  } otherwise {
-    remaining_payload_length := remaining_payload_length
-  }
+  val source_payload_length = Reg(SInt(13 bits))
+
 // for production use this
 //  } otherwise /* { not first beat } */ {
 //    remaining_payload_length := remaining_payload_length - dataWidth / 8
@@ -62,10 +55,24 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
   val z = Stream(Fragment(Bits(dataWidth bits)))
 
   val y_valid = Reg(Bool).init(False)
-  // y holds previous valid x.payload, but only if x is non-last
-  val y = RegNextWhen(x.payload, x.fire)
   val y_last = RegNextWhen(x.last, x.fire)
+  // y holds previous valid x.payload, but only if x is non-last
+  val y = RegNextWhen(x.payload |>> headerWidth, x.fire)
   val y_is_single_beat = RegNextWhen(x_is_single_beat, x.fire)
+
+
+  when (x_is_first_beat) {
+    remaining_payload_length := x_length.asSInt.resize(13 bits) - headerWidthBytes
+    source_payload_length := x_length.asSInt.resize(13 bits) - headerWidthBytes
+  // can be removed, only for clearity during development cycle
+  } elsewhen (y_last & z.fire) {
+    remaining_payload_length := 0
+  } elsewhen (z.fire) {
+    remaining_payload_length := remaining_payload_length - dataWidth / 8
+  } otherwise {
+    remaining_payload_length := remaining_payload_length
+  }
+
 
   // x takes new input, but z does not
   when (x.fire & !z.fire) {
@@ -75,25 +82,16 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
   // z takes y with no new input on x, or 
   // if x.last, z absorps y immediately
   // @TODO tricky, this needs more testing
-  } elsewhen (z.fire & (!x.fire | x.last)) {
+ //} elsewhen (z.fire & (!x.fire | x.last)) {
+  } elsewhen (z.fire & (!x.fire | (remaining_payload_length <= (dataWidth/8)))) {
     y_valid := False
   }
 
-
-  // { x holds most recent word (if any) }
-  // { y holds previous valid word, if any }
-
-  // take all but header from y, put in lsbs
-  // take header sized part from x, put in msbs
-  //z <-< x
-  //  .toStreamOfFragment
-    //.translateWith(x.payload.fragment(headerWidth - 1 downto  0) ## y(dataWidth - 1 downto headerWidth))
-    //.swapPayload(x.payload.fragment(headerWidth - 1 downto  0) ## y(dataWidth - 1 downto headerWidth))
-   // .transmuteWith(U(0, dataWidth bits))
-
-  z.valid := (y_valid & y_is_single_beat) | (x.valid & y_valid)
-  z.payload.fragment := Mux(z.valid, x.payload.fragment(headerWidth - 1 downto  0) ## y(dataWidth - 1 downto headerWidth), B(0))
-  z.payload.last := (remaining_payload_length > 0) && (remaining_payload_length <= (dataWidth/8))
+  z.payload.last := (y_valid & y_last)
+  //z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
+  z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
+  //z.valid := (y_valid & y_is_single_beat) | (x.valid & y_valid)
+  z.payload.fragment := Mux(z.valid, x.payload.fragment(headerWidth - 1 downto  0) ## y(dataWidth - headerWidth - 1 downto 0), B(0))
   // z holds valid word when y is a single beat, or when we can combine x with a non-last y
   x.ready := z.ready
 
@@ -104,7 +102,8 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
   // drive last
   //io.source <-< z.addFragmentLast((remaining_payload_length > 0) && (remaining_payload_length <= (dataWidth/8)))
   io.source <-< z
-  io.source_length := RegNext(Mux(remaining_payload_length < 0, U(0), remaining_payload_length.asUInt.resize(12)))
+  io.source_length := RegNext(Mux(source_payload_length < 0, U(0), source_payload_length.asUInt.resize(12)))
+  io.source_remaining := RegNext(Mux(remaining_payload_length < 0, U(0), remaining_payload_length.asUInt.resize(12)))
   io.header := x_header
 }
 

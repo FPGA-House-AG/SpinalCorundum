@@ -11,7 +11,7 @@ object CorundumEthAxisRxSim {
     val dataWidth = 32 //512
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
-    SimConfig.withFstWave.doSim(new CorundumEthAxisRx(dataWidth/*bits*/, 2/*bytes header*/)){dut =>
+    SimConfig.withFstWave.doSim(new CorundumEthAxisRx(dataWidth/*bits*/, 1/*bytes header*/)){dut =>
 
 
       SimTimeout(100000 * 10)
@@ -38,7 +38,7 @@ object CorundumEthAxisRxSim {
       dut.clockDomain.waitSampling()
 
       // iterate over all frames to generate
-      for (packet_idx <- 3 until 15) {
+      for (packet_idx <- 7 until 15) {
         var packet_length = packet_idx //1 + Random.nextInt(if (packet_idx > 3400) keepWidth else maxPacketSizeBytes)
         //val packet_length = packet_idx match {
         //case (packet_idx > 3400): 1 + Random.nextInt(keepWidth)

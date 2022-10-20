@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Thu Oct 20 11:55:17 2022
+[*] Thu Oct 20 18:21:29 2022
 [*]
 [dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumEthAxisRx/test.fst"
-[dumpfile_mtime] "Thu Oct 20 11:48:04 2022"
-[dumpfile_size] 2135
+[dumpfile_mtime] "Thu Oct 20 18:20:57 2022"
+[dumpfile_size] 3420
 [savefile] "/home/vexriscv/project/SpinalCorundum/CorundumEthAxisRx.gtkw"
-[timestart] 730
+[timestart] 50
 [size] 3840 2066
 [pos] -1 -1
-*-4.000000 756 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 217 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [sst_width] 647
 [signals_width] 702
@@ -22,7 +22,7 @@ TOP.CorundumEthAxisRx.reset
 TOP.CorundumEthAxisRx.io_sink_length[11:0]
 @22
 TOP.CorundumEthAxisRx.io_sink_payload_fragment[31:0]
-@29
+@28
 [color] 3
 TOP.CorundumEthAxisRx.io_sink_ready
 @200028
@@ -53,11 +53,12 @@ TOP.CorundumEthAxisRx.x_length[11:0]
 TOP.CorundumEthAxisRx.remaining_payload_length[12:0]
 @200
 -
-@22
-TOP.CorundumEthAxisRx.y_fragment[31:0]
 @28
 [color] 2
 TOP.CorundumEthAxisRx.y_valid
+@23
+TOP.CorundumEthAxisRx.y[31:0]
+@28
 TOP.CorundumEthAxisRx.y_last
 TOP.CorundumEthAxisRx.y_is_single_beat
 @200
@@ -77,12 +78,13 @@ TOP.CorundumEthAxisRx.z_fire
 @22
 TOP.CorundumEthAxisRx.io_source_payload_fragment[31:0]
 @28
+TOP.CorundumEthAxisRx.io_source_ready
 [color] 2
 TOP.CorundumEthAxisRx.io_source_valid
 TOP.CorundumEthAxisRx.io_source_payload_last
-TOP.CorundumEthAxisRx.io_source_ready
 @22
 TOP.io_source_length[11:0]
+TOP.CorundumEthAxisRx.io_source_remaining[11:0]
 @200
 -
 @22
