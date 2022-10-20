@@ -22,7 +22,7 @@ object CorundumEthAxisRx {
 case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Component {
   val headerWidth = headerWidthBytes * 8
   // currently only single beat headers are supported to be stripped off
-  require(headerWidth <= dataWidth, s"CorundumEthAxisRx not support multibeat headers")
+  require(headerWidth <= dataWidth, s"headerWidth <= dataWidth, needed because CorundumEthAxisRx does not support multibeat headers yet.")
   val io = new Bundle {
     // I/O is only the Corundum Frame tdata payload
     val sink = slave Stream(Fragment(Bits(dataWidth bits)))
