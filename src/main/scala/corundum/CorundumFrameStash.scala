@@ -1,10 +1,46 @@
 // CorundumFrameStash
+//
+// The input is an AXI packet stream interface, where the signals and interface properties match
+// that of the Corundum PCIe/Ethernet project. Each AXIS packet holds one Ethernet frame at the
+// Data Link Layer (known as Layer 2 or L2). The total frame size is in the range [64, 1522].
+//
+// For clearity, a L2 frame means the first field in the frame is the Ethernet destination MAC
+// address and the last field is the frame check sequence (FSC).
+//
+// tdata[TDATA_WIDTH]
+// tkeep[TKEEP_WIDTH] where TKEEP_WIDTH === (TDATA_WIDTH / 8)
+// tuser[1]
+//
+// tlast indicates the last word of the AXIS packet.
+// tvalid indicates this word contains valid data (on tdata, tkeep, tuser, tlast)
+// tready is an input
+//
+// In accordance with the AXI specification, both source and sink (master and slave) agree that
+// when tvalid and tready are both asserted, the AXI word is transferred from source to sink.
+//
+// The first octet (byte) of the Ethernet frame is transferred in the least significant byte
+// of tdata, i.e. tdata[7:0], the second byte in tdata[15:0], etc.
+// For each byte that is present in tdata[], a bit is set 1 in tkeep[].
+// tkeep[0] corresponds with tdata[7:0], tkeep[1] with tdata[15:8], etc.
+//
+// A packet is transmitted as one or more AXIS beats, where only the last beat (tlast=1) can
+// contain a partially filled data word, where only the most significant bytes are not enabled,
+// and corresponding tkeep bits 0.
+
+// tkeep thus always starts with tkeep[0]=1, followed by zero or more consecutive tkeep[]=1 bits,
+// then possibly followed by tkeep[]=0 bits but only for the tlast=1 word. If tvalid & tlast=0,
+// all tkeep[] bits are 1.
+//
+
 // Passes frames through a FIFO to determine frame length.
-// Frames are output together with their frame length on io.length and io.length_valid.
+//
+// Frames are output together with their frame length on io.length and io.length_valid, these
+// remain valid and stable throughout all packet cycles (active or not).
+//
 // When io.source.valid, io.length_valid is also always valid.
-// Oversized frames are dropped. 
-// Oversized frames are internally marked, truncated to maximum FIFO length before entering the FIFO,
-// and dropped after the FIFO.
+// Oversized frames are dropped. (Maximum size is currently hardcoded inside.)
+// Oversized frames are internally marked, truncated to maximum FIFO length before
+// entering the FIFO, and dropped after the FIFO.
 
 package corundum
 
