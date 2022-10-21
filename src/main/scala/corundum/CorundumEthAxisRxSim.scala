@@ -8,10 +8,10 @@ import scala.util.Random
 
 object CorundumEthAxisRxSim {
   def main(args: Array[String]) {
-    val dataWidth = 32 //512
+    val dataWidth = 32
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
-    SimConfig.withFstWave.doSim(new CorundumEthAxisRx(dataWidth/*bits*/, 1/*bytes header*/)){dut =>
+    SimConfig.withFstWave.doSim(new CorundumEthAxisRx(dataWidth/*bits*/, 0/*bytes header*/)){dut =>
 
 
       SimTimeout(100000 * 10)
@@ -43,6 +43,16 @@ object CorundumEthAxisRxSim {
             packet_length = dut.io.source_length.toInt
             remaining = dut.io.source_length.toInt
           }
+          //var clean_data = dut.io.source.payload.fragment.toBigInt
+          //if (remaining < dataWidth / 8) {
+          //  var mask = BigInt(0)
+          //  for (byte <- 0 until remaining) {
+          //    mask <<= 8
+          //    mask = (mask | 0xFF)
+          //  }
+          //  clean_data = mask
+          //}
+          
           printf(s"DATA == 0x%0${dw}X %02d/%02d %s%s\n", dut.io.source.payload.fragment.toBigInt,
            remaining, packet_length,
            if (first_beat) "*" else s" ",
@@ -62,7 +72,7 @@ object CorundumEthAxisRxSim {
       dut.clockDomain.waitSampling()
 
       // iterate over all frames to generate
-      for (packet_idx <- 7 until 15) {
+      for (packet_idx <- 1 until 31) {
         var packet_length = packet_idx //1 + Random.nextInt(if (packet_idx > 3400) keepWidth else maxPacketSizeBytes)
         //val packet_length = packet_idx match {
         //case (packet_idx > 3400): 1 + Random.nextInt(keepWidth)
@@ -80,7 +90,7 @@ object CorundumEthAxisRxSim {
           // simulate source not always valid
           valid0 = (Random.nextInt(8) > 2) | (packet_idx > 3000)
           valid0 &= !pause
-          valid0 = true
+          //valid0 = true
 
           //println(clock_counter + s" pause " + pause + s", valid " + valid0)
           clock_counter += 1
@@ -88,7 +98,7 @@ object CorundumEthAxisRxSim {
           if (pause) pause ^= (Random.nextInt(16) >= 15)
           else if (!pause) pause ^= (Random.nextInt(128) >= 127)
           // limit to single beat activities
-          pause = false
+          //pause = false
 
           assert(tkeep_len <= keepWidth)
           tkeep0 = 0
@@ -122,16 +132,6 @@ object CorundumEthAxisRxSim {
           if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
             remaining -= tkeep_len
           }
-
-          //Check that the dut values match with the reference model ones
-          //val modelFlag = modelState == 0 || dut.io.cond1.toBoolean
-          //assert(dut.io.state.toInt == modelState)
-          //assert(dut.io.flag.toBoolean == modelFlag)
-
-          //Update the reference model value
-          //if(dut.io.cond0.toBoolean) {
-          //  modelState = (modelState + 1) & 0xFF
-          //}
         }
         // after each packet, introduce delay for now
         dut.io.sink.valid #= false

@@ -75,9 +75,11 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
 
   // determine when y becomes valid or invalid
 
+  val remaining_y = RegNextWhen(remaining - dataWidth/8, x.fire, S(0))
+
   // x is valid last word, last word for z comes from x and y combined
-  when (x.valid & x.last & (remaining <= 4)) {
-    y_valid := False
+  when (z.fire & z.payload.last) {
+    y_valid := x.valid
   } elsewhen (x.fire & !z.fire) {
     y_valid := x.valid
   // z takes x, no new x
@@ -85,13 +87,13 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
     y_valid := False
   }
 
-  val y_has_last_data = y_valid & y_last
-  val x_has_last_data = x.valid & x.last
+  val y_has_last_data = y_valid & y_last & (remaining >= 1) & (remaining <= dataWidth/8)
+  val x_has_last_data = y_valid & x.valid & x.last & (remaining >= 1) & (remaining <= dataWidth/8)
 
 
   z.payload.last := y_has_last_data | x_has_last_data
   //z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
-  z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
+  z.valid := (y_valid & z.payload.last) | (x.valid & y_valid & (remaining >= dataWidth/8))
   //z.valid := (y_valid & y_is_single_beat) | (x.valid & y_valid)
   z.payload.fragment := Mux(z.valid, x.payload.fragment(headerWidth - 1 downto  0) ## y(dataWidth - headerWidth - 1 downto 0), B(0))
   // z holds valid word when y is a single beat, or when we can combine x with a non-last y
