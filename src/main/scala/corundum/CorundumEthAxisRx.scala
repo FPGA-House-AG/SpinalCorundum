@@ -109,13 +109,31 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
   io.source_length := RegNext(Mux(source_payload_length < 0, U(0), source_payload_length.asUInt.resize(12)))
   io.source_remaining := RegNext(Mux(remaining < 0, U(0), remaining.asUInt.resize(12)))
   io.header := x_header
+
+  // input               io_sink_valid,
+  // output reg          io_sink_ready,
+  // input               io_sink_payload_last,
+  // input      [127:0]  io_sink_payload_fragment,
+
+  // Rename SpinalHDL library defaults to AXI naming convention
+  private def renameIO(): Unit = {
+    io.flatten.foreach(bt => {
+      if(bt.getName().contains("_payload_fragment")) bt.setName(bt.getName().replace("_payload_fragment", "_tdata"))
+      if(bt.getName().contains("_payload_last")) bt.setName(bt.getName().replace("_payload_last", "_tlast"))
+      if(bt.getName().contains("_payload"))  bt.setName(bt.getName().replace("_payload",  ""))
+      if(bt.getName().contains("_fragment")) bt.setName(bt.getName().replace("_fragment", ""))
+      if(bt.getName().contains("_valid"))    bt.setName(bt.getName().replace("_valid",    "_tvalid"))
+      if(bt.getName().contains("_ready"))    bt.setName(bt.getName().replace("_ready",    "_tready"))
+      if(bt.getName().contains("_last"))     bt.setName(bt.getName().replace("_last",     "_tlast"))
+      if(bt.getName().contains("reset"))     bt.setName(bt.getName().replace("reset",     "rst"))
+    })
+  }
+  // Remove io_ prefix
+  noIoPrefix()
+
+  // Execute the function renameIO after the creation of the component
+  addPrePopTask(() => renameIO())
 }
-
-//  y.ready := io.payload.ready
-//  y.payload := RegNextWhen(x.payload, io.payload.ready)
-//  y.payload.last := RegNextWhen(x.payload.last, io.payload.ready)
-//  y.valid := RegNextWhen(x.valid, io.payload.ready)
-
 
 //Generate the CorundumEthAxisRx's Verilog
 object CorundumEthAxisRxVerilog {
