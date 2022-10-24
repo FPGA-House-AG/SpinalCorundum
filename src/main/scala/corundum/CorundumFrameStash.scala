@@ -291,7 +291,7 @@ object CorundumFrameStashVerilog {
 //Generate the CorundumFrameStashSystemVerilogWithFormal's Verilog
 object CorundumFrameStashSystemVerilogWithFormal {
   def main(args: Array[String]) {
-   val config = SpinalConfig()
+    val config = SpinalConfig()
     config.includeFormal.generateSystemVerilog({
       val toplevel = new CorundumFrameStash(512)
       XilinxPatch(toplevel)

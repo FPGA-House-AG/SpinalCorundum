@@ -92,7 +92,7 @@ object CorundumFrameFilterVerilog {
 //    SpinalVerilog(new CorundumFrameFilter)
 //  }
   def main(args: Array[String]) {
-   val config = SpinalConfig()
+    val config = SpinalConfig()
     config.generateVerilog({
       val toplevel = new CorundumFrameFilter(512)
       XilinxPatch(toplevel)
