@@ -1,0 +1,72 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Mon Oct 24 15:46:48 2022
+[*]
+[dumpfile] "/home/vexriscv/project/SpinalCorundum/cocotb/AxisExtractHeader/AxisExtractHeader.fst"
+[dumpfile_mtime] "Mon Oct 24 15:44:22 2022"
+[dumpfile_size] 2076
+[savefile] "/home/vexriscv/project/SpinalCorundum/cocotb/AxisExtractHeader/AxisExtractHeader.gtkw"
+[timestart] 6650
+[size] 3329 1607
+[pos] -1 -1
+*-13.000000 32700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 669
+[signals_width] 887
+[sst_expanded] 1
+[sst_vpaned_height] 496
+@28
+AxisExtractHeader.sink_tready
+@22
+AxisExtractHeader.sink_tdata[127:0]
+@28
+AxisExtractHeader.sink_tvalid
+AxisExtractHeader.sink_tlast
+@200
+-
+@28
+AxisExtractHeader.source_tready
+@22
+AxisExtractHeader.source_tdata[127:0]
+@28
+AxisExtractHeader.source_tlast
+AxisExtractHeader.source_tvalid
+@200
+-
+@23
+AxisExtractHeader.source_length[11:0]
+@22
+AxisExtractHeader.source_payload_length[12:0]
+AxisExtractHeader.source_remaining[11:0]
+@28
+AxisExtractHeader.reset
+AxisExtractHeader.clk
+AxisExtractHeader.x_fire
+AxisExtractHeader.y_valid
+AxisExtractHeader.z_fire
+AxisExtractHeader.z_valid
+AxisExtractHeader.y_valid
+AxisExtractHeader.y_last
+AxisExtractHeader.z_payload_last
+@c00022
+AxisExtractHeader.remaining[12:0]
+@28
+(0)AxisExtractHeader.remaining[12:0]
+(1)AxisExtractHeader.remaining[12:0]
+(2)AxisExtractHeader.remaining[12:0]
+(3)AxisExtractHeader.remaining[12:0]
+(4)AxisExtractHeader.remaining[12:0]
+(5)AxisExtractHeader.remaining[12:0]
+(6)AxisExtractHeader.remaining[12:0]
+(7)AxisExtractHeader.remaining[12:0]
+(8)AxisExtractHeader.remaining[12:0]
+(9)AxisExtractHeader.remaining[12:0]
+(10)AxisExtractHeader.remaining[12:0]
+(11)AxisExtractHeader.remaining[12:0]
+(12)AxisExtractHeader.remaining[12:0]
+@1401200
+-group_end
+@22
+AxisExtractHeader.remaining_y[12:0]
+AxisExtractHeader.x_length[11:0]
+[pattern_trace] 1
+[pattern_trace] 0

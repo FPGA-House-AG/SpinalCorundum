@@ -180,8 +180,8 @@ rtl_dir = os.path.abspath(os.path.join(tests_dir, '..', '..'))
 #pcie_rtl_dir = os.path.abspath(os.path.join(lib_dir, 'pcie', 'rtl'))
 
 
-def test_CorundumEthAxisRx(request):
-    dut = "CorundumEthAxisRx"
+def test_AxisExtractHeader(request):
+    dut = "AxisExtractHeader"
     module = os.path.splitext(os.path.basename(__file__))[0]
     toplevel = dut
 

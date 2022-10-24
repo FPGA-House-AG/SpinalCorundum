@@ -24,7 +24,7 @@ repl:
 	runMain corundum.CorundumFrameFilterVerilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
-	runMain corundum.CorundumEthAxisRxVerilog \
+	runMain corundum.AxisExtractHeaderVerilog \
 	"
 
 sim_repl:
@@ -33,25 +33,25 @@ sim_repl:
 	#gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst   -a ./CorundumFrameStash.gtkw   &
 	#gtkwave -F -f ./simWorkspace/CorundumFrameMuxPrio/test.fst -a ./CorundumFrameMuxPrio.gtkw &
 	#gtkwave -F -f ./simWorkspace/CorundumFrameFilter/test.fst -a ./CorundumFrameFilter.gtkw &
-	gtkwave -F -f ./simWorkspace/CorundumEthAxisRx/test.fst -a ./CorundumFrameEthAxisRx.gtkw &
+	gtkwave -F -f ./simWorkspace/AxisExtractHeader/test.fst -a ./CorundumFrameEthAxisRx.gtkw &
 # continuous build/simulate on saved source code changes
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ \
 	test:runMain corundum.CorundumFrameMuxPrioSim; \
 	test:runMain corundum.CorundumFrameStashSim; \
 	test:runMain corundum.CorundumFrameFilterSim; \
-	test:runMain corundum.CorundumEthAxisRxSim; \
+	test:runMain corundum.AxisExtractHeaderSim; \
 	"
 	# @TODO can we kill gtkwave here?
 
 sim_repl_eth:
 	set -e
 # run in background
-	gtkwave -F -f ./simWorkspace/CorundumEthAxisRx/test.fst -a ./CorundumEthAxisRx.gtkw &
+	gtkwave -F -f ./simWorkspace/AxisExtractHeader/test.fst -a ./AxisExtractHeader.gtkw &
 # continuous build/simulate on saved source code changes
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ \
-	test:runMain corundum.CorundumEthAxisRxSim; \
+	test:runMain corundum.AxisExtractHeaderSim; \
 	"
 
 sim_writer:
@@ -91,7 +91,7 @@ rtl: src/main/scala/corundum/CorundumFrameStash.scala
 rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 rtl: src/main/scala/corundum/CorundumFrameReader.scala
 rtl: src/main/scala/corundum/CorundumFrameWriter.scala
-rtl: src/main/scala/corundum/CorundumEthAxisRx.scala
+rtl: src/main/scala/corundum/AxisExtractHeader.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
@@ -99,7 +99,7 @@ rtl: src/main/scala/corundum/CorundumEthAxisRx.scala
 	runMain corundum.CorundumFrameFilterVerilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
-	runMain corundum.CorundumEthAxisRxVerilog; \
+	runMain corundum.AxisExtractHeaderVerilog; \
 	"
 
 formal:

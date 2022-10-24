@@ -9,7 +9,7 @@ import spinal.lib.bus.amba4.axi._
 import scala.math._
 
 // companion object
-object CorundumEthAxisRx {
+object AxisExtractHeader {
 }
 
 /* goal:
@@ -19,17 +19,18 @@ object CorundumEthAxisRx {
  * source is the output packet (Ethernet payload)
  */
 
-case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Component {
+case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Component {
   val headerWidth = headerWidthBytes * 8
   // currently only single beat headers are supported to be stripped off
-  require(headerWidth <= dataWidth, s"headerWidth <= dataWidth, needed because CorundumEthAxisRx does not support multibeat headers yet.")
+  require(headerWidth <= dataWidth, s"headerWidth <= dataWidth, needed because AxisExtractHeader does not support multibeat headers yet.")
   val io = new Bundle {
     // I/O is only the Corundum Frame tdata payload
     val sink = slave Stream(Fragment(Bits(dataWidth bits)))
     val source = master Stream(Fragment(Bits(dataWidth bits)))
-    val header = out Bits(headerWidth bits)
     // sink_length is given in bytes
     val sink_length = in UInt(12 bits)
+
+    val header = out Bits(headerWidth bits)
     val source_length = out UInt(12 bits)
     val source_remaining = out UInt(12 bits)
   }
@@ -47,6 +48,7 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
 
   val remaining = Reg(SInt(13 bits))
   val source_payload_length = Reg(SInt(13 bits))
+  val calculated_payload_length = Reg(SInt(13 bits))
 
 // for production use this
 //  } otherwise /* { not first beat } */ {
@@ -73,6 +75,17 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
     remaining := remaining
   }
 
+  when (x_is_first_beat) {
+    calculated_payload_length := dataWidth/8 - headerWidthBytes
+  } otherwise {
+    when (x.fire) {
+      calculated_payload_length := calculated_payload_length + dataWidth/8
+    }
+    when (z.fire) {
+      calculated_payload_length := calculated_payload_length - dataWidth/8
+    }
+  }
+
   // determine when y becomes valid or invalid
 
   val remaining_y = RegNextWhen(remaining - dataWidth/8, x.fire, S(0))
@@ -89,6 +102,9 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
 
   val y_has_last_data = y_valid & y_last & (remaining >= 1) & (remaining <= dataWidth/8)
   val x_has_last_data = y_valid & x.valid & x.last & (remaining >= 1) & (remaining <= dataWidth/8)
+  // unused
+  val y_has_last_data2 = y_valid & y_last & (calculated_payload_length >= 1) & (calculated_payload_length <= dataWidth/8)
+  val x_has_last_data2 = y_valid & x.valid & x.last & (calculated_payload_length >= 1) & (calculated_payload_length <= dataWidth/8)
 
 
   z.payload.last := y_has_last_data | x_has_last_data
@@ -135,9 +151,13 @@ case class CorundumEthAxisRx(dataWidth : Int, headerWidthBytes: Int) extends Com
   addPrePopTask(() => renameIO())
 }
 
-//Generate the CorundumEthAxisRx's Verilog
-object CorundumEthAxisRxVerilog {
+//Generate the AxisExtractHeader's Verilog
+object AxisExtractHeaderVerilog {
   def main(args: Array[String]) {
-    SpinalVerilog(new CorundumEthAxisRx(512, 14 * 8))
+//    val toplevel = new AxisExtractHeader(128, 14/*Ethernet header size in bytes*/)
+//    val config = SpinalConfig()
+//    config.generateVerilog(toplevel)
+//    SpinalVerilog(toplevel)
+    SpinalVerilog(new AxisExtractHeader(128, 14/*Ethernet header size in bytes*/))
   }
 }

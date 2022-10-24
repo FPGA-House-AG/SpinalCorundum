@@ -6,13 +6,14 @@ import spinal.core.sim._
 
 import scala.util.Random
 
-object CorundumEthAxisRxSim {
+object AxisExtractHeaderSim {
   def main(args: Array[String]) {
     val dataWidth = 32
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
-    SimConfig.withFstWave.doSim(new CorundumEthAxisRx(dataWidth/*bits*/, 0/*bytes header*/)){dut =>
-
+    SimConfig
+    .withFstWave
+    .doSim(new AxisExtractHeader(dataWidth/*bits*/, 3/*bytes header*/)){dut =>
 
       SimTimeout(100000 * 10)
 
