@@ -89,7 +89,9 @@ spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameStash.scala
 rtl: src/main/scala/corundum/CorundumFrameFilter.scala
-rtl: src/main/scala/corundum/CorundumFrameWriterSim.scala
+rtl: src/main/scala/corundum/CorundumFrameReader.scala
+rtl: src/main/scala/corundum/CorundumFrameWriter.scala
+rtl: src/main/scala/corundum/CorundumEthAxisRx.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
@@ -97,6 +99,7 @@ rtl: src/main/scala/corundum/CorundumFrameWriterSim.scala
 	runMain corundum.CorundumFrameFilterVerilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
+	runMain corundum.CorundumEthAxisRxVerilog; \
 	"
 
 formal:
