@@ -58,7 +58,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   val minPackets = 1
   val fifoSize = minPackets * maxFragmentWords
   val keepWidth = dataWidth/8
-  val fmaxFrameBytes = maxFragmentWords * keepWidth
+  val maxFrameBytes = maxFragmentWords * keepWidth
   val io = new Bundle {
     val sink = slave Stream new Fragment(CorundumFrame(dataWidth))
     val source = master Stream new Fragment(CorundumFrame(dataWidth))
@@ -134,12 +134,12 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   // the frame_length is max_words-1 due to the previous (non-last) beat (length result has 1 cycle latency)
   // and the current beat is an intermediate beat (resulting in maximum frame length)
   // thus the next beat will make the frame oversized
-  val frame_going_oversize_event = (frame_length === (fmaxFrameBytes - keepWidth)) & !was_last & is_intermediate_beat
+  val frame_going_oversize_event = (frame_length === (maxFrameBytes - keepWidth)) & !was_last & is_intermediate_beat
   
   // frame_too_large will go high on the last beat that fits in max_words
   // it indicates the frame has been truncated, and the remainder should be ignored
-    val frame_too_large = Reg(Bool()) init (False)
-    when (is_first_beat) {
+  val frame_too_large = Reg(Bool()) init (False)
+  when (is_first_beat) {
     frame_too_large := False
   } elsewhen (frame_going_oversize_event) {
     frame_too_large := True 
@@ -162,7 +162,17 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   // do not push data beyond truncation */
   x2.valid := x.valid & (!frame_too_large | frame_going_oversize_event)
   x2.payload.tuser := x.payload.tuser
-  x2.payload.tdata := x.payload.tdata
+  // clear out unused bytes to zero
+  x2.payload.tdata := 0
+  for (i <- 0 until keepWidth) {
+    when (x2.payload.tkeep(i)) {
+      x2.payload.tdata(i*8 + 7 downto i*8).assignFromBits(x.payload.tdata(i*8 + 7 downto i*8))
+    }
+    //.otherwise {
+    //  x2.payload.tdata(i*8 + 7 downto i*8) := 0
+    //}
+  }
+  //x2.payload.tdata := x.payload.tdata
   x2.payload.tkeep := x.payload.tkeep
   x2.last := (x.last & !frame_too_large) | frame_going_oversize_event
   x.ready := x2.ready
@@ -236,7 +246,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
       severity  = ERROR
     )
     assert(
-      assertion = (!io.length_valid | io.length <= fmaxFrameBytes),
+      assertion = (!io.length_valid | io.length <= maxFrameBytes),
       message = "Passed frame lengths are within maximum length bound.",
       severity  = ERROR
     )
