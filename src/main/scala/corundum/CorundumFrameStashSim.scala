@@ -66,6 +66,9 @@ object CorundumFrameStashSim {
             for (i <- 0 until tkeep_len) {
               data0 = (data0 << 8) | (remaining - i)
             }
+            for (i <- tkeep_len until keepWidth) {
+              data0 = data0 | (255 << i*8)
+            }
           }
 
           dut.io.sink.valid #= valid0
