@@ -55,9 +55,9 @@ object AxisExtractHeaderSim {
           //}
           
           printf(s"DATA == 0x%0${dw}X %02d/%02d %s%s\n", dut.io.source.payload.fragment.toBigInt,
-           remaining, packet_length,
-           if (first_beat) "*" else s" ",
-           if (dut.io.source.payload.last.toBoolean) "L" else s" ")
+            remaining, packet_length,
+            if (first_beat) "*" else s" ",
+            if (dut.io.source.payload.last.toBoolean) "L" else s" ")
           in_packet_continuation = !dut.io.source.payload.last.toBoolean
           remaining = if (remaining >= dataWidth/8) remaining - dataWidth/8 else 0
         }

@@ -12,11 +12,14 @@ import scala.math._
 object AxisExtractHeader {
 }
 
-/* goal:
- * split fixed size (14 bytes) Ethernet header in the first bytes, pass the remaining payload
+/* Split off a fixed size header (for example 14 bytes Ethernet header in the first bytes), pass the remaining payload
+ *
  * stream sink to payload as simple as possible
- * length is the input packet length in bytes, this packet arrives on the sink
+ * sink accepts AXIS frames (Ethernet packet)
+ * sink_length is the input packet length in bytes, this packet arrives on the sink
+ *
  * source is the output packet (Ethernet payload)
+ * source_length is the output packet (Ethernet payload)
  */
 
 case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Component {
