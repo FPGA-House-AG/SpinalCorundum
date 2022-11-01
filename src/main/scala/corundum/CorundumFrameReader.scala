@@ -33,7 +33,8 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
     // this is where driveFrom() reads from
     val output = master(Stream(Fragment(CorundumFrame(dataWidth))))
   }
-  // this is a common workaround for driveFrom()
+  // pass component input to output towards bus controller
+  // (this is a recommended workaround for bus controllers in SpinalHDL)
   io.output << io.input
 
   def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
@@ -117,7 +118,7 @@ object CorundumFrameReaderAxi4 {
 // slave must be naturally aligned
 case class CorundumFrameReaderAxi4(dataWidth : Int, busCfg : Axi4Config) extends Component {
 
-  // copy AXI4 properties from bus, but override address with from slave
+  // copy AXI4 properties from bus, but override address width for slave
   val slaveCfg = busCfg.copy(addressWidth = CorundumFrameReader.addressWidth)
   
   val io = new Bundle {
