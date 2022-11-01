@@ -15,13 +15,14 @@
 
 .PHONY: spinal clean simulate repl sim_repl
 
-# continuous build (using sbt ~)
+# continuous build (using sbt "~" REPL feature) on save in editor
 repl:
 	set -e
 	sbt "~ \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
+	runMain corundum.CorundumFrameFilterAxi4Verilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
 	runMain corundum.AxisExtractHeaderVerilog \
@@ -52,6 +53,16 @@ sim_repl_eth:
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ \
 	test:runMain corundum.AxisExtractHeaderSim; \
+	"
+
+sim_repl_filter:
+	set -e
+# run in background
+	gtkwave -F -f ./simWorkspace/CorundumFrameFilterAxi4/test.fst -a ./CorundumFrameFilterAxi4.gtkw &
+# continuous build/simulate on saved source code changes
+# press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+	sbt "~ \
+	test:runMain corundum.CorundumFrameFilterAxi4Sim; \
 	"
 
 sim_writer:

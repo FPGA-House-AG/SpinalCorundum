@@ -10,6 +10,7 @@ import scala.math._
 
 // companion object
 object CorundumFrameFilter {
+  final val addressWidth = 10
 }
 
 case class CorundumFrameFilter(dataWidth : Int) extends Component {
@@ -34,7 +35,9 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   val keepfilter_tkeep = Reg(Bits(dataWidth/8 bits))
   val dropfilter_tkeep = Reg(Bits(dataWidth/8 bits))
   for (i <- 0 until dataWidth/8) {
-    // if any of the bits are in the filter mask, enable the corresponding byte
+    // if any of the bits of a certain byte are in the filter mask, the
+    // input byte should be present; to check enable the corresponding
+    // bit in tkeep
     keepfilter_tkeep(i) := io.keepMask((i+1)*8-1 downto i*8).asBits.orR
     dropfilter_tkeep(i) := io.dropMask((i+1)*8-1 downto i*8).asBits.orR
   }
@@ -57,33 +60,55 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   //printf("hashString = %s\n", SourceCodeGitHash())
   //printf("commitCount = %d\n", SourceCodeGitCommits())
 
-  def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
-    val busCtrlWrapped = new BusSlaveFactoryAddressWrapper(busCtrl, baseAddress)
-
+  def driveFrom(busCtrl : BusSlaveFactory) = new Area {
     // leet code for Blackwire 1 Filter
-    busCtrlWrapped.read(B"32'bB1F117E5", 0x00, documentation = null)
+    busCtrl.read(B"32'hB1F117E5", 0x00, documentation = null)
     // 16'b version and 16'b revision
-    busCtrlWrapped.read(B"32'b00010001", 0x04, documentation = null)
+    busCtrl.read(B"32'b00010001", 0x04, documentation = null)
     // some strictly increasing (not per se incrementing) build number
     val gitCommits = B(BigInt(SourceCodeGitCommits()), 32 bits)
-    busCtrlWrapped.read(gitCommits, 0x08, 0, null)
+    busCtrl.read(gitCommits, 0x08, 0, null)
     val gitHash = B(BigInt(SourceCodeGitHash(), 16), 160 bits)
-    busCtrlWrapped.readMultiWord(gitHash, 0x0c, documentation = null)
+    busCtrl.readMultiWord(gitHash, 0x0c, documentation = null)
 
-    val keepFilter = Reg(Bits(dataWidth bits))
-    busCtrlWrapped.writeMultiWord(keepFilter, 0x40, documentation = null)
-    val keepMask = Reg(Bits(dataWidth bits))
-    busCtrlWrapped.writeMultiWord(keepMask, 0x80, documentation = null)
-    val dropFilter = Reg(Bits(dataWidth bits))
-    busCtrlWrapped.writeMultiWord(dropFilter, 0xc0, documentation = null)
+    val keepFilter = Reg(Bits(dataWidth bits)) init(0)
+    busCtrl.writeMultiWord(keepFilter, 0x40, documentation = null)
+    val keepMask = Reg(Bits(dataWidth bits)) init(0)
+    busCtrl.writeMultiWord(keepMask, 0x80, documentation = null)
+    val dropFilter = Reg(Bits(dataWidth bits)) init(0)
+    busCtrl.writeMultiWord(dropFilter, 0xc0, documentation = null)
     val dropMask = Reg(Bits(dataWidth bits))
-    busCtrlWrapped.writeMultiWord(dropMask, 0x100, documentation = null)
+    //dropMask.init((1 << dataWidth) - 1)
+    busCtrl.writeMultiWord(dropMask, 0x100, documentation = null)
 
     io.keepFilter := keepFilter
     io.keepMask := keepMask
     io.dropFilter := dropFilter
     io.dropMask := dropMask
   }
+}
+
+// companion object
+object CorundumFrameFilterAxi4 {
+}
+
+// slave must be naturally aligned
+case class CorundumFrameFilterAxi4(dataWidth : Int, busCfg : Axi4Config) extends Component {
+
+  // copy AXI4 properties from bus, but override address width for slave
+  val slaveCfg = busCfg.copy(addressWidth = CorundumFrameFilter.addressWidth)
+  
+  val io = new Bundle {
+    val sink = slave Stream Fragment(CorundumFrame(dataWidth))
+    val source = master Stream Fragment(CorundumFrame(dataWidth))
+    val ctrlbus = slave(Axi4(slaveCfg))
+  }
+
+  val filter = CorundumFrameFilter(dataWidth)
+  val ctrl = new Axi4SlaveFactory(io.ctrlbus)
+  val bridge = filter.driveFrom(ctrl)
+  filter.io.sink << io.sink
+  io.source << filter.io.source
 }
 
 //Generate the CorundumFrameFilter's Verilog
@@ -95,6 +120,17 @@ object CorundumFrameFilterVerilog {
     val config = SpinalConfig()
     config.generateVerilog({
       val toplevel = new CorundumFrameFilter(512)
+      XilinxPatch(toplevel)
+    })
+  }
+}
+
+//Generate the CorundumFrameFilter's Verilog
+object CorundumFrameFilterAxi4Verilog {
+  def main(args: Array[String]) {
+    val config = SpinalConfig()
+    config.generateVerilog({
+      val toplevel = new CorundumFrameFilterAxi4(512, Axi4Config(CorundumFrameFilter.addressWidth, 32, 2, useQos = false, useRegion = false))
       XilinxPatch(toplevel)
     })
   }
