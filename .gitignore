@@ -46,3 +46,13 @@ tmp/
 null
 *.sv
 *.v
+*.fst
+
+# Python
+*.pyc
+__pycache__
+
+# CocoTB
+cocotb/**/sim_build
+cocotb/**/results.xml
+cocotb/**/iverilog_dump.v
