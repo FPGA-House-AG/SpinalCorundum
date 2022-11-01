@@ -1,12 +1,19 @@
-Fork
-====
-This fork of SpinalTemplateSbt is aimed at learning SpinalHDL designs, building some components
-for Corundum data flow.
+SpinalCorundum
+==============
+
+Ethernet processing modules components (or modules) for FPGA that can be used to extend the Corundum FPGA PCIe/Ethernet framework. The modules are operating on AXI Streaming interfaces
+and can be controlled through an (optional) AXI4 slave.
+
+Because of the plumbing involved, SpinalHDL was investigated as an appropriate HDL to generate
+the RTL. SpinalHDL has all the benefits of RTL with the power of a Scala (Java-alike) language
+to elaborate the HDL. Creating and connecting bus and stream interfaces is extremely simple.
 
 SpinalHDL Docker
 ================
 git@github.com:likewise/vexriscv-dockerfile.git
 754f14bcec9eef288c46b4e777dd9be147c4e63e
+
+The remainder of these notes are from the SpinalHDLSbtTemplate project, from which this is forked.
 
 Spinal Base Project
 ============
