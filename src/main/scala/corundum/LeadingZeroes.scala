@@ -9,7 +9,7 @@ object LeadingZeroes {
     // https://electronics.stackexchange.com/questions/196914/verilog-synthesize-high-speed-leading-zero-count
     // Code by @typingArtist on SpinalHDL gitter channel: https://gitter.im/SpinalHDL/SpinalHDL?at=5bbe075e435c2a518e81dd83
 
-    def apply(input: Bits): UInt = calcOnes(~input).resize(log2Up(input.getWidth+1))
+    def apply(input: Bits): UInt = calcOnes(~input).resize(log2Up(input.getWidth+1)) 
 
     def calcOnes(input: Bits): UInt = input.getWidth match {
         case 0 => U""
