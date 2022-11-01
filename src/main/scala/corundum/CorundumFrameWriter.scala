@@ -9,9 +9,9 @@ import spinal.lib.bus.amba4.axi._
 import scala.math._
 
 // companion object
-object CorundumFrameWriter {
-  final val addressWidth = 10
-}
+//object CorundumFrameWriter {
+//  final val addressWidth = 10
+//}
 
 // Write a stream of fragments (i.e. generate a packet stream)
 
@@ -26,8 +26,6 @@ object CorundumFrameWriter {
 // For our purpose, not yet a limitation. Limitation is mostly due to tkeep updates.
 
 case class CorundumFrameWriter(dataWidth : Int) extends Component {
-  //val slaveAddressWidth = 10
-
   //require(dataWidth == 64)
   val io = new Bundle {
     // this is where driveFrom() drives into
@@ -139,13 +137,14 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 
 // companion object
 object CorundumFrameWriterAxi4 {
+  final val slaveAddressWidth = 10
 }
 
 // slave must be naturally aligned
 case class CorundumFrameWriterAxi4(dataWidth : Int, busCfg : Axi4Config) extends Component {
 
   // copy AXI4 properties from bus, but override address with from slave
-  val slaveCfg = busCfg.copy(addressWidth = CorundumFrameWriter.addressWidth)
+  val slaveCfg = busCfg.copy(addressWidth = CorundumFrameWriterAxi4.slaveAddressWidth)
   
   val io = new Bundle {
     val output = master(Stream(Fragment(CorundumFrame(dataWidth))))
@@ -174,7 +173,7 @@ object CorundumFrameWriterAxi4Verilog {
   def main(args: Array[String]) {
     val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameWriterAxi4(512, Axi4Config(CorundumFrameWriter.addressWidth, 32, 2, useQos = false, useRegion = false))
+      val toplevel = new CorundumFrameWriterAxi4(512, Axi4Config(CorundumFrameWriterAxi4.slaveAddressWidth, 32, 2, useQos = false, useRegion = false))
       XilinxPatch(toplevel)
     })
   }
