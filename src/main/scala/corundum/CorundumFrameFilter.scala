@@ -8,6 +8,12 @@ import spinal.lib.bus.amba4.axi._
 
 import scala.math._
 
+// "0102030405060102030405060102" Ethernet
+// "xxxx11887766554433221145" IPv4, IHL=5, protocol=0x11 (UDP)
+// "0000FF0000000000000000FF"
+// "CCCCLLLLb315SSSS", DDDD=port 5555 (0x15b3)
+// "00000000FFFF0000"
+
 // companion object
 object CorundumFrameFilter {
   final val addressWidth = 10
