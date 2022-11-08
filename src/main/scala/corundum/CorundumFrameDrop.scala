@@ -32,12 +32,14 @@ case class CorundumFrameDrop(dataWidth : Int) extends Component {
   // capture the drop flag on first
   val drop_this_packet = RegNextWhen(io.drop, io.sink.isFirst)
 
+  // skid buffer on input sink
   x << io.sink.m2sPipe().s2mPipe()
+  // drop packet conditionally
   y << x.throwWhen(drop_this_packet)
   io.source << y
 }
 
-// Gßƒenerate the CorundumFrameDrop's Verilog
+// Generate the CorundumFrameDrop's Verilog
 object CorundumFrameDropVerilog {
   def main(args: Array[String]) {
    val config = SpinalConfig()
