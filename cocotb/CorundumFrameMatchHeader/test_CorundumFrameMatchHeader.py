@@ -61,6 +61,7 @@ def close_tap(name="tap0"):
 	print(cmd1)
 	subprocess.run(cmd1, shell=True)
 
+# Linux host interface TAP IP is hardcoded as 192.168.255.2 here 
 def create_tap(name="tap0", ip="192.168.255.1"):
 	cocotb.log.info("Attempting to create interface %s (%s)" % (name, ip))
 	TUNSETIFF = 0x400454ca
@@ -72,8 +73,9 @@ def create_tap(name="tap0", ip="192.168.255.1"):
 	tun_num = int(name.split('tap')[-1])
 	cmd1='sudo tunctl -u %s -t %s'% (getpass.getuser(), name)
 	print(cmd1)
-	subprocess.check_call(cmd1,shell=True)
-	subprocess.check_call('sudo ifconfig %s 192.168.255.2 up' % (name), shell=True)
+	subprocess.check_call(cmd1, shell=True)
+	subprocess.check_call('sudo ip link set %s up' % (name), shell=True)
+	subprocess.check_call('sudo ip addr add 192.168.255.2 peer %s dev %s' % (ip, name), shell=True)
 
 	while True:
 		try:
@@ -90,7 +92,9 @@ def create_tap(name="tap0", ip="192.168.255.1"):
 				raise e
 
 		tun_num += 1
-	subprocess.check_call('sudo ip link set address aa:bb:cc:dd:ee:ff dev %s' % name, shell=True)
+	subprocess.check_call('sudo ip link set address aa:bb:cc:22:22:22 dev %s' % name, shell=True)
+    # Prevent ICMP as first packets, forcibly set ARP cache
+	subprocess.check_call('sudo arp -s %s aa:bb:cc:11:11:11' % ip, shell=True)
 
 	fcntl.ioctl(tun, TUNSETOWNER, os.getuid())
 	name = 'tap{}'.format(tun_num)
@@ -102,14 +106,15 @@ class TB(object):
         self.dut = dut
 
         self.log = logging.getLogger("cocotb.tb")
-        #self.log.setLevel(logging.DEBUG)
+        self.log.setLevel(logging.DEBUG)
 
         cocotb.fork(Clock(dut.clk, 4, units="ns").start())
 
         # connect TB source to DUT sink, and vice versa
-        # byte_lanes = 16 is workaround for https://github.com/alexforencich/cocotbext-axi/issues/46
-        self.source = AxiStreamSource(AxiStreamBus.from_prefix(dut, "sink"),     dut.clk, dut.reset, byte_lanes = 16)
-        self.sink =   AxiStreamSink  (AxiStreamBus.from_prefix(dut, "source"  ), dut.clk, dut.reset, byte_lanes = 16)
+        # byte_lanes = 16 is a workaround for bug https://github.com/alexforencich/cocotbext-axi/issues/46
+        # in case no TKEEP[] signals are used
+        self.source = AxiStreamSource(AxiStreamBus.from_prefix(dut, "sink"),     dut.clk, dut.reset) #, byte_lanes = 16)
+        self.sink =   AxiStreamSink  (AxiStreamBus.from_prefix(dut, "source"  ), dut.clk, dut.reset) #, byte_lanes = 16)
 
         tap,tapname = create_tap()
         self.tap = tap
@@ -159,7 +164,7 @@ class TB(object):
             if (frame_tb2tap == True):
                 # forward Ethernet frame from TB to TAP
                 rx_pkt = bytes(rx_frame)
-                self.log.info("tapit() passing Ethernet frame from TB to TAP: %s" % bytes(rx_pkt))
+                self.log.info("tapit() passing Ethernet frame from TB to TAP: %s" % bytes(rx_pkt).hex())
                 os.set_blocking(self.tapfd, True)
                 packet = os.write(self.tapfd, rx_pkt)
 
@@ -175,7 +180,7 @@ class TB(object):
             if (frame_tap2tb == True):
                 # forward Ethernet frame from TAP to TB
                 tx_pkt = bytearray(packet)
-                self.log.info("--- Passing packet received on TAP to TB: %s" % bytes(tx_pkt))
+                self.log.info("--- Passing packet received on TAP to TB: %s" % bytes(tx_pkt).hex())
                 tx_frame = AxiStreamFrame(tx_pkt)
                 self.dut.sink_length.value = len(tx_pkt)
                 await self.source.send(tx_frame)
@@ -329,8 +334,8 @@ rtl_dir = os.path.abspath(os.path.join(tests_dir, '..', '..'))
 #pcie_rtl_dir = os.path.abspath(os.path.join(lib_dir, 'pcie', 'rtl'))
 
 
-def test_AxisExtractHeader(request):
-    dut = "AxisExtractHeader"
+def test_CorundumFrameMatchHeader(request):
+    dut = "CorundumFrameMatchHeader"
     module = os.path.splitext(os.path.basename(__file__))[0]
     toplevel = dut
 

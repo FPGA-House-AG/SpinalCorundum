@@ -35,7 +35,7 @@ WAVES ?= 1
 COCOTB_HDL_TIMEUNIT = 1ns
 COCOTB_HDL_TIMEPRECISION = 1ps
 
-DUT      = AxisExtractHeader
+DUT      = CorundumFrameMatchHeader
 TOPLEVEL = $(DUT)
 MODULE   = test_$(DUT)
 #VERILOG_SOURCES += ../../rtl/$(DUT).v
