@@ -19,7 +19,7 @@ object CorundumFrameMatchHeader {
   final val addressWidth = 10
 }
 
-case class CorundumFrameMatchType123() extends Component {
+case class CorundumFrameMatchWireguard() extends Component {
   val dataWidth : Int = 512
   val io = new Bundle {
     val sink = slave Stream Fragment(CorundumFrame(dataWidth))
@@ -58,6 +58,9 @@ case class CorundumFrameMatchType123() extends Component {
   io.is_type4 := is_type4_on_first_beat
   x << io.sink
   io.source << x.stage()
+
+  // Rename SpinalHDL library defaults to AXI naming convention
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
 
 
@@ -167,15 +170,15 @@ object CorundumFrameMatchHeaderAxi4Verilog {
   }
 }
 
-//Generate the CorundumFrameMatchType123's Verilog
-object CorundumFrameMatchType123Verilog {
+//Generate the CorundumFrameMatchWireguard's Verilog
+object CorundumFrameMatchWireguardVerilog {
 //  def main(args: Array[String]) {
 //    SpinalVerilog(new CorundumFrameMatchHeader)
 //  }
   def main(args: Array[String]) {
     val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameMatchType123()
+      val toplevel = new CorundumFrameMatchWireguard()
       XilinxPatch(toplevel)
     })
   }
