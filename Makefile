@@ -21,7 +21,10 @@ repl:
 	sbt "~ \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
+	runMain corundum.CorundumFrameStashVhdl; \
+	runMain corundum.CorundumFrameDropVerilog; \
 	runMain corundum.CorundumFrameFilterVerilog; \
+	runMain corundum.CorundumFrameMatchHeaderVerilog; \
 	runMain corundum.CorundumFrameFilterAxi4Verilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
@@ -31,10 +34,10 @@ repl:
 sim_repl:
 	set -e
 # run in background
-	#gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst   -a ./CorundumFrameStash.gtkw   &
+	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst   -a ./CorundumFrameStash.gtkw   &
 	#gtkwave -F -f ./simWorkspace/CorundumFrameMuxPrio/test.fst -a ./CorundumFrameMuxPrio.gtkw &
 	#gtkwave -F -f ./simWorkspace/CorundumFrameFilter/test.fst -a ./CorundumFrameFilter.gtkw &
-	gtkwave -F -f ./simWorkspace/AxisExtractHeader/test.fst -a ./CorundumFrameEthAxisRx.gtkw &
+	#gtkwave -F -f ./simWorkspace/AxisExtractHeader/test.fst -a ./CorundumFrameEthAxisRx.gtkw &
 # continuous build/simulate on saved source code changes
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ \
@@ -96,8 +99,10 @@ spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
 	sbt "runMain corundum.CorundumFrameMuxPrioVerilog"
 
-# generate Verilog
+# generate Verilog (and sometimes VHDL)
 rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
+rtl: src/main/scala/corundum/CorundumFrameDrop.scala
+rtl: src/main/scala/corundum/CorundumFrameMatchHeader.scala
 rtl: src/main/scala/corundum/CorundumFrameStash.scala
 rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 rtl: src/main/scala/corundum/CorundumFrameReader.scala
@@ -106,7 +111,11 @@ rtl: src/main/scala/corundum/AxisExtractHeader.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
+	runMain corundum.CorundumFrameDropVerilog; \
+	runMain corundum.CorundumFrameMatchHeaderVerilog; \
+	runMain corundum.CorundumFrameMatchWireguardVerilog; \
 	runMain corundum.CorundumFrameStashVerilog; \
+	runMain corundum.CorundumFrameStashVhdl; \
 	runMain corundum.CorundumFrameFilterVerilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
