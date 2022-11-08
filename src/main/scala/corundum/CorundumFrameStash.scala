@@ -51,14 +51,20 @@ import scala.util.Random
 
 // companion object
 object CorundumFrameStash {
+  def nextPowerofTwo2(x: Int): Int = {
+    var y = x - 1
+    for (z <- 1 to 16) y = y | (y >> z)
+    y + 1
+  }
+  def apply(dataWidth : Int) : CorundumFrameStash = {
+    val fifoSize = nextPowerofTwo2((1532 + (dataWidth/8) - 1) / (dataWidth/8))
+    new CorundumFrameStash(dataWidth, fifoSize)
+  }
 }
 
-case class CorundumFrameStash(dataWidth : Int) extends Component {
-  val maxFragmentWords = 8
-  val minPackets = 1
-  val fifoSize = minPackets * maxFragmentWords
+case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component {
   val keepWidth = dataWidth/8
-  val maxFrameBytes = maxFragmentWords * keepWidth
+  val maxFrameBytes = fifoSize * keepWidth
   val io = new Bundle {
     val sink = slave Stream new Fragment(CorundumFrame(dataWidth))
     val source = master Stream new Fragment(CorundumFrame(dataWidth))
@@ -68,6 +74,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     val length_valid = out Bool()
     //val full = out Bool()
     //println(log2Up(fifoSize))
+    val availability = out UInt()
   }
   val length_and_truncated = new Bundle {
     val length = UInt(12 bits)
@@ -75,6 +82,8 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   }
 
   val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), fifoSize)
+
+  io.availability := fifo.io.availability
 
   // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
@@ -88,7 +97,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
 
   // gather at least minPackets packet(s) in the FIFO before continuing the pop/output stream
   // however if the FIFO becomes full, also continue, to prevent corruption
-  val fifo_holds_complete_packet = (packetsInFifoCounter.value >= minPackets)
+  val fifo_holds_complete_packet = (packetsInFifoCounter.value >= 1)
   val z = y.continueWhen(fifo_holds_complete_packet).m2sPipe().s2mPipe()
 
   when (fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last) {
@@ -145,6 +154,8 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     frame_too_large := True 
   }
 
+  // worst-case, a packet is a single beat, so this FIFO must be at least the size of
+  // the data stream FIFO, plus extra 
   val length_fifo = new StreamFifo(UInt(12 bits), fifoSize + 4/*@TODO does this match registers? */)
 
   val push_length_on_last = RegNext(is_last_beat & !frame_too_large) init(False)
@@ -193,6 +204,9 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
   val missing = (io.source.valid & !length_fifo.io.pop.valid)
 
   io.packets := packetsInFifoCounter.value
+
+  // Rename SpinalHDL library defaults to AXI naming convention
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 
   // formal verification
   GenerationFlags.formal {
@@ -268,7 +282,7 @@ case class CorundumFrameStash(dataWidth : Int) extends Component {
     assume(io.sink.tdata === 0x01)
     cover(io.packets === fifoSize)
     cover(io.packets === 0)
-    cover(io.packets === minPackets)
+    cover(io.packets === 1)
     cover(fifo.io.occupancy === fifoSize)
     cover(fifo_holds_complete_packet)
     cover(frame_going_oversize_event)
@@ -293,8 +307,9 @@ object CorundumFrameStashVerilog {
   def main(args: Array[String]) {
    val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new CorundumFrameStash(512)
-      XilinxPatch(toplevel)
+      val toplevel = CorundumFrameStash(dataWidth = 512)
+      //XilinxPatch(toplevel)
+      toplevel
     })
   }
 }
@@ -303,8 +318,9 @@ object CorundumFrameStashSystemVerilogWithFormal {
   def main(args: Array[String]) {
     val config = SpinalConfig()
     config.includeFormal.generateSystemVerilog({
-      val toplevel = new CorundumFrameStash(512)
-      XilinxPatch(toplevel)
+      val toplevel = CorundumFrameStash(dataWidth = 512, 32)
+      //XilinxPatch(toplevel)
+      toplevel
     })
   }
 }
@@ -312,6 +328,6 @@ object CorundumFrameStashSystemVerilogWithFormal {
 //Generate the CorundumFrameStash's VHDL
 object CorundumFrameStashVhdl {
   def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameStash(512))
+    SpinalVhdl(CorundumFrameStash(dataWidth = 512))
   }
 }
