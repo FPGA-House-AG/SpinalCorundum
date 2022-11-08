@@ -61,8 +61,9 @@ def close_tap(name="tap0"):
 	print(cmd1)
 	subprocess.run(cmd1, shell=True)
 
-# Linux host interface TAP IP is hardcoded as 192.168.255.2 here 
-def create_tap(name="tap0", ip="192.168.255.1"):
+# Linux host interface TAP IP is hardcoded as 192.168.255.1 further
+# Linux apps <-> 192.168.255.1 <-> 192.168.255.2 <-> CocoTB <-> DUT
+def create_tap(name="tap0", ip="192.168.255.2"):
 	cocotb.log.info("Attempting to create interface %s (%s)" % (name, ip))
 	TUNSETIFF = 0x400454ca
 	TUNSETOWNER = TUNSETIFF + 2
@@ -75,7 +76,7 @@ def create_tap(name="tap0", ip="192.168.255.1"):
 	print(cmd1)
 	subprocess.check_call(cmd1, shell=True)
 	subprocess.check_call('sudo ip link set %s up' % (name), shell=True)
-	subprocess.check_call('sudo ip addr add 192.168.255.2 peer %s dev %s' % (ip, name), shell=True)
+	subprocess.check_call('sudo ip addr add 192.168.255.1 peer %s dev %s' % (ip, name), shell=True)
 
 	while True:
 		try:
@@ -151,6 +152,8 @@ class TB(object):
 #        print(f"stopped at {time.strftime('%X')}")
 
     async def tapit(self):
+        pkts_sent = 0
+        pkts_rcvd = 0
         while True:
             # assume Ethernet frame on TB sink
             frame_tb2tap = True
@@ -167,6 +170,7 @@ class TB(object):
                 self.log.info("tapit() passing Ethernet frame from TB to TAP: %s" % bytes(rx_pkt).hex())
                 os.set_blocking(self.tapfd, True)
                 packet = os.write(self.tapfd, rx_pkt)
+                pkts_sent += 1
 
             # assume Ethernet frame on TAP interface
             frame_tap2tb = True
@@ -184,6 +188,10 @@ class TB(object):
                 tx_frame = AxiStreamFrame(tx_pkt)
                 self.dut.sink_length.value = len(tx_pkt)
                 await self.source.send(tx_frame)
+                pkts_rcvd += 1
+            if (pkts_rcvd + pkts_sent > 4):
+                break
+
 
     @cocotb.function
     async def tap2tb(self):
@@ -334,8 +342,8 @@ rtl_dir = os.path.abspath(os.path.join(tests_dir, '..', '..'))
 #pcie_rtl_dir = os.path.abspath(os.path.join(lib_dir, 'pcie', 'rtl'))
 
 
-def test_CorundumFrameMatchHeader(request):
-    dut = "CorundumFrameMatchHeader"
+def test_CorundumFrameMatchWireguard(request):
+    dut = "CorundumFrameMatchWireguard"
     module = os.path.splitext(os.path.basename(__file__))[0]
     toplevel = dut
 
@@ -345,9 +353,9 @@ def test_CorundumFrameMatchHeader(request):
 
     parameters = {}
 
-    parameters['DATA_WIDTH'] = 16 * 8 #512
+    #parameters['DATA_WIDTH'] = 16 * 8 #512
     # divide by 8?
-    parameters['KEEP_WIDTH'] = parameters['DATA_WIDTH'] / 8
+    #parameters['KEEP_WIDTH'] = parameters['DATA_WIDTH'] / 8
 
     extra_env = {f'PARAM_{k}': str(v) for k, v in parameters.items()}
 
