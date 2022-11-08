@@ -14,7 +14,6 @@ object AxisExtractHeader {
 
 /* Split off a fixed size header (for example 14 bytes Ethernet header in the first bytes), pass the remaining payload
  *
- * stream sink to payload as simple as possible
  * sink accepts AXIS frames (Ethernet packet)
  * sink_length is the input packet length in bytes, this packet arrives on the sink
  *
@@ -118,10 +117,10 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
   // z holds valid word when y is a single beat, or when we can combine x with a non-last y
   x.ready := z.ready
 
-    // drive payload
-    //.translateWith(x.payload(headerWidth - 1 downto  0) ## y.payload(dataWidth - 1 downto headerWidth))
-    // drive active
-    //.throwWhen(remaining <= 0)
+  // drive payload
+  //.translateWith(x.payload(headerWidth - 1 downto  0) ## y.payload(dataWidth - 1 downto headerWidth))
+  // drive active
+  //.throwWhen(remaining <= 0)
   // drive last
   //io.source <-< z.addFragmentLast((remaining > 0) && (remaining <= (dataWidth/8)))
   io.source <-< z
