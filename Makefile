@@ -48,7 +48,7 @@ sim_repl:
 	"
 	# @TODO can we kill gtkwave here?
 
-sim_repl_eth:
+sim_repl_header:
 	set -e
 # run in background
 	gtkwave -F -f ./simWorkspace/AxisExtractHeader/test.fst -a ./AxisExtractHeader.gtkw &
@@ -56,6 +56,16 @@ sim_repl_eth:
 # press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
 	sbt "~ \
 	test:runMain corundum.AxisExtractHeaderSim; \
+	"
+
+sim_repl_width:
+	set -e
+# run in background
+	gtkwave -F -f ./simWorkspace/AxisWidthAdapter/test.fst -a ./AxisWidthAdapter.gtkw &
+# continuous build/simulate on saved source code changes
+# press Shift-Alt-R in GTKWave to reload waveform after code change/save/compilation
+	sbt "~ \
+	test:runMain corundum.AxisWidthAdapterSim; \
 	"
 
 sim_repl_filter:

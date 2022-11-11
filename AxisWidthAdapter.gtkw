@@ -1,0 +1,55 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Fri Nov 11 11:00:14 2022
+[*]
+[dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/AxisWidthAdapter/test.fst"
+[dumpfile_mtime] "Fri Nov 11 10:59:45 2022"
+[dumpfile_size] 9373
+[savefile] "/home/vexriscv/project/SpinalCorundum/AxisWidthAdapter.gtkw"
+[timestart] 123
+[size] 1440 855
+[pos] -1 -1
+*-9.000000 1185 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 287
+[signals_width] 275
+[sst_expanded] 1
+[sst_vpaned_height] 241
+@28
+TOP.AxisWidthAdapter.clk
+TOP.AxisWidthAdapter.reset
+@24
+TOP.AxisWidthAdapter.sink_length[11:0]
+@22
+TOP.AxisWidthAdapter.sink_tdata[31:0]
+@28
+TOP.AxisWidthAdapter.sink_tlast
+TOP.AxisWidthAdapter.sink_tready
+TOP.AxisWidthAdapter.sink_tvalid
+@200
+-
+@24
+TOP.AxisWidthAdapter.x_length[11:0]
+@22
+TOP.AxisWidthAdapter.x_payload_fragment[31:0]
+@28
+TOP.AxisWidthAdapter.x_payload_last
+TOP.AxisWidthAdapter.x_ready
+TOP.AxisWidthAdapter.x_valid
+@200
+-
+@22
+TOP.AxisWidthAdapter.out_beat_last[11:0]
+TOP.AxisWidthAdapter.out_beat_num[11:0]
+@200
+-
+@24
+TOP.AxisWidthAdapter.source_length[11:0]
+@22
+TOP.AxisWidthAdapter.source_tdata[15:0]
+@28
+TOP.AxisWidthAdapter.source_tlast
+TOP.AxisWidthAdapter.source_tready
+TOP.AxisWidthAdapter.source_tvalid
+[pattern_trace] 1
+[pattern_trace] 0
