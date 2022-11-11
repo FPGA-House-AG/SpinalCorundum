@@ -28,7 +28,8 @@ repl:
 	runMain corundum.CorundumFrameFilterAxi4Verilog; \
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
-	runMain corundum.AxisExtractHeaderVerilog \
+	runMain corundum.AxisExtractHeaderVerilog; \
+	runMain corundum.AxisWidthAdapterVerilog; \
 	"
 
 sim_repl:
@@ -118,6 +119,7 @@ rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 rtl: src/main/scala/corundum/CorundumFrameReader.scala
 rtl: src/main/scala/corundum/CorundumFrameWriter.scala
 rtl: src/main/scala/corundum/AxisExtractHeader.scala
+rtl: src/main/scala/corundum/AxisWidthAdapter.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
@@ -130,6 +132,8 @@ rtl: src/main/scala/corundum/AxisExtractHeader.scala
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
 	runMain corundum.AxisExtractHeaderVerilog; \
+	runMain corundum.AxisWidthAdapterVerilog; \
+	runMain corundum.AxisWidthAdapterVhdl; \
 	"
 
 formal:
