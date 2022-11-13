@@ -85,6 +85,7 @@ object AxisExtractHeaderSim {
         var byte_counter = 0
 
         var clock_counter = 0
+
         // iterate over frame content
         while (remaining > 0) {
           val tkeep_len = if (remaining >= keepWidth) keepWidth else remaining;
@@ -116,7 +117,6 @@ object AxisExtractHeaderSim {
             for (i <- 0 until tkeep_len) {
               data0 = (data0 << 8) | ((packet_idx % 16) * 0x10) | ((byte_counter + tkeep_len - i) % 16)
             }
-              byte_counter += tkeep_len
           }
 
           dut.io.sink.valid #= valid0
@@ -132,6 +132,7 @@ object AxisExtractHeaderSim {
 
           if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
             remaining -= tkeep_len
+            byte_counter += tkeep_len
           }
         }
         // after each packet, introduce delay for now
