@@ -40,6 +40,8 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
 
   // skid buffers the inputs, 1 clock latency
   x << io.sink.m2sPipe().s2mPipe()
+
+  // @TODO @BUG probably broken, probably need a pipelined skid buffer
   val x_length = RegNext(io.sink_length)
 
   // extract header at first beat
