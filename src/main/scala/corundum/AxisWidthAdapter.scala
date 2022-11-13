@@ -12,7 +12,7 @@ import scala.math._
 object AxisWidthAdapter {
 }
 
-/* Split off a fixed size header (for example 14 bytes Ethernet header in the first bytes), pass the remaining payload
+/* Down size the AXIS data width with a factor of 2 or 4
  *
  * sink accepts AXIS frames (Ethernet packet)
  * sink_length is the input packet length in bytes, this packet arrives on the sink
@@ -22,7 +22,11 @@ object AxisWidthAdapter {
  */
 
 case class AxisWidthAdapter(dataWidthIn : Int, dataWidthOut: Int) extends Component {
-  //require(headerWidth <= dataWidth, s"headerWidth <= dataWidth, needed because AxisWidthAdapter does not support multibeat headers yet.")
+  /* upsizing is not supported yet */
+  require(dataWidthIn > dataWidthOut, "dataWidthOut must be an integer division of dataWidthIn")
+  /* non-integer width factors are not supported */
+  require(dataWidthIn % dataWidthOut == 0, "dataWidthOut must be an integer division of dataWidthIn")
+
   val io = new Bundle {
     // I/O is only the Corundum Frame tdata payload
     val sink = slave Stream(Fragment(Bits(dataWidthIn bits)))
@@ -113,5 +117,12 @@ case class AxisWidthAdapter(dataWidthIn : Int, dataWidthOut: Int) extends Compon
 object AxisWidthAdapterVerilog {
   def main(args: Array[String]) {
     SpinalVerilog(new AxisWidthAdapter(512, 128))
+  }
+}
+
+//Generate the AxisWidthAdapter's VHDL
+object AxisWidthAdapterVhdl {
+  def main(args: Array[String]) {
+    SpinalVhdl(new AxisWidthAdapter(512, 128))
   }
 }
