@@ -11,6 +11,7 @@ mode bmc
 depth 18
 task_cover:
 mode cover
+depth 50
 --
 
 [script]
