@@ -12,7 +12,8 @@ import scala.math._
 object AxisWireguardKeyLookup {
 }
 
-/* Down size the AXIS data width with a factor of 2 or 4
+/* Extract and remove the Wireguard Type 4 header, output receiver for key lookup
+ * Delay output to match key lookup latency of two clock cycles.
  *
  * sink accepts AXIS frames (Ethernet packet)
  * sink_length is the input packet length in bytes, this packet arrives on the sink
@@ -48,16 +49,21 @@ case class AxisWireguardKeyLookup(dataWidth : Int) extends Component {
 
   val y = Stream(Fragment(Bits(dataWidth bits)))
 
+  // remove 128 bits Wireguard Type 4 header on output by clearing valid
+  // register to achieve one pipeline stage
   y.valid := RegNextWhen(io.sink.valid & !io.sink.isFirst, io.sink.ready) init(False)
   y.payload := RegNextWhen(io.sink.payload, io.sink.ready)
   y.last := RegNextWhen(io.sink.last, io.sink.ready)
   io.sink.ready := y.ready
 
+  // add one extra pipeline stage
   io.source <-< y
 
-  // remove 128 bits Wireguard Type 4 header from length
+  // remove 128 bits Wireguard Type 4 header from output length
   val unpadded_length_out = RegNextWhen(io.sink_length - 128/8, io.sink.isFirst)
+  // round up to next 16 bytes (should we always do this? -- Ethernet MTU?)
   val padded16_length_out = RegNext(((unpadded_length_out + 15) >> 4) << 4)
+  // during testing, do not pad, to verify correct propagation delay in simulator
   //val padded16_length_out = RegNext(unpadded_length_out)
   io.source_length := RegNext(padded16_length_out)
 
