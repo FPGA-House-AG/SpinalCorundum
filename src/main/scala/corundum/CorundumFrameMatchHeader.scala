@@ -23,7 +23,7 @@ case class CorundumFrameMatchWireguard() extends Component {
   val dataWidth : Int = 512
   val io = new Bundle {
     val sink = slave Stream Fragment(CorundumFrame(dataWidth))
-    val sink_length = in UInt(12 bits)
+    //val sink_length = in UInt(12 bits)
     val source = master Stream Fragment(CorundumFrame(dataWidth))
     val is_type123 = out Bool()
     val is_type4 = out Bool()
@@ -31,16 +31,20 @@ case class CorundumFrameMatchWireguard() extends Component {
 
   // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
+
+  x << io.sink
+
   val is_frame_continuation = RegNextWhen(!x.last, x.valid) init(False)
   // purely for manual debug
   val is_first_beat = x.ready & x.valid & !is_frame_continuation
   // byte 14 is IP header, byte 34 is UDP header, byte 42 is UDP payload
   val is_ipv4l5  = x.payload.tdata(14 * 8,  8 bits) === B"8'h45"
   val is_udp     = x.payload.tdata(23 * 8,  8 bits) === B"8'h11"
-  val is_type1   = x.payload.tdata(42 * 8, 32 bits) === B"32'h01000001"
-  val is_type2   = x.payload.tdata(42 * 8, 32 bits) === B"32'h02000002"
-  val is_type3   = x.payload.tdata(42 * 8, 32 bits) === B"32'h03000003"
-  val is_type4   = x.payload.tdata(42 * 8, 32 bits) === B"32'h03000004"
+  val is_type1   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000001"
+  val is_type2   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000002"
+  val is_type3   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000003"
+  val is_type4   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000004"
+  val type4_field = x.payload.tdata(42 * 8, 32 bits)
   val is_type123 = (x.payload.tdata(42 * 8 + 2,  6 bits) === B"6'b000000") &
     (x.payload.tdata(43 * 8, 24 bits) === B"24'h000000")
   val udp_length = x.payload.tdata(34 * 8, 16 bits)
@@ -56,8 +60,29 @@ case class CorundumFrameMatchWireguard() extends Component {
 
   io.is_type123 := is_type123_on_first_beat
   io.is_type4 := is_type4_on_first_beat
-  x << io.sink
   io.source << x.stage()
+
+  // Rename SpinalHDL library defaults to AXI naming convention
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
+}
+
+class CorundumFrameDemuxWireguard() extends Component {
+  val dataWidth : Int = 512
+  val io = new Bundle {
+    val sink = slave Stream Fragment(CorundumFrame(dataWidth))
+    val source_type123 = master Stream Fragment(CorundumFrame(dataWidth))
+    val source_type4 = master Stream Fragment(CorundumFrame(dataWidth))
+  }
+
+  val matcher = CorundumFrameMatchWireguard()
+  matcher.io.sink << io.sink
+  val select_type4 = matcher.io.is_type4
+  
+  Vec(io.source_type123, io.source_type4) <> StreamDemux(
+    matcher.io.source,
+    U(select_type4),
+    2
+  )
 
   // Rename SpinalHDL library defaults to AXI naming convention
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
@@ -171,15 +196,16 @@ object CorundumFrameMatchHeaderAxi4Verilog {
 }
 
 //Generate the CorundumFrameMatchWireguard's Verilog
-object CorundumFrameMatchWireguardVerilog {
-//  def main(args: Array[String]) {
-//    SpinalVerilog(new CorundumFrameMatchHeader)
-//  }
+object CorundumFrameMatchWireguard {
   def main(args: Array[String]) {
     val config = SpinalConfig()
     config.generateVerilog({
       val toplevel = new CorundumFrameMatchWireguard()
-      XilinxPatch(toplevel)
+      toplevel
+    })
+    config.generateVhdl({
+      val toplevel = new CorundumFrameMatchWireguard()
+      toplevel
     })
   }
 }
@@ -188,5 +214,17 @@ object CorundumFrameMatchWireguardVerilog {
 object CorundumFrameMatchHeaderVhdl {
   def main(args: Array[String]) {
     SpinalVhdl(new CorundumFrameMatchHeader(512))
+  }
+}
+
+//Generate the CorundumFrameDemuxWireguard's Verilog
+object CorundumFrameDemuxWireguardVerilog {
+  def main(args: Array[String]) {
+    val config = SpinalConfig()
+    config.generateVerilog({
+      val toplevel = new CorundumFrameDemuxWireguard()
+      //XilinxPatch(toplevel)
+      toplevel
+    })
   }
 }

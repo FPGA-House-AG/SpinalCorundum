@@ -24,27 +24,9 @@ case class CorundumFrameMuxPrio(dataWidth : Int = 8) extends Component {
     val slave1 = slave Stream Fragment(CorundumFrame(dataWidth))
     val master0 = master Stream Fragment(CorundumFrame(dataWidth))
   }
-//    val xslave = slave Stream(BundleA(8))
-//    val xmaster = master Stream(BundleA(8))
-
-  //val source = Stream(Fragment(CorundumFrame(8)))
-  //val sink   = Stream(Fragment(CorundumFrame(8)))
-  // skid buffer
-  //source << sink.s2mPipe().m2sPipe()
-
-  //io.slave0 <> sink
-  //io.master0 <> source
-
-  //io.slave0 <> xslave
-  //io.master0 <> xmaster
-  //slave << master.s2m()
-
-  //val arbiterLowIdPortFirstFragmentLockInputs =  Vec(io.slave0.s2mPipe().m2sPipe(), io.slave1.s2mPipe().m2sPipe())
-  //val arbiterLowIdPortFirstFragmentLockOutput =  master Stream(CorundumFrame(RGB(8)))
 
   val arbiter = StreamArbiterFactory.lowerFirst.fragmentLock.build(Fragment(CorundumFrame(dataWidth)), 2)
 
-  //io.master0 << StreamArbiterFactory.lowerFirst.fragmentLock.build(arbiterLowIdPortFirstFragmentLockInputs, 2)
   arbiter.io.inputs(0) << io.slave0.s2mPipe().m2sPipe()
   arbiter.io.inputs(1) << io.slave1.s2mPipe().m2sPipe()
   io.master0 << arbiter.io.output.s2mPipe().m2sPipe()

@@ -120,13 +120,14 @@ rtl: src/main/scala/corundum/CorundumFrameReader.scala
 rtl: src/main/scala/corundum/CorundumFrameWriter.scala
 rtl: src/main/scala/corundum/AxisExtractHeader.scala
 rtl: src/main/scala/corundum/AxisWidthAdapter.scala
+rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
 	runMain corundum.CorundumFrameDropVerilog; \
 	runMain corundum.CorundumFrameMatchHeaderVerilog; \
-	runMain corundum.CorundumFrameMatchWireguardVerilog; \
+	runMain corundum.CorundumFrameMatchWireguard; \
 	runMain corundum.CorundumFrameStashVerilog; \
 	runMain corundum.CorundumFrameStashVhdl; \
 	runMain corundum.CorundumFrameFilterVerilog; \
@@ -135,6 +136,9 @@ rtl: src/main/scala/corundum/LookupTable.scala
 	runMain corundum.AxisExtractHeaderVerilog; \
 	runMain corundum.AxisWidthAdapterVerilog; \
 	runMain corundum.AxisWidthAdapterVhdl; \
+	runMain corundum.AxisWireguardKeyLookupVerilog; \
+	runMain corundum.AxisWireguardKeyLookupVhdl; \
+	runMain corundum.AxisWireguardType4Vhdl; \
 	runMain corundum.LookupTableVerilog; \
 	"
 

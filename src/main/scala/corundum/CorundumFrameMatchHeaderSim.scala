@@ -255,3 +255,215 @@ object CorundumFrameMatchHeaderAxi4Sim {
     }
   }
 }
+
+object CorundumFrameMatchWireguardSim {
+  def main(args: Array[String]) {
+    val dataWidth = 512
+    val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
+    val keepWidth = dataWidth/8
+    SimConfig
+    .withFstWave
+    .doSim(CorundumFrameMatchWireguard()){dut =>
+
+      dut.io.sink.valid #= false
+
+      //Fork a process to generate the reset and the clock on the dut
+      dut.clockDomain.forkStimulus(period = 10)
+
+      var data0 = 0
+
+      var last0 = false
+      var valid0 = false
+      var tkeep0 = BigInt(0)
+      var pause = false
+
+      dut.clockDomain.waitSampling()
+
+      // 000  4c 61 64 69 65 73 20 61 6e 64 20 47 65 6e 74 6c  Ladies and Gentl
+      // 016  65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73  emen of the clas
+      // 032  73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63  s of '99: If I c
+      // 048  6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f  ould offer you o
+      // 064  6e 6c 79 20 6f 6e 65 20 74 69 70 20 66 6f 72 20  nly one tip for
+      // 080  74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73  the future, suns
+      // 096  63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69  creen would be i
+      // 112  74 2e                                            t.
+
+// "0102030405060102030405060102" Ethernet
+// "xxxx11887766554433221145" IPv4, IHL=5, protocol=0x11 (UDP)
+// "0000FF0000000000000000FF"
+// "CCCCLLLLb315SSSS", DDDD=port 5555 (0x15b3)
+// "00000000FFFF0000"
+
+      // @TODO add Poly1305 tag
+      val plaintext = Vector(
+        //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>
+        BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16),
+        BigInt("04 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 4c 61 64 69 65 73 20 61 6e 64 20 47 65 6e 74 6c 65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73 73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63".split(" ").reverse.mkString(""), 16),
+        BigInt("6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f 6e 6c 79 20 6f 6e 65 20 74 69 70 20 66 6f 72 20 74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73 63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69".split(" ").reverse.mkString(""), 16),
+        BigInt("74 2e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+      )
+
+      var packet_length = 16 + 114 // bytes
+      var remaining = packet_length
+
+      var word_index = 0
+      // iterate over frame content
+      while (remaining > 0) {
+        printf("remaining = %d\n", remaining)
+        val tkeep_len = if (remaining >= keepWidth) keepWidth else remaining;
+        printf("tkeep_len = %d\n", tkeep_len)
+        valid0 = (Random.nextInt(8) > 2)
+        valid0 &= !pause
+        if (pause) pause ^= (Random.nextInt(16) >= 15)
+        if (!pause) pause ^= (Random.nextInt(128) >= 127)
+
+        assert(tkeep_len <= keepWidth)
+        tkeep0 = 0
+        data0 = 0
+        if (valid0) {
+          last0 = (remaining <= keepWidth)
+          for (i <- 0 until tkeep_len) {
+            tkeep0 = (tkeep0 << 1) | 1
+          }
+        }
+
+        dut.io.sink.valid #= valid0
+        dut.io.sink.payload.tdata #= plaintext(word_index)
+        dut.io.sink.last #= last0
+        dut.io.sink.payload.tkeep #= tkeep0
+
+        dut.io.source.ready #= (Random.nextInt(8) > 1)
+
+        // Wait a rising edge on the clock
+        dut.clockDomain.waitRisingEdge()
+
+        if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
+          remaining -= tkeep_len
+          word_index += 1
+        }
+      }
+      dut.io.sink.valid #= false
+      dut.io.source.ready #= true
+      while (dut.io.source.valid.toBoolean) {
+          // Wait a rising edge on the clock
+          dut.clockDomain.waitRisingEdge()
+      }
+      dut.clockDomain.waitRisingEdge(8)
+      dut.clockDomain.waitRisingEdge(8)
+    }
+  }
+}
+
+object CorundumFrameDemuxWireguardSim {
+  def main(args: Array[String]) {
+    val dataWidth = 512
+    val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
+    val keepWidth = dataWidth/8
+    SimConfig
+    .withFstWave
+    .doSim(new CorundumFrameDemuxWireguard()){dut =>
+
+      dut.io.sink.valid #= false
+
+      //Fork a process to generate the reset and the clock on the dut
+      dut.clockDomain.forkStimulus(period = 10)
+
+      var data0 = 0
+
+      var last0 = false
+      var valid0 = false
+      var tkeep0 = BigInt(0)
+      var pause = false
+
+      dut.clockDomain.waitSampling()
+
+      // 000  4c 61 64 69 65 73 20 61 6e 64 20 47 65 6e 74 6c  Ladies and Gentl
+      // 016  65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73  emen of the clas
+      // 032  73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63  s of '99: If I c
+      // 048  6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f  ould offer you o
+      // 064  6e 6c 79 20 6f 6e 65 20 74 69 70 20 66 6f 72 20  nly one tip for
+      // 080  74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73  the future, suns
+      // 096  63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69  creen would be i
+      // 112  74 2e                                            t.
+
+// "0102030405060102030405060102" Ethernet
+// "xxxx11887766554433221145" IPv4, IHL=5, protocol=0x11 (UDP)
+// "0000FF0000000000000000FF"
+// "CCCCLLLLb315SSSS", DDDD=port 5555 (0x15b3)
+// "00000000FFFF0000"
+
+      // @TODO add Poly1305 tag
+      val plaintext = Vector(
+        Vector(
+          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16),
+          BigInt("04 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 4c 61 64 69 65 73 20 61 6e 64 20 47 65 6e 74 6c 65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73 73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63".split(" ").reverse.mkString(""), 16),
+          BigInt("6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f 6e 6c 79 20 6f 6e 65 20 74 69 70 20 66 6f 72 20 74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73 63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69".split(" ").reverse.mkString(""), 16),
+          BigInt("74 2e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+        ),
+        Vector(
+          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 02 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16),
+          BigInt("04 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 4c 61 64 69 65 73 20 61 6e 64 20 47 65 6e 74 6c 65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73 73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63".split(" ").reverse.mkString(""), 16),
+          BigInt("6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f 6e 6c 79 20 6f 6e 65 20 74 69 70 20 66 6f 72 20 74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73 63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69".split(" ").reverse.mkString(""), 16),
+          BigInt("74 2e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+        )
+      )
+      var packet = 0
+      while (packet < 2) {
+
+      var packet_length = 192 + 2 // bytes
+      var remaining = packet_length
+
+      var word_index = 0
+      // iterate over frame content
+      while (remaining > 0) {
+        printf("remaining = %d\n", remaining)
+        val tkeep_len = if (remaining >= keepWidth) keepWidth else remaining;
+        printf("tkeep_len = %d\n", tkeep_len)
+        valid0 = (Random.nextInt(8) > 2)
+        valid0 &= !pause
+        if (pause) pause ^= (Random.nextInt(16) >= 15)
+        if (!pause) pause ^= (Random.nextInt(128) >= 127)
+
+        assert(tkeep_len <= keepWidth)
+        tkeep0 = 0
+        data0 = 0
+        if (valid0) {
+          last0 = (remaining <= keepWidth)
+          for (i <- 0 until tkeep_len) {
+            tkeep0 = (tkeep0 << 1) | 1
+          }
+        }
+
+        dut.io.sink.valid #= valid0
+        dut.io.sink.payload.tdata #= plaintext(packet)(word_index)
+        dut.io.sink.last #= last0
+        dut.io.sink.payload.tkeep #= tkeep0
+
+        dut.io.source_type123.ready #= (Random.nextInt(8) > 1)
+        dut.io.source_type4.ready #= (Random.nextInt(8) > 1)
+
+        // Wait a rising edge on the clock
+        dut.clockDomain.waitRisingEdge()
+
+        if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
+          remaining -= tkeep_len
+          word_index += 1
+        }
+      }
+      packet += 1
+      }
+      // flush
+      dut.io.sink.valid #= false
+      dut.io.source_type123.ready #= true
+      dut.io.source_type4.ready #= true
+      while (dut.io.source_type123.valid.toBoolean | dut.io.source_type4.valid.toBoolean) {
+          // Wait a rising edge on the clock
+          dut.clockDomain.waitRisingEdge()
+      }
+      dut.clockDomain.waitRisingEdge(8)
+      dut.clockDomain.waitRisingEdge(8)
+    }
+  }
+}
