@@ -1,0 +1,234 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Tue Nov 15 00:06:01 2022
+[*]
+[dumpfile] "./SpinalCorundum/simWorkspace/AxisWireguardKeyLookup/test.fst"
+[dumpfile_mtime] "Mon Nov 14 20:13:28 2022"
+[dumpfile_size] 9076
+[savefile] "./SpinalCorundum/AxisWireguardKeyLookup.gtkw"
+[timestart] 687
+[size] 3285 1928
+[pos] -1 -1
+*-4.000000 760 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.AxisWireguardKeyLookup.
+[sst_width] 525
+[signals_width] 792
+[sst_expanded] 1
+[sst_vpaned_height] 608
+@28
+TOP.AxisWireguardKeyLookup.clk
+TOP.AxisWireguardKeyLookup.reset
+TOP.AxisWireguardKeyLookup.sink_fire
+[color] 2
+TOP.AxisWireguardKeyLookup.sink_is_first
+@22
+TOP.AxisWireguardKeyLookup.sink_length[11:0]
+@28
+TOP.AxisWireguardKeyLookup.sink_payload_first
+@22
+TOP.AxisWireguardKeyLookup.sink_tdata[127:0]
+@28
+TOP.AxisWireguardKeyLookup.sink_tlast
+[color] 3
+TOP.AxisWireguardKeyLookup.sink_tvalid
+TOP.AxisWireguardKeyLookup.sink_tready
+@200
+-
+-
+@22
+TOP.AxisWireguardKeyLookup.receiver[31:0]
+TOP.AxisWireguardKeyLookup.counter[63:0]
+@200
+-
+@c00022
+TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+@28
+(0)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(1)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(2)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(3)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(4)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(5)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(6)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(7)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(8)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(9)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(10)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(11)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(12)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(13)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(14)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(15)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(16)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(17)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(18)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(19)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(20)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(21)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(22)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(23)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(24)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(25)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(26)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(27)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(28)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(29)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(30)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(31)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(32)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(33)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(34)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(35)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(36)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(37)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(38)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(39)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(40)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(41)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(42)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(43)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(44)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(45)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(46)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(47)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(48)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(49)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(50)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(51)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(52)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(53)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(54)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(55)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(56)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(57)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(58)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(59)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(60)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(61)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(62)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(63)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(64)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(65)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(66)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(67)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(68)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(69)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(70)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(71)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(72)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(73)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(74)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(75)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(76)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(77)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(78)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(79)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(80)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(81)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(82)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(83)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(84)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(85)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(86)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(87)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(88)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(89)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(90)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(91)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(92)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(93)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(94)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(95)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(96)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(97)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(98)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(99)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(100)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(101)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(102)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(103)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(104)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(105)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(106)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(107)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(108)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(109)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(110)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(111)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(112)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(113)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(114)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(115)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(116)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(117)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(118)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(119)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(120)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(121)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(122)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(123)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(124)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(125)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(126)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(127)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+@1401200
+-group_end
+@28
+[color] 2
+TOP.AxisWireguardKeyLookup.source_is_first
+TOP.AxisWireguardKeyLookup.source_tlast
+TOP.AxisWireguardKeyLookup.source_tready
+TOP.AxisWireguardKeyLookup.source_tvalid
+@c00022
+#{TOP.AxisWireguardKeyLookup.source_tdata[7:0]} (120)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (121)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (122)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (123)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (124)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (125)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (126)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (127)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+@28
+(120)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(121)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(122)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(123)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(124)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(125)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(126)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(127)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+@1401200
+-group_end
+@c00022
+#{TOP.AxisWireguardKeyLookup.source_tdata[31:8]} (96)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (97)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (98)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (99)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (100)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (101)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (102)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (103)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (104)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (105)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (106)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (107)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (108)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (109)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (110)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (111)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (112)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (113)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (114)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (115)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (116)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (117)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (118)TOP.AxisWireguardKeyLookup.source_tdata[127:0] (119)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+@28
+(96)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(97)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(98)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(99)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(100)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(101)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(102)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(103)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(104)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(105)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(106)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(107)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(108)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(109)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(110)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(111)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(112)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(113)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(114)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(115)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(116)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(117)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(118)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+(119)TOP.AxisWireguardKeyLookup.source_tdata[127:0]
+@1401200
+-group_end
+@200
+-
+@22
+TOP.AxisWireguardKeyLookup.unpadded_length_out[11:0]
+TOP.AxisWireguardKeyLookup.padded16_length_out[11:0]
+TOP.AxisWireguardKeyLookup.source_length[11:0]
+@200
+-
+[pattern_trace] 1
+[pattern_trace] 0
