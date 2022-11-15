@@ -1,0 +1,75 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Tue Nov 15 01:08:03 2022
+[*]
+[dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/AxisWireguardType4/test.fst"
+[dumpfile_mtime] "Tue Nov 15 01:07:10 2022"
+[dumpfile_size] 16758
+[savefile] "/home/vexriscv/project/SpinalCorundum/AxisWireguardType4.gtkw"
+[timestart] 150
+[size] 3435 1769
+[pos] -1 -1
+*-4.618411 356 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.AxisWireguardType4.
+[treeopen] TOP.AxisWireguardType4.stash.
+[sst_width] 727
+[signals_width] 731
+[sst_expanded] 1
+[sst_vpaned_height] 553
+@28
+TOP.AxisWireguardType4.clk
+TOP.AxisWireguardType4.type4.sink_is_first
+TOP.AxisWireguardType4.type4.reset
+@200
+-
+@28
+TOP.AxisWireguardType4.downsizer.sink_tvalid
+@820
+TOP.AxisWireguardType4.downsizer.sink_tdata[511:0]
+@200
+-
+-Stash
+@820
+TOP.AxisWireguardType4.stash.source_tdata[511:0]
+@28
+TOP.AxisWireguardType4.stash.source_tvalid
+@24
+TOP.AxisWireguardType4.stash.length[11:0]
+@200
+-
+-Downsizer
+@28
+TOP.AxisWireguardType4.downsizer.sink_tvalid
+@820
+TOP.AxisWireguardType4.downsizer.sink_tdata[511:0]
+@28
+TOP.AxisWireguardType4.downsizer.sink_tlast
+TOP.AxisWireguardType4.downsizer.sink_tready
+@24
+TOP.AxisWireguardType4.downsizer.sink_length[11:0]
+@22
+TOP.AxisWireguardType4.downsizer.out_beat_last[11:0]
+TOP.AxisWireguardType4.downsizer.out_beat_num[11:0]
+@29
+TOP.AxisWireguardType4.downsizer.next_input
+@28
+TOP.AxisWireguardType4.downsizer.source_tvalid
+@820
+TOP.AxisWireguardType4.downsizer.source_tdata[127:0]
+@24
+TOP.AxisWireguardType4.downsizer.source_length[11:0]
+@200
+-
+@22
+TOP.AxisWireguardType4.downsizer.source_length[11:0]
+@820
+TOP.AxisWireguardType4.downsizer.source_tdata[127:0]
+@22
+TOP.AxisWireguardType4.downsizer.source_tdata[127:0]
+@28
+TOP.AxisWireguardType4.downsizer.source_tlast
+TOP.AxisWireguardType4.downsizer.source_tready
+TOP.AxisWireguardType4.downsizer.source_tvalid
+[pattern_trace] 1
+[pattern_trace] 0
