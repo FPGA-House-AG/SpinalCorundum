@@ -63,34 +63,35 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
 
   val y = Stream(Fragment(Bits(dataWidth bits)))
   // pipeline x into y, thereby replacing first beat
-    // modify 128 bits Wireguard Type 4 header on output by clearing valid
-    // register to achieve one pipeline stage
-    // replace reserved field with payload length
-    val header_payload = x.payload(127 downto 32) ## padded16_length_out.resize(24).asBits ## x.payload(7 downto 0)
-    val y_payload = Bits(dataWidth bits)
-    y_payload.assignFromBits(Mux(x.isFirst, header_payload, x.payload))
+  // modify 128 bits Wireguard Type 4 header on output by clearing valid
+  // register to achieve one pipeline stage
+  // replace reserved field with payload length
+  val header_payload = x.payload(127 downto 32) ## padded16_length_out.resize(24).asBits ## x.payload(7 downto 0)
+  val y_payload = Bits(dataWidth bits)
+  y_payload.assignFromBits(Mux(x.isFirst, header_payload, x.payload))
 
-    val delete_header = x.isFirst & False
+  val delete_header = x.isFirst & False
 
-    y.valid := RegNextWhen(x.valid /*& !delete_header*/, x.ready) init(False)
-    y.payload := RegNextWhen(y_payload, x.ready)
-    y.last := RegNextWhen(x.last, x.ready)
-    x.ready := y.ready
+  // we keep the header; it carries the counter and the payload length in the reserved field
+  y.valid := RegNextWhen(x.valid /*& !delete_header*/, x.ready) init(False)
+  y.payload := RegNextWhen(y_payload, x.ready)
+  y.last := RegNextWhen(x.last, x.ready)
+  x.ready := y.ready
 
-  // add two extra pipeline stages
   io.source << y
 
   io.source_length := RegNext(padded16_length_out)
 
-  val pass_key = (!has_internal_test_lut) generate new Area{
+  val gen_external_keylut = (!has_internal_test_lut) generate new Area {
     // optional hardware here
     io.key_out := io.key_in
   }
-  val pass_internal_key = (has_internal_test_lut) generate new Area{
+  val gen_internal_keylut = (has_internal_test_lut) generate new Area {
     val keys_num = 256
     val lut = LookupTable(256/*bits*/, keys_num)
-    //                                            1122334455667788990011223344556677889900112233445566778899001122
-    lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f", 16)))
+
+    // key from RFC -note all entries are the same, so every receiver value will return this key in the LUT
+    lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
 
     //lut.mem.initBigInt(Seq.range(0xA000, 0xA000 + keys_num))
     lut.io.portA.en := True
@@ -143,6 +144,7 @@ object AxisWireguardKeyLookupVhdl {
   }
 }
 
+// composition of the RX data flow towards ChaCha20-Poly1305
 case class AxisWireguardType4() extends Component {
  final val corundumDataWidth = 512
  final val cryptoDataWidth = 128
@@ -192,7 +194,27 @@ case class AxisWireguardType4() extends Component {
   lut.io.portB.wrData := 0
   lut.io.portB.addr := 0
 
+    // Rename SpinalHDL library defaults to AXI naming convention
+  private def renameIO(): Unit = {
+    io.flatten.foreach(bt => {
+      if(bt.getName().contains("_payload_fragment")) bt.setName(bt.getName().replace("_payload_fragment", "_tdata"))
+      if(bt.getName().contains("_payload_last")) bt.setName(bt.getName().replace("_payload_last", "_tlast"))
+      if(bt.getName().contains("_payload"))  bt.setName(bt.getName().replace("_payload",  ""))
+      if(bt.getName().contains("_fragment")) bt.setName(bt.getName().replace("_fragment", ""))
+      if(bt.getName().contains("_valid"))    bt.setName(bt.getName().replace("_valid",    "_tvalid"))
+      if(bt.getName().contains("_ready"))    bt.setName(bt.getName().replace("_ready",    "_tready"))
+      if(bt.getName().contains("_last"))     bt.setName(bt.getName().replace("_last",     "_tlast"))
+      if(bt.getName().contains("_tdata_"))   bt.setName(bt.getName().replace("_tdata_",     "_"))
+      if(bt.getName().contains("reset"))     bt.setName(bt.getName().replace("reset",     "rst"))
+    })
+  }
+  // Remove io_ prefix
+  noIoPrefix()
+
+  // Execute the function renameIO after the creation of the component
+  addPrePopTask(() => renameIO())
 }
+
 //Generate the AxisWireguardType4's VHDL
 object AxisWireguardType4Vhdl {
   def main(args: Array[String]) {
