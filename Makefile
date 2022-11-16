@@ -120,6 +120,7 @@ rtl: src/main/scala/corundum/CorundumFrameReader.scala
 rtl: src/main/scala/corundum/CorundumFrameWriter.scala
 rtl: src/main/scala/corundum/AxisExtractHeader.scala
 rtl: src/main/scala/corundum/AxisWidthAdapter.scala
+rtl: src/main/scala/corundum/AxisUpsizer.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
 	set -e
@@ -136,6 +137,7 @@ rtl: src/main/scala/corundum/LookupTable.scala
 	runMain corundum.AxisExtractHeaderVerilog; \
 	runMain corundum.AxisWidthAdapterVerilog; \
 	runMain corundum.AxisWidthAdapterVhdl; \
+	runMain corundum.AxisUpsizer; \
 	runMain corundum.AxisWireguardKeyLookupVerilog; \
 	runMain corundum.AxisWireguardKeyLookupVhdl; \
 	runMain corundum.AxisWireguardType4Vhdl; \
