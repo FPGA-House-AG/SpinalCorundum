@@ -145,6 +145,7 @@ object AxisWireguardKeyLookupVhdl {
 }
 
 // composition of the RX data flow towards ChaCha20-Poly1305
+// stash -> downsizer -> key lookup ->
 case class AxisWireguardType4() extends Component {
  final val corundumDataWidth = 512
  final val cryptoDataWidth = 128
@@ -170,12 +171,13 @@ case class AxisWireguardType4() extends Component {
   val downsizer = AxisWidthAdapter(corundumDataWidth, cryptoDataWidth)
   downsizer.io.sink << x
   downsizer.io.sink_length := stash.io.length
-  val type4 = AxisWireguardKeyLookup(cryptoDataWidth, has_internal_test_lut = false)
-  type4.io.sink << downsizer.io.source
-  type4.io.sink_length := downsizer.io.source_length
+  
+  val rxkey = AxisWireguardKeyLookup(cryptoDataWidth, has_internal_test_lut = false)
+  rxkey.io.sink << downsizer.io.source
+  rxkey.io.sink_length := downsizer.io.source_length
 
-  io.source << type4.io.source
-  io.key := type4.io.key_out
+  io.source << rxkey.io.source
+  io.key := rxkey.io.key_out
 
   val keys_num = 256
   val lut = LookupTable(256/*bits*/, keys_num)
@@ -184,8 +186,8 @@ case class AxisWireguardType4() extends Component {
   lut.io.portA.en := True
   lut.io.portA.wr := False
   lut.io.portA.wrData := 0
-  lut.io.portA.addr := type4.io.receiver.resize(log2Up(keys_num))
-  type4.io.key_in := lut.io.portA.rdData
+  lut.io.portA.addr := rxkey.io.receiver.resize(log2Up(keys_num))
+  rxkey.io.key_in := lut.io.portA.rdData
 
   lut.io.portB.clk := ClockDomain.current.readClockWire
   lut.io.portB.rst := False
