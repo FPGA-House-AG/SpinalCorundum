@@ -17,7 +17,9 @@ object CorundumFrameMatchHeaderSim {
 
     printf("keepWidth=%d\n", keepWidth)
 
-    SimConfig.withFstWave.doSim(new CorundumFrameMatchHeader(dataWidth)){dut =>
+    SimConfig
+    .withFstWave
+    .doSim(new CorundumFrameMatchHeader(dataWidth)){dut =>
       //Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 

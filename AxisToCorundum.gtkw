@@ -1,0 +1,54 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Thu Nov 17 01:14:51 2022
+[*]
+[dumpfile] "./SpinalCorundum/simWorkspace/AxisToCorundumFrame/test.fst"
+[dumpfile_mtime] "Thu Nov 17 01:13:14 2022"
+[dumpfile_size] 5319
+[savefile] "./SpinalCorundum/AxisToCorundum.gtkw"
+[timestart] 130
+[size] 2858 1772
+[pos] -1 -1
+*-4.000000 203 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 621
+[signals_width] 560
+[sst_expanded] 1
+[sst_vpaned_height] 554
+@28
+TOP.AxisToCorundumFrame.clk
+TOP.AxisToCorundumFrame.reset
+@22
+TOP.AxisToCorundumFrame.io_source_payload_fragment_tdata[31:0]
+TOP.AxisToCorundumFrame.io_sink_length[11:0]
+@28
+[color] 2
+TOP.AxisToCorundumFrame.io_sink_valid
+[color] 1
+TOP.AxisToCorundumFrame.io_sink_payload_last
+TOP.AxisToCorundumFrame.io_sink_ready
+@200
+-
+@28
+TOP.AxisToCorundumFrame.x_valid
+@22
+TOP.AxisToCorundumFrame.x_length[11:0]
+TOP.AxisToCorundumFrame.x_payload_fragment[31:0]
+@28
+TOP.AxisToCorundumFrame.x_payload_last
+@200
+-
+@22
+TOP.AxisToCorundumFrame.io_source_payload_fragment_tdata[31:0]
+@28
+[color] 2
+TOP.AxisToCorundumFrame.io_source_valid
+@29
+TOP.AxisToCorundumFrame.io_source_payload_fragment_tkeep[3:0]
+@28
+[color] 1
+TOP.AxisToCorundumFrame.io_source_payload_last
+TOP.AxisToCorundumFrame.io_source_payload_fragment_tuser
+TOP.AxisToCorundumFrame.io_source_ready
+[pattern_trace] 1
+[pattern_trace] 0

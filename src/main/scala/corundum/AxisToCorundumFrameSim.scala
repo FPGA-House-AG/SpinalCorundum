@@ -6,16 +6,15 @@ import spinal.core.sim._
 
 import scala.util.Random
 
-object AxisUpsizerSim {
+object AxisToCorundumFrameSim {
   def main(args: Array[String]) {
-    val dataWidthIn = 16
-    val dataWidthOut = dataWidthIn * 2
+    val dataWidth = 32
+    val keepWidth = dataWidth/8
+    val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
 
-    val maxDataValue = scala.math.pow(2, dataWidthIn).intValue - 1
-    val keepWidth = dataWidthIn/8
     SimConfig
     .withFstWave
-    .doSim(new AxisUpsizer(dataWidthIn, dataWidthOut)){dut =>
+    .doSim(new AxisToCorundumFrame(dataWidth)){dut =>
 
       SimTimeout(100000 * 10)
 
@@ -24,7 +23,7 @@ object AxisUpsizerSim {
 
       dut.io.sink.valid #= false
 
-      //Fork a process to generate the reset and the clock on the dut
+      // Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
       var modelState = 0
@@ -33,7 +32,9 @@ object AxisUpsizerSim {
 
       //Create a new thread
       val myNewThread = fork {
-        val dwO = dataWidthOut / 4
+        // calculate printf formatter lengths
+        val dw = (dataWidth/4).max(1)
+        val tw = (keepWidth/4).max(1)
         var not_last_seen = false
         var in_packet_continuation = false
         var first_beat = false
@@ -43,31 +44,16 @@ object AxisUpsizerSim {
           // wait for beat on DUT source
           dut.clockDomain.waitSamplingWhere(dut.io.source.valid.toBoolean & dut.io.source.ready.toBoolean)
           first_beat = !in_packet_continuation
-          if (first_beat) {
-            packet_length = dut.io.source_length.toInt
-            remaining = dut.io.source_length.toInt
-          }
-          //var clean_data = dut.io.source.payload.fragment.toBigInt
-          //if (remaining < dataWidthIn / 8) {
-          //  var mask = BigInt(0)
-          //  for (byte <- 0 until remaining) {
-          //    mask <<= 8
-          //    mask = (mask | 0xFF)
-          //  }
-          //  clean_data = mask
-          //}
-          
-          printf(s"DATA == 0x%0${dwO}X %02d/%02d %s%s\n",
-            dut.io.source.payload.fragment.toBigInt,
-            packet_length - remaining, packet_length,
+          printf(s"DATA == 0x%0${dw}X 0x%0${tw}X %s%s\n",
+            dut.io.source.payload.fragment.tdata.toBigInt,
+            dut.io.source.payload.fragment.tkeep.toBigInt,
             if (first_beat) "*" else s" ",
             if (dut.io.source.payload.last.toBoolean) "L" else s" ")
           in_packet_continuation = !dut.io.source.payload.last.toBoolean
-          remaining = if (remaining >= dataWidthOut/8) remaining - dataWidthOut/8 else 0
         }
       }
 
-      val dwI = dataWidthIn / 4/*nibble*/
+      val dwI = dataWidth / 4/*nibble*/
 
       var data0 = BigInt(0)
       var last0 = false

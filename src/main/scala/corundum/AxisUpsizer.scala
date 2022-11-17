@@ -27,7 +27,7 @@ object AxisUpsizer {
 
 case class AxisUpsizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
   /* upsizing by 2 is not supported yet due to bug in StreamFragmentWidthAdapter(x, y = x * 2, earlyLast = true) */
-  require(dataWidthOut >= (4 * dataWidthIn), "dataWidthOut must be an 4 or higher integer multiple of dataWidthIn")
+  require(dataWidthOut >= (2 * dataWidthIn), "dataWidthOut must be an 4 or higher integer multiple of dataWidthIn")
   /* non-integer width factors are not supported */
   require(dataWidthOut % dataWidthIn == 0, "dataWidthOut must be an integer multiple of dataWidthIn")
 
