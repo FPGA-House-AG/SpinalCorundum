@@ -331,3 +331,57 @@ object CorundumFrameStashVhdl {
     SpinalVhdl(CorundumFrameStash(dataWidth = 512))
   }
 }
+
+// companion object
+object CorundumFrameOutputStash {
+}
+
+// Stash that never de-asserts sink_ready during a packet on sink
+// assuming packets are smaller 26 words
+case class CorundumFrameOutputStash(dataWidth : Int, fifoSize : Int, maxPacketFifoWords: Int) extends Component {
+  val keepWidth = dataWidth/8
+  val maxFrameBytes = fifoSize * keepWidth
+  val io = new Bundle {
+    val sink = slave Stream new Fragment(CorundumFrame(dataWidth))
+    val source = master Stream new Fragment(CorundumFrame(dataWidth))
+  }
+  val stash = CorundumFrameStash(dataWidth, fifoSize)
+
+  val x = Stream(Fragment(CorundumFrame(dataWidth)))
+  
+  x << io.sink
+
+
+  // { io.sink.ready never de-asserts during the reception of a packet }
+  // { fifo_too_full never    asserts during the reception of a packet }
+  val fifo_too_full = Reg(Bool()) init (False)
+  // enough space for full packet?
+  when (stash.io.availability > maxPacketFifoWords) {
+    fifo_too_full := False
+  // just received a full packet?
+  } elsewhen (x.lastFire) {
+    // update only now
+    fifo_too_full := stash.io.availability <= maxPacketFifoWords
+  }
+  //x.allowOverride() // or when (True) {}
+  // pause stream
+  //x.ready := !fifo_too_full
+  //when (fifo_too_full) { x.valid := False }
+
+  stash.io.sink << x.haltWhen(fifo_too_full)
+
+  io.source << stash.io.source
+
+  // Rename SpinalHDL library defaults to AXI naming convention
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
+
+  // formal verification
+  GenerationFlags.formal {
+    import spinal.core.GenerationFlags._
+    import spinal.core.formal._
+
+    assumeInitial(clockDomain.isResetActive)
+
+    // assert, assume and cover are only active during clocks
+  } 
+}
