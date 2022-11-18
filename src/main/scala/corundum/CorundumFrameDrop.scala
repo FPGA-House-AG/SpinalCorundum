@@ -10,6 +10,11 @@ import scala.math._
 
 // companion object
 object CorundumFrameDrop {
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    SpinalVerilog(new CorundumFrameDrop(512))
+    SpinalVhdl(new CorundumFrameDrop(512))
+  }
 }
 
 case class CorundumFrameDrop(dataWidth : Int) extends Component {
@@ -18,45 +23,40 @@ case class CorundumFrameDrop(dataWidth : Int) extends Component {
     val source = master Stream Fragment(CorundumFrame(dataWidth))
     val drop = in Bool()
   }
-  // component sink/slave port to fifo push/sink/slave port
-  val x = Stream Fragment(CorundumFrame(dataWidth))
-  val y = Stream Fragment(CorundumFrame(dataWidth))
 
-  // remember if current beat is not last; then next beat is not first
-  val is_frame_continuation = RegNextWhen(!x.last, x.fire) init(False)
-  val is_first_beat = x.fire & !is_frame_continuation
-  val is_last_beat = x.fire & x.last
-  val is_intermediate_beat = x.fire & is_frame_continuation & !x.last
-  val is_first = x.isFirst
+  // translateWith() for Stream(Fragment())
+  // (before this we needed to work-around this, see AxisUpSizer.scala commented out code)
+  implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
+    def ~~[T2 <: Data](trans: T => T2) = {
+      val that = trans(v.fragment)
+      val res = Fragment(cloneOf(that))
+      res.fragment := trans(v.fragment)
+      res.last := v.last
+      res
+    }
+  }
+
+  // x is sink, but adds the sink_length as stream payload
+  // such that both sink and sink_length are skid buffered
+  val x = Stream Fragment(CorundumFrame(dataWidth))
+  x << io.sink
+  when (io.drop) {
+    x.payload.fragment.tuser(0) := True
+  }
+   
+  val y = Stream Fragment(CorundumFrame(dataWidth))
+  y << x.s2mPipe().m2sPipe()
+  val y_drop = y.payload.fragment.tuser(0)
 
   // capture the drop flag on first
-  val drop_this_packet = RegNextWhen(io.drop, io.sink.isFirst)
+  val drop_y_packet = RegNextWhen(y_drop, y.isFirst, False)
 
-  // skid buffer on input sink
-  x << io.sink.m2sPipe().s2mPipe()
+  // component sink/slave port to fifo push/sink/slave port
+  val z = Stream Fragment(CorundumFrame(dataWidth))
   // drop packet conditionally
-  y << x.throwWhen(drop_this_packet)
-  io.source << y
-}
+  z << y.throwWhen(drop_y_packet)
+  io.source << z
 
-// Generate the CorundumFrameDrop's Verilog
-object CorundumFrameDropVerilog {
-  def main(args: Array[String]) {
-   val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameDrop(512)
-      XilinxPatch(toplevel)
-    })
-    config.generateVerilog({
-      val toplevel = new CorundumFrameDrop(512)
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-// Generate the CorundumFrameDrop's VHDL
-object CorundumFrameDropVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameDrop(512))
-  }
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
