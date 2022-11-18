@@ -1,0 +1,66 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Thu Nov 17 23:34:54 2022
+[*]
+[dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumFrameOutputStash/test.fst"
+[dumpfile_mtime] "Thu Nov 17 23:18:35 2022"
+[dumpfile_size] 1481011
+[savefile] "/home/vexriscv/project/SpinalCorundum/CorundumFrameOutputStash.gtkw"
+[timestart] 2930
+[size] 3374 1816
+[pos] -1 -1
+*-9.000000 5249 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.CorundumFrameOutputStash.
+[sst_width] 725
+[signals_width] 789
+[sst_expanded] 1
+[sst_vpaned_height] 558
+@28
+TOP.CorundumFrameOutputStash.clk
+TOP.CorundumFrameOutputStash.reset
+@22
+TOP.CorundumFrameOutputStash.sink_tdata[23:0]
+@28
+TOP.CorundumFrameOutputStash.sink_tkeep[2:0]
+TOP.CorundumFrameOutputStash.clk
+TOP.CorundumFrameOutputStash.sink_tvalid
+@29
+TOP.CorundumFrameOutputStash.sink_tready
+@28
+TOP.CorundumFrameOutputStash.sink_tlast
+@200
+-
+@28
+TOP.CorundumFrameOutputStash.stash.x_fire
+TOP.CorundumFrameOutputStash.stash.x_ready
+TOP.CorundumFrameOutputStash.stash.x_valid
+TOP.CorundumFrameOutputStash.stash.x2_ready
+TOP.CorundumFrameOutputStash.stash.x2_valid
+@22
+TOP.CorundumFrameOutputStash.stash.x3_payload_fragment_tdata[23:0]
+@28
+TOP.CorundumFrameOutputStash.stash.x3_payload_fragment_tkeep[2:0]
+TOP.CorundumFrameOutputStash.stash.x3_payload_fragment_tuser
+TOP.CorundumFrameOutputStash.stash.x3_payload_last
+TOP.CorundumFrameOutputStash.stash.x3_ready
+TOP.CorundumFrameOutputStash.stash.x3_valid
+@200
+-
+@8022
+TOP.CorundumFrameOutputStash.stash_availability[5:0]
+@28
+TOP.CorundumFrameOutputStash.fifo_too_full
+@20000
+-
+@200
+-
+@22
+TOP.CorundumFrameOutputStash.source_tdata[23:0]
+@28
+TOP.CorundumFrameOutputStash.source_tkeep[2:0]
+TOP.CorundumFrameOutputStash.source_tready
+TOP.CorundumFrameOutputStash.source_tlast
+TOP.CorundumFrameOutputStash.source_tvalid
+[pattern_trace] 1
+[pattern_trace] 0
