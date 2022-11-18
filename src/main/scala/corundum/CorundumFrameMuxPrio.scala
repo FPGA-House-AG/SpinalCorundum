@@ -30,7 +30,8 @@ case class CorundumFrameMuxPrio(dataWidth : Int = 8) extends Component {
   arbiter.io.inputs(0) << io.slave0.s2mPipe().m2sPipe()
   arbiter.io.inputs(1) << io.slave1.s2mPipe().m2sPipe()
   io.master0 << arbiter.io.output.s2mPipe().m2sPipe()
-  noIoPrefix()
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
 
 object FrameSpecRenamer{
