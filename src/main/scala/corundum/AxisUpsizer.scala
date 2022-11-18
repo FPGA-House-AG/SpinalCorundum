@@ -52,37 +52,35 @@ case class AxisUpsizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
     }
   }
 
-  // xx is sink, but adds the sink_length as stream payload
-  val xx = Stream(Fragment(Bits(dataWidthIn + 12 bits)))
+  // x is sink, but adds the sink_length as stream payload
+  // such that both sink and sink_length are skid buffered
+  val x = Stream(Fragment(Bits(dataWidthIn + 12 bits)))
 
   //val ff = Fragment(io.sink_length.asBits ## io.sink.payload.fragment)
   //ff.fragment := io.sink_length.asBits ## io.sink.payload.fragment
   //ff.last := io.sink.payload.last
-  // and xx also has a pipelined skid buffer (or elastic buffer)
-  //xx << io.sink.translateWith(ff).s2mPipe().m2sPipe()
+  // and x also has a pipelined skid buffer (or elastic buffer)
+  //x << io.sink.translateWith(ff).s2mPipe().m2sPipe()
 
-  xx << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
+  x << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
    
-  // x is the original stream after the skid buffer
-  val x = Stream(Fragment(Bits(dataWidthIn bits)))
+  // y is input stream with original payload, but after the skid buffer
+  val y = Stream(Fragment(Bits(dataWidthIn bits)))
   //val fff = Fragment(Bits(dataWidthIn bits))
-  //fff.last := xx.payload.last
-  //fff.fragment := xx.payload.fragment.resize(dataWidthIn)
-  //x << xx.translateWith(fff)
-  x << xx.~~(_.~~(_.resize(dataWidthIn)))
-  val x_length = (xx.payload.fragment >> dataWidthIn).asUInt
+  //fff.last := x.payload.last
+  //fff.fragment := x.payload.fragment.resize(dataWidthIn)
+  //y << x.translateWith(fff)
+  y << x.~~(_.~~(_.resize(dataWidthIn)))
+  val y_length = (x.payload.fragment >> dataWidthIn).asUInt
 
-  val y = Stream(Fragment(Bits(dataWidthOut bits)))
+  val z = Stream(Fragment(Bits(dataWidthOut bits)))
 
-  StreamFragmentWidthAdapter(x, y, earlyLast = true)
+  StreamFragmentWidthAdapter(y, z, earlyLast = true)
 
-  io.source <-< y
-  io.source_length := RegNext(x_length)
+  io.source <-< z
+  io.source_length := RegNext(y_length)
 
-  // Remove io_ prefix
-  noIoPrefix()
-
-  // Execute the function renameIO after the creation of the component
+  // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
 
