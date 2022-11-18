@@ -13,6 +13,19 @@ SpinalHDL Docker
 git@github.com:likewise/vexriscv-dockerfile.git
 754f14bcec9eef288c46b4e777dd9be147c4e63e
 
+TODO
+====
+Check for correct usage of last signals etc.
+
+See Fragment.scala:
+  def first: Bool = signalCache(pimped, "first")(RegNextWhen(pimped.last, pimped.fire, True).setCompositeName(pimped, "first", true))
+  def tail: Bool = !first
+  def isFirst: Bool = pimped.valid && first
+  def isTail : Bool = pimped.valid && tail
+  def isLast: Bool = pimped.valid && pimped.last
+  def lastFire : Bool = pimped.fire && pimped.last
+  def firstFire : Bool = pimped.fire && pimped.first
+
 The remainder of these notes are from the SpinalHDLSbtTemplate project, from which this is forked.
 
 Spinal Base Project
