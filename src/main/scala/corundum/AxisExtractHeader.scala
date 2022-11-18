@@ -40,13 +40,30 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
     val source_length = out UInt(12 bits)
     val source_remaining = out UInt(12 bits)
   }
+
+  // translateWith() for Stream(Fragment())
+  // (before this we needed to work-around this, see AxisUpSizer.scala commented out code)
+  implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
+    def ~~[T2 <: Data](trans: T => T2) = {
+      val that = trans(v.fragment)
+      val res = Fragment(cloneOf(that))
+      res.fragment := trans(v.fragment)
+      res.last := v.last
+      res
+    }
+  }
+
+  // x1 is sink, but adds the sink_length as stream payload
+  // such that both sink and sink_length are skid buffered
+  val x1 = Stream(Fragment(Bits(dataWidth + 12 bits)))
+  x1 << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
+   
+  // y is input stream with original payload, but after the skid buffer
   val x = Stream(Fragment(Bits(dataWidth bits)))
+  x << x1.~~(_.~~(_.resize(dataWidth)))
+  val x_length = (x1.payload.fragment >> dataWidth).asUInt
 
-  // skid buffers the inputs, 1 clock latency
-  x << io.sink.m2sPipe().s2mPipe()
-
-  // @TODO @BUG probably broken, probably need a pipelined skid buffer
-  val x_length = RegNext(io.sink_length)
+  // @TODO thorough design review needed
 
   // extract header at first beat
   val x_is_frame_continuation = RegNextWhen(!x.last, x.fire).init(False)
