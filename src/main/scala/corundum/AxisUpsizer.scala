@@ -55,21 +55,10 @@ case class AxisUpsizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
   // x is sink, but adds the sink_length as stream payload
   // such that both sink and sink_length are skid buffered
   val x = Stream(Fragment(Bits(dataWidthIn + 12 bits)))
-
-  //val ff = Fragment(io.sink_length.asBits ## io.sink.payload.fragment)
-  //ff.fragment := io.sink_length.asBits ## io.sink.payload.fragment
-  //ff.last := io.sink.payload.last
-  // and x also has a pipelined skid buffer (or elastic buffer)
-  //x << io.sink.translateWith(ff).s2mPipe().m2sPipe()
-
   x << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
    
   // y is input stream with original payload, but after the skid buffer
   val y = Stream(Fragment(Bits(dataWidthIn bits)))
-  //val fff = Fragment(Bits(dataWidthIn bits))
-  //fff.last := x.payload.last
-  //fff.fragment := x.payload.fragment.resize(dataWidthIn)
-  //y << x.translateWith(fff)
   y << x.~~(_.~~(_.resize(dataWidthIn)))
   val y_length = (x.payload.fragment >> dataWidthIn).asUInt
 
