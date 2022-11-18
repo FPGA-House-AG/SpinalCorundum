@@ -6,16 +6,16 @@ import spinal.core.sim._
 
 import scala.util.Random
 
-object AxisUpsizerSim {
+object AxisDownSizerSim {
   def main(args: Array[String]) {
-    val dataWidthIn = 16
-    val dataWidthOut = dataWidthIn * 2
+    val dataWidthIn = 32
+    val dataWidthOut = dataWidthIn/2
 
     val maxDataValue = scala.math.pow(2, dataWidthIn).intValue - 1
     val keepWidth = dataWidthIn/8
     SimConfig
     .withFstWave
-    .doSim(new AxisUpsizer(dataWidthIn, dataWidthOut)){dut =>
+    .doSim(new AxisDownSizer(dataWidthIn, dataWidthOut)){dut =>
 
       SimTimeout(100000 * 10)
 
@@ -97,7 +97,7 @@ object AxisUpsizerSim {
           // simulate source not always valid
           valid0 = (Random.nextInt(8) > 2) | (packet_idx > 3000)
           valid0 &= !pause
-          valid0 = true
+          //valid0 = true
 
           //println(clock_counter + s" pause " + pause + s", valid " + valid0)
           clock_counter += 1
@@ -160,7 +160,6 @@ object AxisUpsizerSim {
         //dut.clockDomain.waitRisingEdge(16)
       }
       dut.io.sink.valid #= false
-      dut.io.sink.ready #= true
       while (dut.io.source.valid.toBoolean) {
           // Wait a rising edge on the clock
           dut.clockDomain.waitRisingEdge()

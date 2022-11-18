@@ -9,10 +9,10 @@ import spinal.lib.bus.amba4.axi._
 import scala.math._
 
 // companion object
-object AxisUpsizer {
+object AxisUpSizer {
   def main(args: Array[String]) {
-    SpinalVerilog(new AxisUpsizer(128, 512))
-    SpinalVhdl(new AxisUpsizer(128, 512))
+    SpinalVerilog(new AxisUpSizer(128, 512))
+    SpinalVhdl(new AxisUpSizer(128, 512))
   }
 }
 
@@ -25,7 +25,7 @@ object AxisUpsizer {
  * source_length is the output packet (Ethernet payload)
  */
 
-case class AxisUpsizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
+case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
   /* upsizing by 2 is not supported yet due to bug in StreamFragmentWidthAdapter(x, y = x * 2, earlyLast = true) */
   require(dataWidthOut >= (2 * dataWidthIn), "dataWidthOut must be an 4 or higher integer multiple of dataWidthIn")
   /* non-integer width factors are not supported */
@@ -41,7 +41,7 @@ case class AxisUpsizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
   }
 
   // translateWith() for Stream(Fragment())
-  // (before this we needed to work-around this, see AxisUpsizer.scala commented out code)
+  // (before this we needed to work-around this, see AxisUpSizer.scala commented out code)
   implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
     def ~~[T2 <: Data](trans: T => T2) = {
       val that = trans(v.fragment)
@@ -74,7 +74,7 @@ case class AxisUpsizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
 }
 
 // minimal case to reproduce bug for case StreamFragmentWidthAdapter(x, y = x * 2, earlyLast = true)
-case class AxisUpsizerIssue963(dataWidthIn : Int, dataWidthOut: Int) extends Component {
+case class AxisUpSizerIssue963(dataWidthIn : Int, dataWidthOut: Int) extends Component {
   /* upsizing is not supported yet */
   require(dataWidthOut == (2 * dataWidthIn), "dataWidthOut must be an 2 or higher integer multiple of dataWidthIn")
   /* non-integer width factors are not supported */

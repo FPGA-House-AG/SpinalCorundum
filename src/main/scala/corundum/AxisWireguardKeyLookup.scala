@@ -152,7 +152,7 @@ case class AxisWireguardType4() extends Component {
   fff.fragment := stash.io.source.payload.fragment.tdata
   x << stash.io.source.translateWith(fff)
 
-  val downsizer = AxisWidthAdapter(corundumDataWidth, cryptoDataWidth)
+  val downsizer = AxisDownSizer(corundumDataWidth, cryptoDataWidth)
   downsizer.io.sink << x
   downsizer.io.sink_length := stash.io.length
   
