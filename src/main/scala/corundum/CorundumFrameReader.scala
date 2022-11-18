@@ -62,17 +62,18 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
     val instanceDataWidth = U(dataWidth, 32 bits)
     busCtrlWrapped.read(instanceDataWidth, 0x020, 0, null)
 
+    // read the packet through a FIFO (@TODO maybe remove, not much use...)
     val fifoDepth = 4
     val (fifo, fifoOccupancy) = io.output.queueWithOccupancy(fifoDepth) //.init(0)
     busCtrlWrapped.read(fifoOccupancy, address = 0x40)
 
-    val empty_bytes = LeadingZeroes(io.input.payload.tkeep)
+    val empty_bytes = LeadingZeroes(fifo.payload.tkeep)
     val tkeep_empty = RegNext(fifo.valid.asUInt ## fifo.last.asUInt ## empty_bytes.resize(30))
     busCtrlWrapped.read(tkeep_empty, 0x080, documentation = null)
 
     // 0x100.. write into wide (512-bits?) register
     //val stream_word = RegNext(io.input.payload.tdata)
-    busCtrlWrapped.readMultiWord(io.input.payload.tdata, 0x100, documentation = null)
+    busCtrlWrapped.readMultiWord(fifo.payload.tdata, 0x100, documentation = null)
 
     // match a range of addresses using mask
     import spinal.lib.bus.misc.MaskMapping
@@ -93,7 +94,7 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
 
     val reg_idx = busCtrlWrapped.readAddress.resize(log2Up(dataWidth / 8)) / (busCtrl.busDataWidth / 8)
     val full_bytes = keepWidth - empty_bytes
-    val full_words = full_bytes / (busCtrl.busDataWidth / 8)
+    val full_words = (full_bytes + busCtrl.busDataWidth / 8 - 1) / (busCtrl.busDataWidth / 8)
 
     valid := False
 
