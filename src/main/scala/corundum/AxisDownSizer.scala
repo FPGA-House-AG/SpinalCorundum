@@ -10,6 +10,10 @@ import scala.math._
 
 // companion object
 object AxisDownSizer {
+  def main(args: Array[String]) {
+    SpinalVhdl(new AxisDownSizer(512, 128))
+    SpinalVerilog(new AxisDownSizer(512, 128))
+  }
 }
 
 /* Down size the AXIS data width with a factor of 2 or 4
@@ -93,18 +97,4 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
-}
-
-//Generate the AxisDownSizer's Verilog
-object AxisDownSizerVerilog {
-  def main(args: Array[String]) {
-    SpinalVerilog(new AxisDownSizer(512, 128))
-  }
-}
-
-//Generate the AxisDownSizer's VHDL
-object AxisDownSizerVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(new AxisDownSizer(512, 128))
-  }
 }

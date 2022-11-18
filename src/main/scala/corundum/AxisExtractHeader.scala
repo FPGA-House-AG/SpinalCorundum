@@ -10,6 +10,10 @@ import scala.math._
 
 // companion object
 object AxisExtractHeader {
+  def main(args: Array[String]) {
+    SpinalVhdl(new AxisExtractHeader(128, 14/*Ethernet header size in bytes*/))
+    SpinalVerilog(new AxisExtractHeader(128, 14/*Ethernet header size in bytes*/))
+  }
 }
 
 /* Split off a fixed size header (for example 14 bytes Ethernet header in the first bytes), pass the remaining payload
@@ -147,5 +151,20 @@ object AxisExtractHeaderVerilog {
 //    config.generateVerilog(toplevel)
 //    SpinalVerilog(toplevel)
     SpinalVerilog(new AxisExtractHeader(128, 14/*Ethernet header size in bytes*/))
+  }
+}
+
+case class AxisCheck() extends Component {
+  val io = new Bundle {
+    // I/O is only the Corundum Frame tdata payload
+    val sink = slave Stream(Fragment(Bits(8 bits)))
+    val source = master Stream(Fragment(Bits(8 bits)))
+  }
+  io.source << io.sink.m2sPipe()
+}
+
+object AxisCheckVerilog {
+  def main(args: Array[String]) {
+    SpinalVerilog(new AxisCheck())
   }
 }
