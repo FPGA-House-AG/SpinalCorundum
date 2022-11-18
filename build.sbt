@@ -2,15 +2,17 @@ ThisBuild / version := "1.0"
 ThisBuild / scalaVersion := "2.11.12"
 ThisBuild / organization := "org.example"
 
-val spinalVersion = "1.7.3" // "dev"
+val spinalVersion = "1.7.3a"
+val spinalDir = "../SpinalHDL.upstream"
+//val spinalVersion = "dev"
+//val spinalDir = "../SpinalHDL.dev"
+
 val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
 val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
 val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
 
 val SourceCode = "com.lihaoyi" %% "sourcecode" % "0.2.7"
 val ScalaTest = "org.scalatest" % "scalatest_2.11" % "2.2.1"
-
-val spinalDir = "../SpinalHDL.upstream"
 
 lazy val corundum = (project in file("."))
   .settings(
