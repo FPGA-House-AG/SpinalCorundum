@@ -28,7 +28,6 @@ case class AxisToCorundumFrame(dataWidth : Int) extends Component {
   ff.last := io.sink.payload.last
   // such that both data and length go through a pipelined skid buffer (or elastic buffer)
   xx << io.sink.translateWith(ff).s2mPipe().m2sPipe()
-
   
   // x is the original stream after the skid buffer
   val x = Stream Fragment(Bits(dataWidth bits))
