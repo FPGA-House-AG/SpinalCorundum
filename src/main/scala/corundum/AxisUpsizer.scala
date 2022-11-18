@@ -40,21 +40,36 @@ case class AxisUpsizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
     val source_length = out UInt(12 bits)
   }
 
+  // translateWith() for Stream(Fragment())
+  // (before this we needed to work-around this, see AxisUpsizer.scala commented out code)
+  implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
+    def ~~[T2 <: Data](trans: T => T2) = {
+      val that = trans(v.fragment)
+      val res = Fragment(cloneOf(that))
+      res.fragment := trans(v.fragment)
+      res.last := v.last
+      res
+    }
+  }
+
   // xx is sink, but adds the sink_length as stream payload
   val xx = Stream(Fragment(Bits(dataWidthIn + 12 bits)))
-  val ff = Fragment(io.sink_length.asBits ## io.sink.payload.fragment)
-  ff.fragment := io.sink_length.asBits ## io.sink.payload.fragment
-  ff.last := io.sink.payload.last
 
+  //val ff = Fragment(io.sink_length.asBits ## io.sink.payload.fragment)
+  //ff.fragment := io.sink_length.asBits ## io.sink.payload.fragment
+  //ff.last := io.sink.payload.last
   // and xx also has a pipelined skid buffer (or elastic buffer)
-  xx << io.sink.translateWith(ff).s2mPipe().m2sPipe()
-  
+  //xx << io.sink.translateWith(ff).s2mPipe().m2sPipe()
+
+  xx << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
+   
   // x is the original stream after the skid buffer
   val x = Stream(Fragment(Bits(dataWidthIn bits)))
-  val fff = Fragment(Bits(dataWidthIn bits))
-  fff.last := xx.payload.last
-  fff.fragment := xx.payload.fragment.resize(dataWidthIn)
-  x << xx.translateWith(fff)
+  //val fff = Fragment(Bits(dataWidthIn bits))
+  //fff.last := xx.payload.last
+  //fff.fragment := xx.payload.fragment.resize(dataWidthIn)
+  //x << xx.translateWith(fff)
+  x << xx.~~(_.~~(_.resize(dataWidthIn)))
   val x_length = (xx.payload.fragment >> dataWidthIn).asUInt
 
   val y = Stream(Fragment(Bits(dataWidthOut bits)))
