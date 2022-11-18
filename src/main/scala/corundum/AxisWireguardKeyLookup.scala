@@ -180,25 +180,8 @@ case class AxisWireguardType4() extends Component {
   lut.io.portB.wrData := 0
   lut.io.portB.addr := 0
 
-    // Rename SpinalHDL library defaults to AXI naming convention
-  private def renameIO(): Unit = {
-    io.flatten.foreach(bt => {
-      if(bt.getName().contains("_payload_fragment")) bt.setName(bt.getName().replace("_payload_fragment", "_tdata"))
-      if(bt.getName().contains("_payload_last")) bt.setName(bt.getName().replace("_payload_last", "_tlast"))
-      if(bt.getName().contains("_payload"))  bt.setName(bt.getName().replace("_payload",  ""))
-      if(bt.getName().contains("_fragment")) bt.setName(bt.getName().replace("_fragment", ""))
-      if(bt.getName().contains("_valid"))    bt.setName(bt.getName().replace("_valid",    "_tvalid"))
-      if(bt.getName().contains("_ready"))    bt.setName(bt.getName().replace("_ready",    "_tready"))
-      if(bt.getName().contains("_last"))     bt.setName(bt.getName().replace("_last",     "_tlast"))
-      if(bt.getName().contains("_tdata_"))   bt.setName(bt.getName().replace("_tdata_",     "_"))
-      if(bt.getName().contains("reset"))     bt.setName(bt.getName().replace("reset",     "rst"))
-    })
-  }
-  // Remove io_ prefix
-  noIoPrefix()
-
-  // Execute the function renameIO after the creation of the component
-  addPrePopTask(() => renameIO())
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
 
 //Generate the AxisWireguardType4's VHDL
