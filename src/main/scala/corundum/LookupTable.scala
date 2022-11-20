@@ -22,7 +22,8 @@ import java.util.Base64
 
 // true dual port ram with independent clocks, symmetric data widths
 case class LookupTable(memDataWidth : Int,
-                     wordCount : Int) extends Component {
+                     wordCount : Int,
+                     lookupCD: ClockDomain) extends Component {
 
   //val bram_bus_config = BRAMConfig(memDataWidth, log2Up(wordCount))
 
@@ -40,8 +41,8 @@ case class LookupTable(memDataWidth : Int,
       val rdData = out Bits (memDataWidth bits)
     }
     val portB = new Bundle {
-      val clk = in Bool()
-      val rst = in Bool()
+      //val clk = in Bool()
+      //val rst = in Bool()
       //val portB = BRAM()
       val en = in Bool()
       val wr = in Bool()
@@ -62,7 +63,7 @@ case class LookupTable(memDataWidth : Int,
       data    = io.portA.wrData
     ))
   }
-  val areaB = new ClockingArea(ClockDomain(io.portB.clk, io.portB.rst)) {
+  val areaB = new ClockingArea(lookupCD) {
     io.portB.rdData := RegNext(mem.readWriteSync(
       enable  = io.portB.en,
       address = io.portB.addr,
@@ -282,7 +283,7 @@ object LookupTableAxi4 {
 }
 
 // slave must be naturally aligned
-case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config) extends Component {
+case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config ,lookupCD: ClockDomain) extends Component {
 
   // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
   def nextPowerofTwo(x: Int): Int = {
@@ -325,8 +326,8 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
     val ctrlbus = slave(Axi4(slaveCfg))
 
     // lookup
-    val clk = in Bool()
-    val rst = in Bool()
+    //val clk = in Bool()
+    //val rst = in Bool()
     val en = in Bool()
     val wr = in Bool()
     val addr = in UInt (memAddressWidth bits)
@@ -334,12 +335,12 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
     val rdData = out Bits (wordWidth bits)
   }
 
-  val mem = LookupTable(wordWidth, wordCount)
+  val mem = LookupTable(wordWidth, wordCount, lookupCD)
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
   val bridge = mem.driveFrom(ctrl)
 
-  mem.io.portB.clk := io.clk
-  mem.io.portB.rst := io.rst
+  //mem.io.portB.clk := io.clk
+  //mem.io.portB.rst := io.rst
   mem.io.portB.en := io.en
   mem.io.portB.wr := io.wr
   mem.io.portB.addr := io.addr
@@ -352,7 +353,7 @@ object LookupTableAxi4Verilog {
   def main(args: Array[String]) {
     val config = SpinalConfig()
     config.generateVerilog({
-      val toplevel = new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false))
+      val toplevel = new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false), ClockDomain.external("portb"))
       XilinxPatch(toplevel)
     })
   }
@@ -364,7 +365,7 @@ object LookupTableVerilog {
     //config.addStandardMemBlackboxing(blackboxAll)
 
     val verilog = config.generateVerilog({
-      val toplevel = new LookupTable(memDataWidth = 33, wordCount = 1024)
+      val toplevel = new LookupTable(memDataWidth = 33, wordCount = 1024, ClockDomain.external("portb"))
       //toplevel.mem.initBigInt(Seq(BigInt("1AABBCC00", 16), BigInt("1AABBCC11", 16)))
 
       val bytes = BigInt("1AABBCC00", 16).toByteArray
@@ -389,5 +390,22 @@ object LookupTableVerilog {
       //XilinxPatch(toplevel)
     })
     //verilog.printPruned()
+  }
+}
+
+
+object Quicky {
+  def main(args: Array[String]) {
+
+    def nextPowOf2(x: Int): Int = {
+      var y = x - 1
+      for (z <- 1 to 16) y = y | (y >> z)
+      y + 1
+    }
+    
+    for (x <- 1 to 64) {
+      printf("x = % 3d, log2Up(% 3d)=% 3d, 1 << log2Up(% 3d)=% 3d, nextPowOf2(% 3d)=% 3d\n",
+        x, x, log2Up(x), x, 1 << log2Up(x),x, nextPowOf2(x))
+    }
   }
 }

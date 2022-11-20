@@ -447,7 +447,7 @@ object CorundumFrameDemuxWireguardSim {
         dut.io.sink.last #= last0
         dut.io.sink.payload.tkeep #= tkeep0
 
-        dut.io.source_type123.ready #= (Random.nextInt(8) > 1)
+        dut.io.source_other.ready #= (Random.nextInt(8) > 1)
         dut.io.source_type4.ready #= (Random.nextInt(8) > 1)
 
         // Wait a rising edge on the clock
@@ -462,9 +462,9 @@ object CorundumFrameDemuxWireguardSim {
       }
       // flush
       dut.io.sink.valid #= false
-      dut.io.source_type123.ready #= true
+      dut.io.source_other.ready #= true
       dut.io.source_type4.ready #= true
-      while (dut.io.source_type123.valid.toBoolean | dut.io.source_type4.valid.toBoolean) {
+      while (dut.io.source_other.valid.toBoolean | dut.io.source_type4.valid.toBoolean) {
           // Wait a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
       }

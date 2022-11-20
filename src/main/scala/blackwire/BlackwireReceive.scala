@@ -36,18 +36,24 @@ case class BlackwireReceive() extends Component {
   val x = Stream Fragment(CorundumFrame(corundumDataWidth))
   x << io.sink
 
-  // fork x into two streams, Type123 and y for Type4
-  val wgtype123or4_demux = new CorundumFrameDemuxWireguard()
-  wgtype123or4_demux.io.sink << x
+  // fork x into two streams, Wireguard Type4 and other packet
+  val type4_demux = new CorundumFrameDemuxWireguard()
+  type4_demux.io.sink << x
 
-  // Type123 is dropped here
-  val type123_sinkhole = Stream Fragment(CorundumFrame(corundumDataWidth))
-  type123_sinkhole.ready := True
-  type123_sinkhole << wgtype123or4_demux.io.source_type123
+  // nob-Type4 packet are dropped here (in fuller design, go into RISC-V Reader)
+  val other_sinkhole = Stream Fragment(CorundumFrame(corundumDataWidth))
+ other_sinkhole.ready := True
+
+  val dropOnFull = CorundumFrameDrop(corundumDataWidth)
+  val readerStash = CorundumFrameStash(corundumDataWidth, 32)
+  dropOnFull.io.sink << type4_demux.io.source_other
+  readerStash.io.sink << dropOnFull.io.source 
+  dropOnFull.io.drop := (readerStash.io.availability < 2)
+  other_sinkhole << readerStash.io.source
 
   // Type4 goes into stash
   val stash = CorundumFrameStash(corundumDataWidth, 32)
-  stash.io.sink << wgtype123or4_demux.io.source_type4
+  stash.io.sink << type4_demux.io.source_type4
 
   // y is stash output but in TDATA+length format
   val y = Stream(Fragment(Bits(corundumDataWidth bits)))
@@ -147,7 +153,7 @@ case class BlackwireReceive() extends Component {
 
 
   val keys_num = 256
-  val lut = LookupTable(256/*bits*/, keys_num)
+  val lut = LookupTable(256/*bits*/, keys_num, ClockDomain.current)
   lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
 
   lut.io.portA.en := True
@@ -156,8 +162,8 @@ case class BlackwireReceive() extends Component {
   lut.io.portA.addr := rxkey.io.receiver.resize(log2Up(keys_num))
   rxkey.io.key_in := lut.io.portA.rdData
 
-  lut.io.portB.clk := ClockDomain.current.readClockWire
-  lut.io.portB.rst := False
+  //lut.io.portB.clk := ClockDomain.current.readClockWire
+  //lut.io.portB.rst := False
   lut.io.portB.en := True
   lut.io.portB.wr := False
   lut.io.portB.wrData := 0
@@ -177,7 +183,7 @@ object BlackwireReceiveSim {
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
     SimConfig
-    .withFstWave
+    //.withFstWave
     .addSimulatorFlag("-Wno-TIMESCALEMOD")
     .doSim(BlackwireReceive()){dut =>
 

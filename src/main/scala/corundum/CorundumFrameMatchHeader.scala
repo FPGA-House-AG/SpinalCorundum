@@ -70,7 +70,7 @@ class CorundumFrameDemuxWireguard() extends Component {
   val dataWidth : Int = 512
   val io = new Bundle {
     val sink = slave Stream Fragment(CorundumFrame(dataWidth))
-    val source_type123 = master Stream Fragment(CorundumFrame(dataWidth))
+    val source_other = master Stream Fragment(CorundumFrame(dataWidth))
     val source_type4 = master Stream Fragment(CorundumFrame(dataWidth))
   }
 
@@ -78,7 +78,7 @@ class CorundumFrameDemuxWireguard() extends Component {
   matcher.io.sink << io.sink
   val select_type4 = matcher.io.is_type4
   
-  Vec(io.source_type123, io.source_type4) <> StreamDemux(
+  Vec(io.source_other, io.source_type4) <> StreamDemux(
     matcher.io.source,
     U(select_type4),
     2

@@ -337,9 +337,9 @@ object CorundumFrameOutputStash {
 }
 
 // Stash that never de-asserts sink_ready during a packet on sink
-// assuming packets are smaller 26 words
+// assuming packets are not bigger than maxPacketFifoWords
 case class CorundumFrameOutputStash(dataWidth : Int, fifoSize : Int, maxPacketFifoWords: Int) extends Component {
-  val keepWidth = dataWidth/8
+  val keepWidth = dataWidth / 8
   val maxFrameBytes = fifoSize * keepWidth
   val io = new Bundle {
     val sink = slave Stream new Fragment(CorundumFrame(dataWidth))
@@ -350,7 +350,6 @@ case class CorundumFrameOutputStash(dataWidth : Int, fifoSize : Int, maxPacketFi
   val x = Stream(Fragment(CorundumFrame(dataWidth)))
   
   x << io.sink
-
 
   // { io.sink.ready never de-asserts during the reception of a packet }
   // { fifo_too_full never    asserts during the reception of a packet }

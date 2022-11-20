@@ -88,7 +88,7 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   }
   val gen_internal_keylut = (has_internal_test_lut) generate new Area {
     val keys_num = 256
-    val lut = LookupTable(256/*bits*/, keys_num)
+    val lut = LookupTable(256/*bits*/, keys_num, ClockDomain.current)
 
     // key from RFC -note all entries are the same, so every receiver value will return this key in the LUT
     lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
@@ -101,8 +101,8 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
 
     io.key_out := lut.io.portA.rdData
 
-    lut.io.portB.clk := ClockDomain.current.readClockWire
-    lut.io.portB.rst := False
+    //lut.io.portB.clk := ClockDomain.current.readClockWire
+    //lut.io.portB.rst := False
     lut.io.portB.en := True
     lut.io.portB.wr := False
     lut.io.portB.wrData := 0
@@ -164,7 +164,7 @@ case class AxisWireguardType4() extends Component {
   io.key := rxkey.io.key_out
 
   val keys_num = 256
-  val lut = LookupTable(256/*bits*/, keys_num)
+  val lut = LookupTable(256/*bits*/, keys_num, ClockDomain.current)
   lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
 
   lut.io.portA.en := True
@@ -173,8 +173,8 @@ case class AxisWireguardType4() extends Component {
   lut.io.portA.addr := rxkey.io.receiver.resize(log2Up(keys_num))
   rxkey.io.key_in := lut.io.portA.rdData
 
-  lut.io.portB.clk := ClockDomain.current.readClockWire
-  lut.io.portB.rst := False
+  //lut.io.portB.clk := ClockDomain.current.readClockWire
+  //lut.io.portB.rst := False
   lut.io.portB.en := True
   lut.io.portB.wr := False
   lut.io.portB.wrData := 0
