@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Wed Nov 16 19:42:19 2022
 [*]
-[dumpfile] "./SpinalCorundum/simWorkspace/AxisUpsizer/test.fst"
+[dumpfile] "./simWorkspace/AxisUpsizer/test.fst"
 [dumpfile_mtime] "Wed Nov 16 19:41:51 2022"
 [dumpfile_size] 10129
-[savefile] "./SpinalCorundum/AxisUpsizer.gtkw"
+[savefile] "./AxisUpsizer.gtkw"
 [timestart] 0
 [size] 2066 1040
 [pos] -1 -1

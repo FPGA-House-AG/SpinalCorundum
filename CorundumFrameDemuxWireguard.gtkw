@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Tue Nov 15 22:57:00 2022
 [*]
-[dumpfile] "./SpinalCorundum/simWorkspace/CorundumFrameDemuxWireguard/test.fst"
+[dumpfile] "./simWorkspace/CorundumFrameDemuxWireguard/test.fst"
 [dumpfile_mtime] "Tue Nov 15 22:52:03 2022"
 [dumpfile_size] 2629
-[savefile] "./SpinalCorundum/CorundumFrameDemuxWireguard.gtkw"
+[savefile] "./CorundumFrameDemuxWireguard.gtkw"
 [timestart] 0
 [size] 3379 1866
 [pos] -1 -1

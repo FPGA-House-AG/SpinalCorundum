@@ -177,3 +177,4 @@ clean:
 
 fix_gtkw:
 	sed -i -e "s@$PWD@.@" -e "s@/home/vexriscv/project@.@" *.gtkw
+	sed -i -e "s@$PWD@.@" -e "s@./SpinalCorundum@.@" *.gtkw

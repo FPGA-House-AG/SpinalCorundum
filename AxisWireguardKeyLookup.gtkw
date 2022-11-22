@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Tue Nov 15 00:06:01 2022
 [*]
-[dumpfile] "./SpinalCorundum/simWorkspace/AxisWireguardKeyLookup/test.fst"
+[dumpfile] "./simWorkspace/AxisWireguardKeyLookup/test.fst"
 [dumpfile_mtime] "Mon Nov 14 20:13:28 2022"
 [dumpfile_size] 9076
-[savefile] "./SpinalCorundum/AxisWireguardKeyLookup.gtkw"
+[savefile] "./AxisWireguardKeyLookup.gtkw"
 [timestart] 687
 [size] 3285 1928
 [pos] -1 -1

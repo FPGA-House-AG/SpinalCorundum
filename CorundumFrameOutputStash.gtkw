@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Thu Nov 17 23:34:54 2022
 [*]
-[dumpfile] "/home/vexriscv/project/SpinalCorundum/simWorkspace/CorundumFrameOutputStash/test.fst"
+[dumpfile] "./simWorkspace/CorundumFrameOutputStash/test.fst"
 [dumpfile_mtime] "Thu Nov 17 23:18:35 2022"
 [dumpfile_size] 1481011
-[savefile] "/home/vexriscv/project/SpinalCorundum/CorundumFrameOutputStash.gtkw"
+[savefile] "./CorundumFrameOutputStash.gtkw"
 [timestart] 2930
 [size] 3374 1816
 [pos] -1 -1

@@ -1,0 +1,44 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Mon Nov 21 15:36:34 2022
+[*]
+[dumpfile] "./simWorkspace/AxisInsertHeader/test.fst"
+[dumpfile_mtime] "Mon Nov 21 15:35:37 2022"
+[dumpfile_size] 8087
+[savefile] "./AxisInsertHeader.gtkw"
+[timestart] 0
+[size] 2362 1728
+[pos] 45 -535
+*0.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 821
+[signals_width] 334
+[sst_expanded] 1
+[sst_vpaned_height] 526
+@28
+TOP.AxisInsertHeader.clk
+TOP.AxisInsertHeader.reset
+@201
+-
+@22
+TOP.AxisInsertHeader.header[23:0]
+@200
+-
+@22
+TOP.AxisInsertHeader.sink_length[11:0]
+TOP.AxisInsertHeader.sink_tdata[31:0]
+@28
+TOP.AxisInsertHeader.sink_tlast
+TOP.AxisInsertHeader.sink_tready
+TOP.AxisInsertHeader.sink_tvalid
+@200
+-
+@22
+TOP.AxisInsertHeader.source_length[11:0]
+TOP.AxisInsertHeader.source_tdata[31:0]
+@28
+TOP.AxisInsertHeader.source_tlast
+TOP.AxisInsertHeader.source_tready
+TOP.AxisInsertHeader.source_tvalid
+[pattern_trace] 1
+[pattern_trace] 0

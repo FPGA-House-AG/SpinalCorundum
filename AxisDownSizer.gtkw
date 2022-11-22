@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Fri Nov 11 11:00:14 2022
 [*]
-[dumpfile] "./SpinalCorundum/simWorkspace/AxisWidthAdapter/test.fst"
+[dumpfile] "./simWorkspace/AxisWidthAdapter/test.fst"
 [dumpfile_mtime] "Fri Nov 11 10:59:45 2022"
 [dumpfile_size] 9373
-[savefile] "./SpinalCorundum/AxisWidthAdapter.gtkw"
+[savefile] "./AxisWidthAdapter.gtkw"
 [timestart] 123
 [size] 1440 855
 [pos] -1 -1

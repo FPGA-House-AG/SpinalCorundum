@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Mon Mar 21 22:14:31 2022
 [*]
-[dumpfile] "./SpinalCorundum/simWorkspace/CorundumFrameStash/test.fst"
+[dumpfile] "./simWorkspace/CorundumFrameStash/test.fst"
 [dumpfile_mtime] "Mon Mar 21 22:14:18 2022"
 [dumpfile_size] 758553532
-[savefile] "./SpinalCorundum/CorundumFrameStash.gtkw"
+[savefile] "./CorundumFrameStash.gtkw"
 [timestart] 8115
 [size] 3844 1680
 [pos] -1 -1
