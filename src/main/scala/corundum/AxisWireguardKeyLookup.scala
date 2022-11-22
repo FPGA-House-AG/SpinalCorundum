@@ -39,6 +39,18 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
     val key_out = out Bits(256 bits)
   }
 
+  // translateWith() for Stream(Fragment())
+  // (before this we needed to work-around this, see AxisUpSizer.scala commented out code)
+  implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
+    def ~~[T2 <: Data](trans: T => T2) = {
+      val that = trans(v.fragment)
+      val res = Fragment(cloneOf(that))
+      res.fragment := trans(v.fragment)
+      res.last := v.last
+      res
+    }
+  }
+
   // register Wireguard Type 4 header fields
   val receiver = RegNextWhen(io.sink.payload(4 * 8, 32 bits), io.sink.isFirst)
   val counter = RegNextWhen (io.sink.payload(8 * 8, 64 bits), io.sink.isFirst)
@@ -66,25 +78,31 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   // modify 128 bits Wireguard Type 4 header on output by clearing valid
   // register to achieve one pipeline stage
   // replace reserved field with payload length
-  val header_payload = x.payload(127 downto 32) ## padded16_length_out.resize(24).asBits ## x.payload(7 downto 0)
-  val y_payload = Bits(dataWidth bits)
-  y_payload.assignFromBits(Mux(x.isFirst, header_payload, x.payload))
+  //val header_payload = x.payload(127 downto 32) ## padded16_length_out.resize(24).asBits ## x.payload(7 downto 0)
 
-  val delete_header = x.isFirst & False
+  val header_payload = x.payload(7 downto 0) ## padded16_length_out.resize(24).asBits ## x.payload(63 downto 32) ## x.payload(127 downto 64)
+  val data_payload = x.payload.subdivideIn((dataWidth / 8) slices).reverse.asBits()
+  //val y_payload = Bits(dataWidth bits)
+  //y_payload.assignFromBits(Mux(x.isFirst, header_payload, data_payload))
 
-  // we keep the header; it carries the counter and the payload length in the reserved field
-  y.valid := RegNextWhen(x.valid /*& !delete_header*/, x.ready) init(False)
-  y.payload := RegNextWhen(y_payload, x.ready)
-  y.last := RegNextWhen(x.last, x.ready)
-  x.ready := y.ready
+  //val delete_header = x.isFirst & False
+  //// we keep the header; it carries the counter and the payload length in the reserved field
+  //y.valid := RegNextWhen(x.valid /*& !delete_header*/, x.ready) init(False)
+  //y.payload := RegNextWhen(y_payload, x.ready)
+  //y.last := RegNextWhen(x.last, x.ready)
+  //x.ready := y.ready
 
-  io.source << y
+  y << x
+  when (True) {
+    y.payload.fragment.assignFromBits(Mux(x.isFirst, header_payload, data_payload))
+  }
 
+  io.source <-< y
   io.source_length := RegNext(padded16_length_out)
 
   val gen_external_keylut = (!has_internal_test_lut) generate new Area {
     // optional hardware here
-    io.key_out := io.key_in
+    io.key_out := io.key_in.subdivideIn((widthOf(io.key_out) / 8) slices).reverse.asBits()
   }
   val gen_internal_keylut = (has_internal_test_lut) generate new Area {
     val keys_num = 256
@@ -99,7 +117,7 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
     lut.io.portA.wrData := 0
     lut.io.portA.addr := receiver.resize(log2Up(keys_num)).asUInt
 
-    io.key_out := lut.io.portA.rdData
+    io.key_out := lut.io.portA.rdData.subdivideIn((widthOf(io.key_out) / 8) slices).reverse.asBits()
 
     //lut.io.portB.clk := ClockDomain.current.readClockWire
     //lut.io.portB.rst := False
@@ -129,7 +147,7 @@ object AxisWireguardKeyLookupVhdl {
 }
 
 // composition of the RX data flow towards ChaCha20-Poly1305
-// stash -> downsizer -> key lookup ->
+// stash -> downsizer -> key lookup -> endianess
 case class AxisWireguardType4() extends Component {
  final val corundumDataWidth = 512
  final val cryptoDataWidth = 128
@@ -142,8 +160,12 @@ case class AxisWireguardType4() extends Component {
     val source = master Stream(Fragment(Bits(cryptoDataWidth bits)))
     val key = out Bits(256 bits)
   }
+
+  val reverse = CorundumFrameEndianess(corundumDataWidth)
+  reverse.io.sink << io.sink
+  
   val stash = CorundumFrameStash(corundumDataWidth, 32)
-  stash.io.sink << io.sink
+  stash.io.sink << reverse.io.source
 
   // extract only TDATA into fragment
   val x = Stream(Fragment(Bits(corundumDataWidth bits)))
@@ -160,7 +182,10 @@ case class AxisWireguardType4() extends Component {
   rxkey.io.sink << downsizer.io.source
   rxkey.io.sink_length := downsizer.io.source_length
 
-  io.source << rxkey.io.source
+  // KeyLookup now adapts for endianess of ChaCha
+  //val endianess = AxisEndianess(cryptoDataWidth)
+  //endianess.io.sink << rxkey.io.source
+  io.source << rxkey.io.source //endianess.io.source
   io.key := rxkey.io.key_out
 
   val keys_num = 256
