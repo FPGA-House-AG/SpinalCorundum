@@ -119,6 +119,7 @@ rtl: src/main/scala/corundum/CorundumFrameFilter.scala
 rtl: src/main/scala/corundum/CorundumFrameReader.scala
 rtl: src/main/scala/corundum/CorundumFrameWriter.scala
 rtl: src/main/scala/corundum/AxisExtractHeader.scala
+rtl: src/main/scala/corundum/AxisInsertHeader.scala
 rtl: src/main/scala/corundum/AxisDownSizer.scala
 rtl: src/main/scala/corundum/AxisUpSizer.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
@@ -135,6 +136,7 @@ rtl: src/main/scala/corundum/LookupTable.scala
 	runMain corundum.CorundumFrameWriterAxi4Verilog; \
 	runMain corundum.CorundumFrameReaderAxi4Verilog; \
 	runMain corundum.AxisExtractHeader; \
+	runMain corundum.AxisInsertHeader; \
 	runMain corundum.AxisDownSizer; \
 	runMain corundum.AxisUpSizer; \
 	runMain corundum.AxisWireguardKeyLookupVerilog; \
