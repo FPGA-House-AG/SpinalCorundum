@@ -10,6 +10,10 @@ import scala.math._
 
 // companion object
 object AxisWireguardKeyLookup {
+  def main(args: Array[String]) {
+    SpinalVerilog(new AxisWireguardKeyLookup(128, has_internal_test_lut = true))
+    SpinalVhdl(new AxisWireguardKeyLookup(128, has_internal_test_lut = true))
+  }
 }
 
 /* Extract and remove the Wireguard Type 4 header, output receiver for key lookup
@@ -51,22 +55,23 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
     }
   }
 
-  // register Wireguard Type 4 header fields
+  // register Wireguard Type 4 header fields, those are little endian fields
   val receiver = RegNextWhen(io.sink.payload(4 * 8, 32 bits), io.sink.isFirst)
   val counter = RegNextWhen (io.sink.payload(8 * 8, 64 bits), io.sink.isFirst)
 
   // drive external key LUT, expect key_in valid after two clock cycles
-  io.receiver := receiver.asUInt
-  io.counter := counter.asUInt
+  io.receiver := receiver.asBits.subdivideIn(4 slices).reverse.asBits().asUInt
+  io.counter := counter.asBits.subdivideIn(8 slices).reverse.asBits().asUInt
 
   val sink_is_first = io.sink.isFirst
 
+   // round up to next 16 bytes (should we always do this? -- Ethernet MTU?)
+  val padded16_length_out = RegNextWhen(((io.sink_length + 15) >> 4) << 4, io.sink.isFirst)
   // remove 128 bits Wireguard Type 4 header and 128 bits tag from output length
-  val unpadded_length_out = RegNextWhen(io.sink_length - 128/8 - 128/8, io.sink.isFirst)
-  // round up to next 16 bytes (should we always do this? -- Ethernet MTU?)
-  val padded16_length_out = RegNext(((unpadded_length_out + 15) >> 4) << 4)
-  // during testing, do not pad, to verify correct propagation delay in simulator
-  //val padded16_length_out = RegNext(unpadded_length_out)
+  val plaintext_length_out = RegNext(padded16_length_out - 128/8 - 128/8)
+
+  // @NOTE: during testing, do not pad, to verify correct propagation delay in simulator
+
 
   val x = Stream(Fragment(Bits(dataWidth bits)))
 
@@ -80,7 +85,12 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   // replace reserved field with payload length
   //val header_payload = x.payload(127 downto 32) ## padded16_length_out.resize(24).asBits ## x.payload(7 downto 0)
 
-  val header_payload = x.payload(7 downto 0) ## padded16_length_out.resize(24).asBits ## x.payload(63 downto 32) ## x.payload(127 downto 64)
+  // prepare output for ChaCha20-Poly1305
+  val header_payload =
+    x.payload(7 downto 0) ## // type 4 byte
+    plaintext_length_out.resize(24) ## // reserved replaced by plaintext_length_out in big-endian
+    x.payload( 63 downto 32).asBits.subdivideIn(4 slices).reverse.asBits() ## // receiver in big-endian
+    x.payload(127 downto 64).asBits.subdivideIn(8 slices).reverse.asBits()    // counter  in big-endian
   val data_payload = x.payload.subdivideIn((dataWidth / 8) slices).reverse.asBits()
   //val y_payload = Bits(dataWidth bits)
   //y_payload.assignFromBits(Mux(x.isFirst, header_payload, data_payload))
