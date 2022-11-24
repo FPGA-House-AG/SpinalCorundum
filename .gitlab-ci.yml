@@ -23,8 +23,8 @@ default:
 # List of stages for jobs, and their order of execution, these run sequential
 stages:
   - build
-#  - test
-#  - deploy
+  - test
+  - deploy
 
 # This job runs in the build stage, which runs first.
 build-job:
