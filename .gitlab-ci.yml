@@ -33,6 +33,7 @@ build-job:
     - echo "Building..."
     - mv build.sbt build.sbt.orig
     - mv release-build.sbt build.sbt
+    - git config --global --add safe.directory $PWD
     - make
     - echo "Build complete."
 
