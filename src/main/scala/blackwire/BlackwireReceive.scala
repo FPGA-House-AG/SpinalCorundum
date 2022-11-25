@@ -14,7 +14,13 @@ import corundum._
 object BlackwireReceive {
   def main(args: Array[String]) {
     SpinalVerilog(new BlackwireReceive())
-    SpinalVhdl(new BlackwireReceive())
+    //SpinalVhdl(new BlackwireReceive())
+    
+    val report = SpinalConfig(
+      mode = VHDL
+    ).generate(new BlackwireReceive())
+
+    report.mergeRTLSource("merge")
   }
 }
 
@@ -42,7 +48,7 @@ case class BlackwireReceive() extends Component {
 
   // nob-Type4 packet are dropped here (in fuller design, go into RISC-V Reader)
   val other_sinkhole = Stream Fragment(CorundumFrame(corundumDataWidth))
- other_sinkhole.ready := True
+  other_sinkhole.ready := True
 
   val dropOnFull = CorundumFrameDrop(corundumDataWidth)
   val readerStash = CorundumFrameStash(corundumDataWidth, 32)
@@ -149,7 +155,7 @@ case class BlackwireReceive() extends Component {
 
   io.source << r
 
-  printf("x to r = %d clock cycles.\n", LatencyAnalysis(x.valid, r.valid))
+  //printf("x to r = %d clock cycles.\n", LatencyAnalysis(x.valid, r.valid))
 
 
   val keys_num = 256
@@ -183,8 +189,11 @@ object BlackwireReceiveSim {
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
     SimConfig
-    //.withFstWave
-    .addSimulatorFlag("-Wno-TIMESCALEMOD")
+    .withVcdWave
+    .withGhdl
+    .addRtl(s"/home/vexriscv/project/SpinalCorundum/ChaCha20Poly1305Decrypt.vhd")
+
+    //.addSimulatorFlag("-Wno-TIMESCALEMOD")
     .doSim(BlackwireReceive()){dut =>
 
       dut.io.sink.valid #= false

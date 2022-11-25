@@ -130,7 +130,7 @@ object BlackwireWireguardType4Sim {
 
       // reversed byte order of TKEEP
       val plaintext = Vector(
-        BigInt("04 00 00 90 00 00 00 01 00 01 02 03 04 05 06 07 4c 61 64 69 65 73 20 61 6e 64 20 47 65 6e 74 6c 65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73 73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63".split(" ")/*.reverse*/.mkString(""), 16),
+        BigInt("04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 4c 61 64 69 65 73 20 61 6e 64 20 47 65 6e 74 6c 65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73 73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63".split(" ")/*.reverse*/.mkString(""), 16),
         BigInt("6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f 6e 6c 79 20 6f 6e 65 20 74 69 70 20 66 6f 72 20 74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73 63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69".split(" ")/*.reverse*/.mkString(""), 16),
         BigInt("74 2e 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ")/*.reverse*/.mkString(""), 16)
       )
@@ -177,7 +177,7 @@ object BlackwireWireguardType4Sim {
 
         dut.io.source.ready #= (Random.nextInt(8) > 1)
 
-        // Wait a rising edge on the clock
+        // Wait for a rising edge on the clock
         dut.clockDomain.waitRisingEdge()
 
         if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
@@ -195,7 +195,7 @@ object BlackwireWireguardType4Sim {
 
       printf("VALID=%d, LAST=%d", dut.io.source.valid.toBigInt, dut.io.source.last.toBigInt)
       while (dut.io.source.valid.toBoolean) {
-          // Wait a rising edge on the clock
+          // Wait for a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
           printf("VALID=%d, LAST=%d", dut.io.source.valid.toBigInt, dut.io.source.last.toBigInt)
       }
