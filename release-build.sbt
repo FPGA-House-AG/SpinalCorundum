@@ -1,20 +1,21 @@
-val spinalVersion = "1.7.3"
+ThisBuild / version := "1.0"
+ThisBuild / scalaVersion := "2.11.12"
+ThisBuild / organization := "online.blackwire"
 
-lazy val root = (project in file(".")).
-  settings(
-    inThisBuild(List(
-      organization := "com.github.spinalhdl",
-      scalaVersion := "2.11.12",
-      version      := "2.0.0"
-    )),
-    libraryDependencies ++= Seq(
-      "com.github.spinalhdl" % "spinalhdl-core_2.11" % spinalVersion,
-      "com.github.spinalhdl" % "spinalhdl-lib_2.11" % spinalVersion,
-      compilerPlugin("com.github.spinalhdl" % "spinalhdl-idsl-plugin_2.11" % spinalVersion),
-      "org.scalatest" %% "scalatest-funsuite" % "3.2.5",
-      "org.yaml" % "snakeyaml" % "1.8"
-    ),
-    name := "SpinalStreamFragmentWriter"
+val spinalVersion = "1.7.3a"
+
+val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
+val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
+val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
+
+val sourceCode = "com.lihaoyi" %% "sourcecode" % "0.2.7"
+val scalaTest = "org.scalatest" % "scalatest_2.11" % "2.2.1"
+      
+lazy val spinalCorundum = (project in file("."))
+  .settings(
+    name := "SpinalCorundum",
+    libraryDependencies ++= Seq(sourceCode, scalaTest),
+    libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin)
   )
 
 fork := true

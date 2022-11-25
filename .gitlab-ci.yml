@@ -31,6 +31,8 @@ build-job:
   stage: build
   script:
     - echo "Building..."
+    - mv build.sbt build.sbt.orig
+    - mv release-build.sbt build.sbt
     - make
     - echo "Build complete."
 

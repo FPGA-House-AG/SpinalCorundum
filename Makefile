@@ -13,7 +13,9 @@
 
 .ONESHELL:
 
-.PHONY: spinal clean simulate repl sim_repl
+.PHONY: spinal clean simulate repl sim_repl build
+
+build: rtl
 
 # continuous build (using sbt "~" REPL feature) on save in editor
 repl:
@@ -124,6 +126,8 @@ rtl: src/main/scala/corundum/AxisDownSizer.scala
 rtl: src/main/scala/corundum/AxisUpSizer.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
+rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
+rtl: src/main/scala/blackwire/BlackwireReceive.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrioVerilog; \
@@ -139,10 +143,9 @@ rtl: src/main/scala/corundum/LookupTable.scala
 	runMain corundum.AxisInsertHeader; \
 	runMain corundum.AxisDownSizer; \
 	runMain corundum.AxisUpSizer; \
-	runMain corundum.AxisWireguardKeyLookupVerilog; \
-	runMain corundum.AxisWireguardKeyLookupVhdl; \
-	runMain corundum.AxisWireguardType4Vhdl; \
+	runMain corundum.AxisWireguardKeyLookup; \
 	runMain corundum.LookupTableVerilog; \
+	runMain blackwire.BlackwireWireguardType4; \
 	"
 
 formal:
