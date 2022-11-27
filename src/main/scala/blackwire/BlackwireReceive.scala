@@ -279,6 +279,9 @@ object BlackwireReceiveSim {
       }
       dut.io.sink.valid #= false
       dut.io.source.ready #= true
+
+      dut.clockDomain.waitRisingEdge(8 + 32)
+
       while (dut.io.source.valid.toBoolean) {
           // Wait a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
