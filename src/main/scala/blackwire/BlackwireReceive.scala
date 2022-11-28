@@ -151,7 +151,7 @@ case class BlackwireReceive() extends Component {
   outstash.io.sink << c
   r << outstash.io.source
 
-  output_stash_too_full := outstash.io.sink.ready
+  output_stash_too_full := !outstash.io.sink.ready
 
   io.source << r
 
