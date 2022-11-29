@@ -1,0 +1,204 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Mon Nov 28 00:25:21 2022
+[*]
+[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/BlackwireReceive/test.vcd"
+[dumpfile_mtime] "Mon Nov 28 00:18:53 2022"
+[dumpfile_size] 8888633
+[savefile] "/project-on-host/SpinalCorundum/BlackwireReceiveGHDL.gtkw"
+[timestart] 91400000
+[size] 3417 1764
+[pos] -1 -1
+*-26.000000 182200000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] blackwirereceive.
+[treeopen] blackwirereceive.outstash.
+[treeopen] blackwirereceive.stash.
+[sst_width] 672
+[signals_width] 1143
+[sst_expanded] 1
+[sst_vpaned_height] 539
+@28
+blackwirereceive.reset
+blackwirereceive.clk
+@200
+-
+-DUT Sink/Input
+@22
+blackwirereceive.sink_tdata[511:0]
+blackwirereceive.sink_tkeep[63:0]
+@28
+blackwirereceive.sink_tlast
+blackwirereceive.sink_tready
+blackwirereceive.sink_tuser[0]
+blackwirereceive.sink_tvalid
+@200
+-
+-DUT Source/Output
+@22
+blackwirereceive.source_tdata[511:0]
+blackwirereceive.source_tkeep[63:0]
+@28
+blackwirereceive.source_tlast
+blackwirereceive.source_tready
+blackwirereceive.source_tuser[0]
+blackwirereceive.source_tvalid
+@200
+-
+-Stash
+@22
+blackwirereceive.stash.sink_tdata[511:0]
+blackwirereceive.stash.sink_tkeep[63:0]
+@28
+blackwirereceive.stash.sink_tlast
+blackwirereceive.stash.sink_tready
+blackwirereceive.stash.sink_tready_read_buffer
+blackwirereceive.stash.sink_tuser[0]
+blackwirereceive.stash.sink_tvalid
+@200
+-
+@22
+blackwirereceive.stash.source_tdata[511:0]
+blackwirereceive.stash.source_tkeep[63:0]
+@28
+blackwirereceive.stash.source_tlast
+blackwirereceive.stash.source_tready
+blackwirereceive.stash.source_tuser[0]
+blackwirereceive.stash.source_tvalid
+blackwirereceive.stash.source_tvalid_read_buffer
+@200
+-
+-Header Extract
+@24
+blackwirereceive.headers.sink_length[11:0]
+@22
+blackwirereceive.headers.sink_tdata[511:0]
+@28
+blackwirereceive.headers.sink_tlast
+blackwirereceive.headers.sink_tready
+blackwirereceive.headers.sink_tvalid
+@24
+blackwirereceive.headers.source_length[11:0]
+blackwirereceive.headers.source_payload_length[12:0]
+@22
+blackwirereceive.headers.source_remaining[11:0]
+blackwirereceive.headers.source_tdata[511:0]
+@28
+blackwirereceive.headers.source_tlast
+blackwirereceive.headers.source_tready
+blackwirereceive.headers.source_tvalid
+@200
+-
+-Downsizer
+@24
+blackwirereceive.downsizer.sink_length[11:0]
+@22
+blackwirereceive.downsizer.sink_tdata[511:0]
+@28
+blackwirereceive.downsizer.sink_tlast
+blackwirereceive.downsizer.sink_tready
+blackwirereceive.downsizer.sink_tvalid
+blackwirereceive.clk
+@200
+-
+@24
+blackwirereceive.downsizer.y_length[11:0]
+blackwirereceive.downsizer.y_length_regnext[11:0]
+@22
+blackwirereceive.downsizer.y_payload_fragment[511:0]
+@28
+blackwirereceive.downsizer.y_payload_last
+blackwirereceive.downsizer.y_ready
+blackwirereceive.downsizer.y_valid
+@24
+blackwirereceive.downsizer.out_beat_last[11:0]
+blackwirereceive.downsizer.out_beat_num[11:0]
+@28
+blackwirereceive.downsizer.next_input
+@24
+blackwirereceive.downsizer.counter[1:0]
+@200
+-
+@28
+blackwirereceive.downsizer.z_fire
+@22
+blackwirereceive.downsizer.z_payload_fragment[127:0]
+@28
+blackwirereceive.downsizer.z_payload_last
+blackwirereceive.downsizer.z_ready
+blackwirereceive.downsizer.z_valid
+@200
+-
+@22
+blackwirereceive.downsizer.source_length[11:0]
+blackwirereceive.downsizer.source_tdata[127:0]
+@28
+blackwirereceive.downsizer.source_tlast
+blackwirereceive.downsizer.source_tready
+blackwirereceive.downsizer.source_tvalid
+@200
+-
+-Key Lookup
+@28
+blackwirereceive.rxkey.sink_is_first
+@22
+blackwirereceive.rxkey.sink_length[11:0]
+blackwirereceive.rxkey.sink_tdata[127:0]
+@28
+blackwirereceive.rxkey.sink_tlast
+blackwirereceive.rxkey.sink_tready
+blackwirereceive.rxkey.sink_tready_read_buffer
+blackwirereceive.rxkey.sink_tvalid
+@200
+-
+@28
+blackwirereceive.rxkey.source_tready
+@200
+-
+@28
+blackwirereceive.output_stash_too_full
+blackwirereceive.k_ready
+@200
+-
+-ChaCha
+@22
+blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_payload_fragment[127:0]
+@28
+blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_ready
+blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_valid
+@29
+blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_payload_last
+@22
+blackwirereceive.chacha20poly1305decryptspinal_1.vhdl_axi_tdata_in_msg[127:0]
+@200
+-
+@22
+blackwirereceive.chacha20poly1305decryptspinal_1.io_source_payload_fragment[127:0]
+@28
+blackwirereceive.chacha20poly1305decryptspinal_1.io_source_payload_last
+blackwirereceive.chacha20poly1305decryptspinal_1.io_source_ready
+blackwirereceive.chacha20poly1305decryptspinal_1.io_source_valid
+blackwirereceive.chacha20poly1305decryptspinal_1.io_tag_valid
+@200
+-
+-Output Stash
+@28
+blackwirereceive.output_stash_too_full
+blackwirereceive.outstash.fifo_too_full
+@22
+blackwirereceive.outstash.sink_tdata[511:0]
+blackwirereceive.outstash.sink_tkeep[63:0]
+@28
+blackwirereceive.outstash.sink_tlast
+blackwirereceive.outstash.sink_tready
+blackwirereceive.outstash.sink_tuser[0]
+blackwirereceive.outstash.sink_tvalid
+@22
+blackwirereceive.outstash.source_tdata[511:0]
+blackwirereceive.outstash.source_tkeep[63:0]
+@28
+blackwirereceive.outstash.source_tlast
+blackwirereceive.outstash.source_tready
+blackwirereceive.outstash.source_tuser[0]
+blackwirereceive.outstash.source_tvalid
+[pattern_trace] 1
+[pattern_trace] 0

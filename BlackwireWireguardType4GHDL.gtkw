@@ -1,0 +1,92 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Tue Nov 29 11:08:12 2022
+[*]
+[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/BlackwireWireguardType4/test.vcd"
+[dumpfile_mtime] "Tue Nov 29 10:49:13 2022"
+[dumpfile_size] 16346330
+[savefile] "/project-on-host/SpinalCorundum/BlackwireWireguardType4GHDL.gtkw"
+[timestart] 2864600000
+[size] 1916 658
+[pos] -1 -1
+*-26.618412 3164800000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] blackwirewireguardtype4.
+[sst_width] 56
+[signals_width] 834
+[sst_expanded] 0
+[sst_vpaned_height] 273
+@28
+blackwirewireguardtype4.reset
+blackwirewireguardtype4.clk
+@200
+-
+@22
+blackwirewireguardtype4.sink_tdata[511:0]
+blackwirewireguardtype4.sink_tkeep[63:0]
+@28
+blackwirewireguardtype4.sink_tlast
+blackwirewireguardtype4.sink_tready
+blackwirewireguardtype4.sink_tuser[0]
+blackwirewireguardtype4.sink_tvalid
+@200
+-
+-Downsizer Output 128 bit
+@24
+blackwirewireguardtype4.downsizer.source_length[11:0]
+@22
+blackwirewireguardtype4.downsizer.source_tdata[127:0]
+@28
+blackwirewireguardtype4.downsizer.source_tlast
+blackwirewireguardtype4.downsizer.source_tready
+blackwirewireguardtype4.downsizer.source_tvalid
+@200
+-
+-Key Lookup
+@28
+blackwirewireguardtype4.rxkey.source_is_first
+@24
+blackwirewireguardtype4.rxkey.source_length[11:0]
+@22
+blackwirewireguardtype4.rxkey.source_tdata[127:0]
+@28
+blackwirewireguardtype4.rxkey.source_tlast
+blackwirewireguardtype4.rxkey.source_tlast_read_buffer
+blackwirewireguardtype4.rxkey.source_tready
+blackwirewireguardtype4.rxkey.source_tvalid
+@22
+blackwirewireguardtype4.rxkey.key_out[255:0]
+@200
+-
+-ChaCha20
+@28
+blackwirewireguardtype4.decrypt.clk
+blackwirewireguardtype4.decrypt.reset
+@22
+blackwirewireguardtype4.decrypt.io_sink_payload_fragment[127:0]
+@28
+blackwirewireguardtype4.decrypt.io_sink_payload_last
+blackwirewireguardtype4.decrypt.io_sink_valid
+@200
+-
+@22
+blackwirewireguardtype4.decrypt.vhdl_axi_tdata_in_key[255:0]
+blackwirewireguardtype4.decrypt.vhdl_axi_tdata_in_msg[127:0]
+@28
+blackwirewireguardtype4.decrypt.vhdl_axi_tready_in_msg
+@200
+-
+@22
+blackwirewireguardtype4.decrypt.vhdl_axi_tdata_out[127:0]
+@28
+blackwirewireguardtype4.decrypt.vhdl_axi_tlast_out
+blackwirewireguardtype4.decrypt.vhdl_axi_tvalid_out
+blackwirewireguardtype4.decrypt.vhdl_tag_valid
+blackwirewireguardtype4.decrypt.vhdl_tag_valid
+@22
+blackwirewireguardtype4.decrypt.vhdl_axi_tdata_out[127:0]
+@28
+blackwirewireguardtype4.decrypt.vhdl_axi_tlast_out
+blackwirewireguardtype4.decrypt.vhdl_axi_tvalid_out
+blackwirewireguardtype4.decrypt.vhdl_tag_valid
+[pattern_trace] 1
+[pattern_trace] 0
