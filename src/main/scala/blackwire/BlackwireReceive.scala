@@ -103,7 +103,7 @@ case class BlackwireReceive() extends Component {
   val s = Stream(Fragment(Bits(cryptoDataWidth bits)))
   val s_length = Reg(UInt(12 bits))
 
-  val include_chacha = false
+  val include_chacha = true
   (include_chacha) generate new Area {
 
     // p is the decrypted Type 4 payload
@@ -191,7 +191,41 @@ object BlackwireReceiveSim {
     SimConfig
     .withVcdWave
     .withGhdl
-    .addRtl(s"/home/vexriscv/project/SpinalCorundum/ChaCha20Poly1305Decrypt.vhd")
+    //.withXSim.withXilinxDevice("xcu50-fsvh2104-2-e")
+    //.addRtl(s"/home/vexriscv/project/SpinalCorundum/MaximVHDL/AEAD_decryption_wrapper.vhd")
+    //.addSimulatorFlag("--ieee=standard")
+    //.addSimulatorFlag("-v")
+    //.addSimulatorFlag("-P/project-on-host/SpinalCorundum/xilinx-vivado/unisim/v93")
+    //.addSimulatorFlag("-P/project-on-host/SpinalCorundum/xilinx-vivado/unimacro/v93") 
+    // these define bus_pkg and bus_pkg1
+    .addRtl(s"MaximVHDL/imports/project_1/ChaCha20.vhd")
+    .addRtl(s"MaximVHDL/new/AEAD_ChaCha_Poly.vhd")
+
+    .addRtl(s"MaximVHDL/imports/project_1/q_round.vhd")
+    .addRtl(s"MaximVHDL/imports/project_1/diag_round.vhd")
+    .addRtl(s"MaximVHDL/imports/project_1/col_round.vhd")
+    .addRtl(s"MaximVHDL/imports/project_1/half_round.vhd")
+    .addRtl(s"MaximVHDL/new/test_top_ChaCha.vhd")
+    .addRtl(s"MaximVHDL/new/Poly1305.vhd")
+    .addRtl(s"MaximVHDL/new/ChaCha20_128.vhd")
+    .addRtl(s"MaximVHDL/new/mul136_mod_red.vhd")
+    .addRtl(s"MaximVHDL/new/mul_red_pipeline.vhd")
+    .addRtl(s"MaximVHDL/new/test_top_mod_red.vhd")
+    .addRtl(s"MaximVHDL/new/ChaCha_int.vhd")
+    .addRtl(s"MaximVHDL/new/r_power_n.vhd")
+    .addRtl(s"MaximVHDL/mul_gen_0.vhd")
+    .addRtl(s"MaximVHDL/new/mul_36.vhd")
+    .addRtl(s"MaximVHDL/new/mul_72.vhd")
+    .addRtl(s"MaximVHDL/new/mul_144.vhd")
+    .addRtl(s"MaximVHDL/new/mod_red_1305.vhd")
+    .addRtl(s"MaximVHDL/new/Poly_1305_pipe_top.vhd")
+    //.addRtl(s"MaximVHDL/new/test_top_Poly.vhd")
+    .addRtl(s"MaximVHDL/new/Poly_1305_pipe.vhd")
+    .addRtl(s"MaximVHDL/new/AEAD_decryption_top.vhd")
+    .addRtl(s"MaximVHDL/new/AEAD_top.vhd")
+    .addRtl(s"MaximVHDL/new/Poly_pipe_top_test.vhd")
+    .addRtl(s"MaximVHDL/new/AEAD_decryption.vhd")
+    .addRtl(s"MaximVHDL/ChaCha20Poly1305Decrypt.vhd")
 
     //.addSimulatorFlag("-Wno-TIMESCALEMOD")
     .doSim(BlackwireReceive()){dut =>
@@ -280,7 +314,7 @@ object BlackwireReceiveSim {
       dut.io.sink.valid #= false
       dut.io.source.ready #= true
 
-      dut.clockDomain.waitRisingEdge(8 + 32)
+      dut.clockDomain.waitRisingEdge(8 + 32 + 290)
 
       while (dut.io.source.valid.toBoolean) {
           // Wait a rising edge on the clock

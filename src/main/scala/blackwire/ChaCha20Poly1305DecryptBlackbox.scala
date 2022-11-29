@@ -5,7 +5,7 @@ import spinal.lib._
 
 // Define ChaCha20Poly1305Decrypt
 // This is called AEAD_decryption_wrapper by Maxim, renamed here
-class ChaCha20Poly1305DecryptBlackbox() extends BlackBox {
+class ChaCha20Poly1305Decrypt() extends BlackBox {
   // Define IO of the VHDL entity / Verilog module
   val io = new Bundle {
     val clk = in Bool()
@@ -50,7 +50,7 @@ case class ChaCha20Poly1305DecryptSpinal() extends Component {
     val key    = in Bits (256 bit)
     val tag_valid = out Bool()
   }
-  val vhdl = new ChaCha20Poly1305DecryptBlackbox()
+  val vhdl = new ChaCha20Poly1305Decrypt()
   vhdl.io.axi_tvalid_in_msg := io.sink.valid
   vhdl.io.axi_tdata_in_msg  := U(io.sink.payload.fragment)
   vhdl.io.axi_tlast_in_msg  := io.sink.payload.last
