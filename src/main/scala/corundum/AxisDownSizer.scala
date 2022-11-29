@@ -64,8 +64,10 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
   val z = Stream(Fragment(Bits(dataWidthOut bits)))
 
   // calculate number of output beats based on input length
-  val out_beat_last = (y_length - 1) / (dataWidthOut / 8)
-  val out_beat_num = Reg(U(0, 12 bits)) init(0)
+  // @TODO buggy, y_length == 8 gives 5, must be 4
+  val out_beat_last = (y_length + dataWidthOut / 8 - 1) / (dataWidthOut / 8) - 1
+  //val out_beat_last = (y_length - 1) / (dataWidthOut / 8)
+  val out_beat_num = Reg(UInt(12 bits)) init(0)
 
   // current output beat in z?
   when (z.fire) {
