@@ -28,6 +28,7 @@ object CorundumFrameStashSim {
 
       var data0 = 0
 
+      var tuser0 = 0
       var last0 = false
       var valid0 = false
       var tkeep0 = 0
@@ -58,6 +59,7 @@ object CorundumFrameStashSim {
           assert(tkeep_len <= keepWidth)
           tkeep0 = 0
           data0 = 0
+          var drop_frame = false 
           if (valid0) {
             last0 = (remaining <= keepWidth)
             for (i <- 0 until tkeep_len) {
@@ -69,10 +71,14 @@ object CorundumFrameStashSim {
             for (i <- tkeep_len until keepWidth) {
               data0 = data0 | (255 << i*8)
             }
+            if (last0) {
+              drop_frame = (Random.nextInt(16) >= 8)
+            }
           }
 
           dut.io.sink.valid #= valid0
           dut.io.sink.payload.tdata #= data0
+          dut.io.sink.payload.tuser #= drop_frame.toInt
           dut.io.sink.last #= last0
           dut.io.sink.payload.tkeep #= tkeep0
 

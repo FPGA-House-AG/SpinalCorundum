@@ -11,9 +11,10 @@
 // tkeep[TKEEP_WIDTH] where TKEEP_WIDTH === (TDATA_WIDTH / 8)
 // tuser[1]
 //
-// tlast indicates the last word of the AXIS packet.
+// tlast indicates the last word of the AXIS packet (if valid).
 // tvalid indicates this word contains valid data (on tdata, tkeep, tuser, tlast)
-// tready is an input
+// tuser indicates the packet must be dropped, this may occur anywhere in a packet (on valid)
+// tready is an input indicating the downstream is ready to takes a valid transfer
 //
 // In accordance with the AXI specification, both source and sink (master and slave) agree that
 // when tvalid and tready are both asserted, the AXI word is transferred from source to sink.
@@ -65,6 +66,7 @@ object CorundumFrameStash {
 case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component {
   val keepWidth = dataWidth/8
   val maxFrameBytes = fifoSize * keepWidth
+  printf("maxFrameBytes = %d\n", maxFrameBytes)
   val io = new Bundle {
     val sink = slave Stream new Fragment(CorundumFrame(dataWidth))
     val source = master Stream new Fragment(CorundumFrame(dataWidth))
@@ -87,6 +89,12 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
 
   // component sink/slave port to fifo push/sink/slave port
   val x = Stream Fragment(CorundumFrame(dataWidth))
+
+  // skid buffer between input and x
+  // at least 1 clock cycle latency
+  // but full throughput
+  x << io.sink.m2sPipe().s2mPipe()
+
   val x2 = Stream Fragment(CorundumFrame(dataWidth))
   val x3 = Stream Fragment(CorundumFrame(dataWidth))
   // fifo source/master/pop port to component source/master port
@@ -117,7 +125,10 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
 
   // measure frame length in x
   val tkeep_count = UInt(/*log2Up(dataWidth/8 + 1) bits*/)
-  tkeep_count := U(dataWidth/8) - LeadingZeroes(x.tkeep)
+  val tkeep_len = U(dataWidth/8)
+  val leading_zeroes = LeadingZeroes(x.tkeep)
+ //tkeep_count := U(dataWidth/8) - LeadingZeroes(x.tkeep)
+  tkeep_count := tkeep_len - leading_zeroes
 
   val was_last = RegNextWhen(x.last, x.fire)
   val previous_beat_was_not_last = RegNext(x.fire & !x.last)
@@ -154,27 +165,36 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
     frame_too_large := True 
   }
 
+  // if any beat has tkeep(0) de-asserted, set the drop bit in the length FIFO
+  // or if any beat has tuser(0) asserted, set the drop bit in the length FIFO
+  val drop_this_frame = Reg(Bool()) //init (False)
+  // when (is_first_beat) {
+  when (x.firstFire) {
+    drop_this_frame := x.fragment.tuser(0) | (!x.fragment.tkeep(0))
+  } elsewhen (x.fire) {
+    drop_this_frame := drop_this_frame | x.fragment.tuser(0) | (!x.fragment.tkeep(0))
+  }
+
   // worst-case, a packet is a single beat, so this FIFO must be at least the size of
   // the data stream FIFO, plus extra 
   val length_fifo = new StreamFifo(UInt(12 bits), fifoSize + 4/*@TODO does this match registers? */)
 
   val push_length_on_last = RegNext(is_last_beat & !frame_too_large) init(False)
   length_fifo.io.push.valid := push_length_on_last | frame_going_oversize_event
-  length_fifo.io.push.payload := frame_length | (frame_going_oversize_event.asUInt << 11)
+  // bit 11 in the length FIFO indicates the frame must be dropped
+  length_fifo.io.push.payload := frame_length | (frame_going_oversize_event.asUInt << 11) |
+    (drop_this_frame.asUInt << 11)
   val length_pop = Bool()
   /* pop length from length FIFO on last packet word */
   length_pop := z.last & z.fire
   length_fifo.io.pop.ready := length_pop;
 
-  // skid buffer between input and x
-  // at least 1 clock cycle latency
-  // but full throughput
-  x << io.sink.m2sPipe().s2mPipe()
   // do not push data beyond truncation */
   x2.valid := x.valid & (!frame_too_large | frame_going_oversize_event)
   x2.payload.tuser := x.payload.tuser
-  // clear out unused bytes to zero
+  // clear out unused bytes to zero in x2
   x2.payload.tdata := 0
+  // copy valid bytes from x into x2
   for (i <- 0 until keepWidth) {
     when (x2.payload.tkeep(i)) {
       x2.payload.tdata(i*8 + 7 downto i*8).assignFromBits(x.payload.tdata(i*8 + 7 downto i*8))
@@ -185,6 +205,7 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
   }
   //x2.payload.tdata := x.payload.tdata
   x2.payload.tkeep := x.payload.tkeep
+  // @TODO is frame_going_oversize_event a pulse? then coincide with valid
   x2.last := (x.last & !frame_too_large) | frame_going_oversize_event
   x.ready := x2.ready
   /* one cycle latency to match length calculation, to ensure the frame
@@ -192,13 +213,13 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
   x3 << x2.m2sPipe().s2mPipe()
   fifo.io.push << x3
   y << fifo.io.pop
-  // highest bit indicates truncated packet
+  // highest bit indicates truncated packet or dropped packet
   val drop_on_truncate = ((length_fifo.io.pop.payload & U(0x800)) === U(0x800)) // length_fifo.io.pop.payload >= 0x800
   io.source << z.throwWhen(drop_on_truncate) //.haltWhen(!io.length.ready)
 
   // drive length in parallel to packet, unless packet dropped
   io.length := length_fifo.io.pop.payload & U(0x7FF)
-  io.length_valid := length_fifo.io.pop.valid & !((length_fifo.io.pop.payload & U(0x800)) === U(0x800))
+  io.length_valid := length_fifo.io.pop.valid & !drop_on_truncate
 
   val diff = (io.source.valid =/= length_fifo.io.pop.valid)
   val missing = (io.source.valid & !length_fifo.io.pop.valid)
@@ -260,10 +281,15 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
       severity  = ERROR
     )
     assert(
-      assertion = (!io.length_valid | io.length <= maxFrameBytes),
+      assertion = (!io.length_valid | (io.length <= maxFrameBytes)),
       message = "Passed frame lengths are within maximum length bound.",
       severity  = ERROR
     )
+    assert(
+      assertion = (!io.source.valid | (!io.source.fragment.tuser(0))),
+      message = "All packets with any tuser(0) asserted are dropped on out.",
+      severity  = ERROR
+    )    
     val formal_frame_length = Reg(UInt(12 bits)) init(0)
     val formal_is_frame_continuation = RegNextWhen(!io.sink.last, io.sink.fire) init(False)
     val formal_is_first_beat = io.sink.fire & !formal_is_frame_continuation
