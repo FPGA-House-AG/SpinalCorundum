@@ -102,6 +102,7 @@ case class BlackwireReceive() extends Component {
   // s is the decrypted Type 4 payload but with the length determined from the IP header
   val s = Stream(Fragment(Bits(cryptoDataWidth bits)))
   val s_length = Reg(UInt(12 bits))
+  val s_drop = Reg(Bool()) init(False)
 
   val include_chacha = true
   (include_chacha) generate new Area {
@@ -117,8 +118,11 @@ case class BlackwireReceive() extends Component {
     when (p.isFirst) {
       //s_length.assignFromBits(s.payload.fragment.asBits()(16, 16 bits))
       s_length.assignFromBits(p.payload.fragment(16, 16 bits).resize(12))
+      // @TODO put tag_valid in length field
     }
     s <-< p
+    // @NOTE drop is valid on last beat
+    s_drop := !decrypt.io.tag_valid
   }
   (!include_chacha) generate new Area {
     s << k.haltWhen(output_stash_too_full)
@@ -128,10 +132,13 @@ case class BlackwireReceive() extends Component {
   // u is the decrypted Type 4 payload but in 512 bits
   val u = Stream(Fragment(Bits(corundumDataWidth bits)))
   val upsizer = AxisUpSizer(cryptoDataWidth, corundumDataWidth)
+  // @NOTE consider pipeline stage
   upsizer.io.sink << s
   upsizer.io.sink_length := s_length
+  upsizer.io.sink_drop := s_drop
   u << upsizer.io.source
   val u_length = upsizer.io.source_length
+  val u_drop = False //upsizer.io.source_drop
 
   printf("Upsizer Latency = %d clock cycles.\n", LatencyAnalysis(s.valid, u.valid))
 
@@ -139,10 +146,12 @@ case class BlackwireReceive() extends Component {
   // c does not experience back pressure during a packet out
   val c = Stream Fragment(CorundumFrame(corundumDataWidth))
   val corundum = AxisToCorundumFrame(corundumDataWidth)
+  // @NOTE consider pipeline stage
   corundum.io.sink << u
   corundum.io.sink_length := u_length
+  corundum.io.sink_drop := u_drop
   c << corundum.io.source
-
+  
   // r is the decrypted Type 4 payload but in 512 bits in Corundum format
   // r can receive back pressure from Corundum
   val r = Stream Fragment(CorundumFrame(corundumDataWidth))
