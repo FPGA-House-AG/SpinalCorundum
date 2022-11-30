@@ -1,5 +1,7 @@
 package blackwire
 
+import corundum._
+
 import spinal.core._
 import spinal.lib._
 
@@ -51,16 +53,31 @@ case class ChaCha20Poly1305DecryptSpinal() extends Component {
     val tag_valid = out Bool()
   }
   val vhdl = new ChaCha20Poly1305Decrypt()
-  vhdl.io.axi_tvalid_in_msg := io.sink.valid
+
+  // decrypted output
+  val d = Stream(Fragment(Bits(128 bits)))
+
+  // enforce one idle cycle after last beat, this is
+  // required by VHDL ChaCha20Poly1305
+  val after_last = RegNext(io.sink.lastFire)
+
+  vhdl.io.axi_tvalid_in_msg := io.sink.valid & !after_last
   vhdl.io.axi_tdata_in_msg  := U(io.sink.payload.fragment)
   vhdl.io.axi_tlast_in_msg  := io.sink.payload.last
-  io.sink.ready             := vhdl.io.axi_tready_in_msg
+  // pass-through READY outside of the VHDL block, not READY after LAST
+  io.sink.ready             := d.ready & !after_last
   vhdl.io.axi_tdata_in_key  := U(io.key)
 
-  io.source.valid            := vhdl.io.axi_tvalid_out
-  io.source.payload.fragment := B(vhdl.io.axi_tdata_out)
-  io.source.payload.last     := vhdl.io.axi_tlast_out
-  vhdl.io.axi_tready_out     := io.source.ready
+  d.valid                := vhdl.io.axi_tvalid_out
+  d.payload.fragment     := B(vhdl.io.axi_tdata_out)
+  d.payload.last         := vhdl.io.axi_tlast_out
+  vhdl.io.axi_tready_out := d.ready
 
-  io.tag_valid               := vhdl.io.tag_valid
+  // one stage delay, such that tag_valid coincides with io.last
+  io.source <-< d
+  
+  io.tag_valid           := vhdl.io.tag_valid
+
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
