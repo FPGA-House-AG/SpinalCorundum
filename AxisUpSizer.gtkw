@@ -1,19 +1,22 @@
 [*]
-[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Wed Nov 16 19:42:19 2022
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Wed Nov 30 00:01:54 2022
 [*]
-[dumpfile] "./simWorkspace/AxisUpsizer/test.fst"
-[dumpfile_mtime] "Wed Nov 16 19:41:51 2022"
-[dumpfile_size] 10129
-[savefile] "./AxisUpsizer.gtkw"
-[timestart] 0
+[dumpfile] "/project-on-hos./simWorkspace/AxisUpSizer/test.fst"
+[dumpfile_mtime] "Tue Nov 29 23:54:34 2022"
+[dumpfile_size] 8669
+[savefile] "/project-on-hos./AxisUpSizer.gtkw"
+[timestart] 2437
 [size] 2066 1040
 [pos] -1 -1
-*0.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 170 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 375
 [signals_width] 302
 [sst_expanded] 1
 [sst_vpaned_height] 284
+@28
+TOP.clk
+TOP.reset
 @22
 TOP.sink_length[11:0]
 TOP.sink_tdata[15:0]
@@ -21,5 +24,16 @@ TOP.sink_tdata[15:0]
 TOP.sink_tlast
 TOP.sink_tready
 TOP.sink_tvalid
+@29
+TOP.sink_drop
+@28
+TOP.source_drop
+@22
+TOP.source_length[11:0]
+TOP.source_tdata[31:0]
+@28
+TOP.source_tlast
+TOP.source_tready
+TOP.source_tvalid
 [pattern_trace] 1
 [pattern_trace] 0

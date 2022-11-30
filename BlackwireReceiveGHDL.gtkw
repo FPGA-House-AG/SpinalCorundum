@@ -1,20 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Mon Nov 28 00:25:21 2022
+[*] Wed Nov 30 00:50:12 2022
 [*]
-[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/BlackwireReceive/test.vcd"
-[dumpfile_mtime] "Mon Nov 28 00:18:53 2022"
-[dumpfile_size] 8888633
-[savefile] "/project-on-host/SpinalCorundum/BlackwireReceiveGHDL.gtkw"
-[timestart] 91400000
+[dumpfile] "/project-on-hos./simWorkspace/BlackwireReceive/test.vcd"
+[dumpfile_mtime] "Wed Nov 30 00:42:42 2022"
+[dumpfile_size] 17261040
+[savefile] "/project-on-hos./BlackwireReceiveGHDL.gtkw"
+[timestart] 3095200000
 [size] 3417 1764
 [pos] -1 -1
-*-26.000000 182200000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-26.240412 3236700000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] blackwirereceive.
-[treeopen] blackwirereceive.outstash.
 [treeopen] blackwirereceive.stash.
 [sst_width] 672
-[signals_width] 1143
+[signals_width] 1247
 [sst_expanded] 1
 [sst_vpaned_height] 539
 @28
@@ -64,7 +63,8 @@ blackwirereceive.stash.source_tlast
 blackwirereceive.stash.source_tready
 blackwirereceive.stash.source_tuser[0]
 blackwirereceive.stash.source_tvalid
-blackwirereceive.stash.source_tvalid_read_buffer
+@24
+blackwirereceive.stash.length[11:0]
 @200
 -
 -Header Extract
@@ -128,8 +128,9 @@ blackwirereceive.downsizer.z_ready
 blackwirereceive.downsizer.z_valid
 @200
 -
-@22
+@24
 blackwirereceive.downsizer.source_length[11:0]
+@22
 blackwirereceive.downsizer.source_tdata[127:0]
 @28
 blackwirereceive.downsizer.source_tlast
@@ -140,8 +141,9 @@ blackwirereceive.downsizer.source_tvalid
 -Key Lookup
 @28
 blackwirereceive.rxkey.sink_is_first
-@22
+@24
 blackwirereceive.rxkey.sink_length[11:0]
+@22
 blackwirereceive.rxkey.sink_tdata[127:0]
 @28
 blackwirereceive.rxkey.sink_tlast
@@ -151,33 +153,70 @@ blackwirereceive.rxkey.sink_tvalid
 @200
 -
 @28
-blackwirereceive.rxkey.source_tready
-@200
--
-@28
 blackwirereceive.output_stash_too_full
 blackwirereceive.k_ready
 @200
 -
 -ChaCha
 @22
-blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_payload_fragment[127:0]
+blackwirereceive.chacha20poly1305decryptspinal_1.sink_tdata[127:0]
 @28
-blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_ready
-blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_valid
-@29
-blackwirereceive.chacha20poly1305decryptspinal_1.io_sink_payload_last
-@22
-blackwirereceive.chacha20poly1305decryptspinal_1.vhdl_axi_tdata_in_msg[127:0]
+blackwirereceive.chacha20poly1305decryptspinal_1.sink_tlast
+blackwirereceive.chacha20poly1305decryptspinal_1.sink_tready
+blackwirereceive.chacha20poly1305decryptspinal_1.sink_tvalid
 @200
 -
 @22
-blackwirereceive.chacha20poly1305decryptspinal_1.io_source_payload_fragment[127:0]
+blackwirereceive.chacha20poly1305decryptspinal_1.source_tdata[127:0]
 @28
-blackwirereceive.chacha20poly1305decryptspinal_1.io_source_payload_last
-blackwirereceive.chacha20poly1305decryptspinal_1.io_source_ready
-blackwirereceive.chacha20poly1305decryptspinal_1.io_source_valid
-blackwirereceive.chacha20poly1305decryptspinal_1.io_tag_valid
+blackwirereceive.chacha20poly1305decryptspinal_1.source_tready
+blackwirereceive.chacha20poly1305decryptspinal_1.source_tlast
+blackwirereceive.chacha20poly1305decryptspinal_1.source_tvalid
+blackwirereceive.chacha20poly1305decryptspinal_1.tag_tvalid
+@200
+-
+-UpSizer
+@28
+blackwirereceive.upsizer.sink_drop
+@24
+blackwirereceive.upsizer.sink_length[11:0]
+@22
+blackwirereceive.upsizer.sink_tdata[127:0]
+@28
+blackwirereceive.upsizer.sink_tlast
+blackwirereceive.upsizer.sink_tready
+blackwirereceive.upsizer.sink_tvalid
+blackwirereceive.upsizer.source_drop
+@24
+blackwirereceive.upsizer.source_length[11:0]
+@22
+blackwirereceive.upsizer.source_tdata[511:0]
+@28
+blackwirereceive.upsizer.source_tlast
+blackwirereceive.upsizer.source_tready
+blackwirereceive.upsizer.source_tvalid
+@200
+-
+-Corundum
+@28
+blackwirereceive.corundum.sink_drop
+@22
+blackwirereceive.corundum.sink_length[11:0]
+blackwirereceive.corundum.sink_tdata[511:0]
+@28
+blackwirereceive.corundum.sink_tlast
+blackwirereceive.corundum.sink_tready
+blackwirereceive.corundum.sink_tvalid
+@201
+-
+@22
+blackwirereceive.corundum.source_tdata[511:0]
+blackwirereceive.corundum.source_tkeep[63:0]
+@28
+blackwirereceive.corundum.source_tlast
+blackwirereceive.corundum.source_tready
+blackwirereceive.corundum.source_tuser[0]
+blackwirereceive.corundum.source_tvalid
 @200
 -
 -Output Stash
