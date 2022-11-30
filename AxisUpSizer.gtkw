@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
 [*] Wed Nov 30 00:01:54 2022
 [*]
-[dumpfile] "/project-on-hos./simWorkspace/AxisUpSizer/test.fst"
+[dumpfile] "/project-on-host/simWorkspace/AxisUpSizer/test.fst"
 [dumpfile_mtime] "Tue Nov 29 23:54:34 2022"
 [dumpfile_size] 8669
-[savefile] "/project-on-hos./AxisUpSizer.gtkw"
+[savefile] "/project-on-host/AxisUpSizer.gtkw"
 [timestart] 2437
 [size] 2066 1040
 [pos] -1 -1

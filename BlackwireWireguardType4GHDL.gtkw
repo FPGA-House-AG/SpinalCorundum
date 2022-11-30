@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Wed Nov 30 11:12:25 2022
+[*] Wed Nov 30 11:30:59 2022
 [*]
-[dumpfile] "/project-on-hos./simWorkspace/BlackwireWireguardType4/test.vcd"
-[dumpfile_mtime] "Wed Nov 30 11:07:40 2022"
-[dumpfile_size] 23599570
-[savefile] "/project-on-hos./BlackwireWireguardType4GHDL.gtkw"
-[timestart] 0
-[size] 3385 1750
+[dumpfile] "./simWorkspace/BlackwireWireguardType4/test.vcd"
+[dumpfile_mtime] "Wed Nov 30 11:30:32 2022"
+[dumpfile_size] 23250430
+[savefile] "./BlackwireWireguardType4GHDL.gtkw"
+[timestart] 2664000000
+[size] 3384 1750
 [pos] -1 -1
-*-26.618412 380000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-26.618412 3309000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] blackwirewireguardtype4.
 [sst_width] 584
 [signals_width] 743

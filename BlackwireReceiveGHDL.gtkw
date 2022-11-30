@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
 [*] Wed Nov 30 00:50:12 2022
 [*]
-[dumpfile] "/project-on-hos./simWorkspace/BlackwireReceive/test.vcd"
+[dumpfile] "/project-on-host/simWorkspace/BlackwireReceive/test.vcd"
 [dumpfile_mtime] "Wed Nov 30 00:42:42 2022"
 [dumpfile_size] 17261040
-[savefile] "/project-on-hos./BlackwireReceiveGHDL.gtkw"
+[savefile] "/project-on-host/BlackwireReceiveGHDL.gtkw"
 [timestart] 3095200000
 [size] 3417 1764
 [pos] -1 -1
