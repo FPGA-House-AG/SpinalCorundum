@@ -37,7 +37,10 @@ case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
     val source = master Stream(Fragment(Bits(dataWidthOut bits)))
     // sink_length is given in bytes
     val sink_length = in UInt(12 bits)
+    // accept drop flag
+    val sink_drop = in Bool()
     val source_length = out UInt(12 bits)
+    val source_drop = out Bool()
   }
 
   // translateWith() for Stream(Fragment())
@@ -54,13 +57,14 @@ case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
 
   // x is sink, but adds the sink_length as stream payload
   // such that both sink and sink_length are skid buffered
-  val x = Stream(Fragment(Bits(dataWidthIn + 12 bits)))
-  x << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
+  val x = Stream(Fragment(Bits(dataWidthIn + 12 + 1 bits)))
+  x << io.sink.~~(_.~~(io.sink_drop ## io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
    
   // y is input stream with original payload, but after the skid buffer
   val y = Stream(Fragment(Bits(dataWidthIn bits)))
   y << x.~~(_.~~(_.resize(dataWidthIn)))
-  val y_length = (x.payload.fragment >> dataWidthIn).asUInt
+  val y_length = (x.payload.fragment >> dataWidthIn).resize(12).asUInt
+  val y_drop = (x.payload.fragment >> dataWidthIn)(12)
 
   val z = Stream(Fragment(Bits(dataWidthOut bits)))
 
@@ -68,6 +72,9 @@ case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
 
   io.source <-< z
   io.source_length := RegNext(y_length)
+  // @NOTE we could take drop directly from y, to make it line up with last from chacha
+  // this is currently taken care of in chacha wrapper already - so leave as is!
+  io.source_drop := RegNext(y_drop)
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))

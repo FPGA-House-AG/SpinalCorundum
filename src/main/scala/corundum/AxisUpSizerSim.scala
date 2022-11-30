@@ -128,6 +128,7 @@ object AxisUpSizerSim {
           dut.io.sink.last #= last0
           dut.io.sink.payload.fragment #= data0
           dut.io.sink_length #= packet_length
+          dut.io.sink_drop #= (Random.nextInt(8) > 1)
 
           dut.io.source.ready #= (Random.nextInt(8) > 1) | (packet_idx > 4000)
           dut.io.source.ready #= true
