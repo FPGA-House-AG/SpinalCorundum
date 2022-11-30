@@ -124,7 +124,7 @@ rtl: src/main/scala/corundum/AxisExtractHeader.scala
 rtl: src/main/scala/corundum/AxisInsertHeader.scala
 rtl: src/main/scala/corundum/AxisDownSizer.scala
 rtl: src/main/scala/corundum/AxisUpSizer.scala
-rtl: src/main/scala/corundum/AxisToCorundum.scala
+rtl: src/main/scala/corundum/AxisToCorundumFrame.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
 rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
@@ -144,7 +144,7 @@ rtl: src/main/scala/blackwire/BlackwireReceive.scala
 	runMain corundum.AxisInsertHeader; \
 	runMain corundum.AxisDownSizer; \
 	runMain corundum.AxisUpSizer; \
-	runMain corundum.AxisToCorundum; \
+	runMain corundum.AxisToCorundumFrame; \
 	runMain corundum.AxisWireguardKeyLookup; \
 	runMain corundum.LookupTableVerilog; \
 	runMain blackwire.BlackwireWireguardType4; \
@@ -181,5 +181,5 @@ clean:
 	netlistsvg $< -o $@
 
 fix_gtkw:
-	sed -i -e "s@$PWD@.@" -e "s@/home/vexriscv/project@.@" *.gtkw
-	sed -i -e "s@$PWD@.@" -e "s@./SpinalCorundum@.@" *.gtkw
+	sed -i -e "s@$(PWD)@.@" *.gtkw
+	sed -i -e "s@./SpinalCorundum@.@" *.gtkw
