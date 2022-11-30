@@ -10,6 +10,10 @@ import scala.math._
 
 // companion object
 object AxisToCorundumFrame {
+  def main(args: Array[String]) {
+    SpinalVerilog(new AxisToCorundumFrame(512))
+    SpinalVhdl(new AxisToCorundumFrame(512))
+  }
 }
 
 case class AxisToCorundumFrame(dataWidth : Int) extends Component {
@@ -17,14 +21,15 @@ case class AxisToCorundumFrame(dataWidth : Int) extends Component {
     val sink = slave Stream Fragment(Bits(dataWidth bits))
     // sink_length is given in bytes
     val sink_length = in UInt(12 bits)
+    val sink_drop = in Bool()
     val source = master Stream Fragment(CorundumFrame(dataWidth))
   }
   val tkeep_width = dataWidth / 8
 
   // xx is sink, but adds the sink_length to the stream payload
-  val xx = Stream(Fragment(Bits(dataWidth + 12 bits)))
-  val ff = Fragment(io.sink_length.asBits ## io.sink.payload.fragment)
-  ff.fragment := io.sink_length.asBits ## io.sink.payload.fragment
+  val xx = Stream(Fragment(Bits(dataWidth + 12 + 1 bits)))
+  val ff = Fragment(io.sink_drop ## io.sink_length.asBits ## io.sink.payload.fragment)
+  ff.fragment := io.sink_drop ## io.sink_length.asBits ## io.sink.payload.fragment
   ff.last := io.sink.payload.last
   // such that both data and length go through a pipelined skid buffer (or elastic buffer)
   xx << io.sink.translateWith(ff).s2mPipe().m2sPipe()
@@ -37,7 +42,8 @@ case class AxisToCorundumFrame(dataWidth : Int) extends Component {
   fff.fragment := xx.payload.fragment.resize(dataWidth)
   x << xx.translateWith(fff)
   // and extract the length
-  val x_length = (xx.payload.fragment >> dataWidth).asUInt
+  val x_length = (xx.payload.fragment >> dataWidth).resize(12).asUInt
+  val x_drop = (xx.payload.fragment >> dataWidth)(12)
 
   // y will create a CorundumFrame from x
   val y = Stream Fragment(CorundumFrame(dataWidth))
@@ -52,17 +58,16 @@ case class AxisToCorundumFrame(dataWidth : Int) extends Component {
     y.payload.fragment.tkeep(i) := !x_last | (x_last_enabled_bytes > i)
   }
   //y.payload.fragment.tkeep(tkeep_width - 1) := !x_last | (x_length.resize(log2Up(tkeep_width) + 1) > (tkeep_width - 1))
+
+  // put drop flag into tuser(0)
   y.payload.fragment.tuser := 0
+  when (True) { y.payload.fragment.tuser(0) := x_drop }
   y.payload.last := x.payload.last
   y.valid := x.valid
   x.ready := y.ready
 
   io.source <-< y
-}
 
-object AxisToCorundumFrameRTL {
-  def main(args: Array[String]) {
-    SpinalVerilog(new AxisToCorundumFrame(512))
-    SpinalVhdl(new AxisToCorundumFrame(512))
-  }
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
