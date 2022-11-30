@@ -109,7 +109,7 @@ object BlackwireWireguardType4Sim {
     SimConfig
     .withGhdl
     .withVcdWave
-        .addRtl(s"MaximVHDL/imports/project_1/ChaCha20.vhd")
+    .addRtl(s"MaximVHDL/imports/project_1/ChaCha20.vhd")
     .addRtl(s"MaximVHDL/new/AEAD_ChaCha_Poly.vhd")
 
     .addRtl(s"MaximVHDL/imports/project_1/q_round.vhd")
@@ -178,76 +178,88 @@ object BlackwireWireguardType4Sim {
       //  BigInt("74 2e 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ")/*.reverse*/.mkString(""), 16)
       //)
 
-      // reversed byte order of TKEEP
-      val plaintext = Vector(
-        BigInt("8B 72 92 DA 69 FB FA 82 12 67 A9 8C 5E A4 BE 3D D6 62 EE 36 A7 B5 E2 A9 FE 08 6E 29 51 ED AD A4 C2 7E EF 53 BC AF 86 7B DB 60 8E 64 34 8D 1A D3 07 06 05 04 03 02 01 00 01 00 00 00 90 00 00 04".split(" ")/*.reverse*/.mkString(""), 16),
-        BigInt("4B C6 CE 86 65 D2 76 E5 9D 7A 4B 8E F0 DE F4 3F BC D7 31 48 8B 80 85 55 94 75 D6 FA E4 24 B3 FA 58 1B 09 28 E3 AE 03 98 8C 8B 77 2D 7F BD DD 92 36 3B CD 7E B6 A5 D6 05 29 0B 06 9E 0A DE 71 1A".split(" ")/*.reverse*/.mkString(""), 16),
-        BigInt("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 4E 8D CC 0A CA 55 87 50 01 E7 44 AF C1 AD 57 20 64 FF EF DD FB 63 76 A6 D7 6C 35 CE 03 0C 16 61".split(" ")/*.reverse*/.mkString(""), 16)
-      )
+      var remaining_packets = 2
+      val inter_packet_gap = 1
+      while (remaining_packets > 0) {
+        // reversed byte order of TKEEP
+        val plaintext = Vector(
+          BigInt("8B 72 92 DA 69 FB FA 82 12 67 A9 8C 5E A4 BE 3D D6 62 EE 36 A7 B5 E2 A9 FE 08 6E 29 51 ED AD A4 C2 7E EF 53 BC AF 86 7B DB 60 8E 64 34 8D 1A D3 07 06 05 04 03 02 01 00 01 00 00 00 90 00 00 04".split(" ")/*.reverse*/.mkString(""), 16),
+          BigInt("4B C6 CE 86 65 D2 76 E5 9D 7A 4B 8E F0 DE F4 3F BC D7 31 48 8B 80 85 55 94 75 D6 FA E4 24 B3 FA 58 1B 09 28 E3 AE 03 98 8C 8B 77 2D 7F BD DD 92 36 3B CD 7E B6 A5 D6 05 29 0B 06 9E 0A DE 71 1A".split(" ")/*.reverse*/.mkString(""), 16),
+          BigInt("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 4E 8D CC 0A CA 55 87 50 01 E7 44 AF C1 AD 57 20 64 FF EF DD FB 63 76 A6 D7 6C 35 CE 03 0C 16 61".split(" ")/*.reverse*/.mkString(""), 16)
+        )
 
-      // 512/8
-      var packet_length = 64 + 64 + 16 + 16 // bytes
-      var remaining = packet_length
+        // 512/8
+        var packet_length = 64 + 64 + 16 + 16 // bytes
+        var remaining = packet_length
 
-      var word_index = 0
-      // iterate over frame content
-      while (remaining > 0) {
-        printf("remaining = %d\n", remaining)
-        val tkeep_len = if (remaining >= keepWidth) keepWidth else remaining;
-        printf("tkeep_len = %d\n", tkeep_len)
-        valid0 = (Random.nextInt(8) > 2)
-        valid0 &= !pause
-        if (pause) pause ^= (Random.nextInt(16) >= 15)
-        if (!pause) pause ^= (Random.nextInt(128) >= 127)
+        var word_index = 0
+        // iterate over frame content
+        while (remaining > 0) {
+          printf("remaining = %d\n", remaining)
+          val tkeep_len = if (remaining >= keepWidth) keepWidth else remaining;
+          printf("tkeep_len = %d\n", tkeep_len)
+          valid0 = (Random.nextInt(8) > 2)
+          valid0 &= !pause
+          if (pause) pause ^= (Random.nextInt(16) >= 15)
+          if (!pause) pause ^= (Random.nextInt(128) >= 127)
 
-
-        valid0 = true
-        
-        assert(tkeep_len <= keepWidth)
-        tkeep0 = 0
-        data0 = 0
-        if (valid0) {
-          last0 = (remaining <= keepWidth)
-          for (i <- 0 until tkeep_len) {
-            tkeep0 = (tkeep0 << 1) | 1
+          valid0 = true
+          
+          assert(tkeep_len <= keepWidth)
+          tkeep0 = 0
+          data0 = 0
+          if (valid0) {
+            last0 = (remaining <= keepWidth)
+            for (i <- 0 until tkeep_len) {
+              tkeep0 = (tkeep0 << 1) | 1
+            }
+            // reverse bit order of TKEEP
+            //var tkeep1 = tkeep0
+            //tkeep0 = 0
+            //for (i <- 0 until keepWidth) {
+            //  tkeep0 = (tkeep0 << 1) | (tkeep1 & 1)
+            //  tkeep1 = tkeep1 >> 1
+            //}
           }
-          // reverse bit order of TKEEP
-          //var tkeep1 = tkeep0
-          //tkeep0 = 0
-          //for (i <- 0 until keepWidth) {
-          //  tkeep0 = (tkeep0 << 1) | (tkeep1 & 1)
-          //  tkeep1 = tkeep1 >> 1
-          //}
+
+          dut.io.sink.valid #= valid0
+          dut.io.sink.payload.tdata #= plaintext(word_index)
+          dut.io.sink.last #= last0
+          dut.io.sink.payload.tkeep #= tkeep0
+
+          // do not apply backpressure on ChaCha20
+          dut.io.source.ready #= true
+
+          // Wait for a rising edge on the clock
+          dut.clockDomain.waitRisingEdge()
+
+          if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
+            remaining -= tkeep_len
+            word_index += 1
+          }
+          dut.io.sink.valid #= false
+          dut.io.sink.last #= false
         }
+        printf("remaining = %d after while (remaining > 0))\n", remaining)
+        assert(remaining == 0)
 
-        dut.io.sink.valid #= valid0
-        dut.io.sink.payload.tdata #= plaintext(word_index)
-        dut.io.sink.last #= last0
-        dut.io.sink.payload.tkeep #= tkeep0
+        dut.clockDomain.waitRisingEdge(inter_packet_gap)
 
-        dut.io.source.ready #= (Random.nextInt(8) > 1)
+        remaining_packets -= 1
+      } // while remaining_packets
 
-        // Wait for a rising edge on the clock
-        dut.clockDomain.waitRisingEdge()
-
-        if (dut.io.sink.ready.toBoolean & dut.io.sink.valid.toBoolean) {
-          remaining -= tkeep_len
-          word_index += 1
-        }
-      }
-      dut.io.sink.valid #= false
+      //dut.io.sink.valid #= false
       dut.io.sink.payload.tdata #= BigInt(0)
-      dut.io.source.ready #= true
-      
+
       //printf("LATENCY=%d\n", dut.io.latency.toInt)
 
-      dut.clockDomain.waitRisingEdge(/*dut.io.latency.toInt*/ 12 + 32 + 290)
+      dut.clockDomain.waitRisingEdge(/*dut.io.latency.toInt*/ 12 + 32 + 490 + inter_packet_gap)
 
-      printf("VALID=%d, LAST=%d", dut.io.source.valid.toBigInt, dut.io.source.last.toBigInt)
+      printf("VALID=%d, LAST=%d\n", dut.io.source.valid.toBigInt, dut.io.source.last.toBigInt)
       while (dut.io.source.valid.toBoolean) {
           // Wait for a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
-          printf("VALID=%d, LAST=%d", dut.io.source.valid.toBigInt, dut.io.source.last.toBigInt)
+          printf("VALID=%d, LAST=%d\n", dut.io.source.valid.toBigInt, dut.io.source.last.toBigInt)
       }
       //dut.clockDomain.waitRisingEdge(8)
       //dut.clockDomain.waitRisingEdge(8)
