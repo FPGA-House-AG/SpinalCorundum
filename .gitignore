@@ -60,3 +60,6 @@ cocotb/**/iverilog_dump.v
 # Vivado
 vivado-test-*/
 vivado*.jou
+
+# Generated Output
+build/
