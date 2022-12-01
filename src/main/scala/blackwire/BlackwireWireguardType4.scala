@@ -10,14 +10,8 @@ import corundum._
 // companion object
 object BlackwireWireguardType4 {
   def main(args: Array[String]) {
-    def spinalConfig = SpinalConfig(
-      targetDirectory = "build",
-      defaultConfigForClockDomains = ClockDomainConfig(
-        resetKind = SYNC
-      )
-    )
-    spinalConfig.generateVhdl(new BlackwireWireguardType4())
-    spinalConfig.generateVerilog(new BlackwireWireguardType4())
+    Config.spinal.generateVhdl(new BlackwireWireguardType4())
+    Config.spinal.generateVerilog(new BlackwireWireguardType4())
   }
 }
 

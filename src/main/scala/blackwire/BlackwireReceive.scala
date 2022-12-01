@@ -13,18 +13,8 @@ import corundum._
 // companion object
 object BlackwireReceive {
   def main(args: Array[String]) {
-    def spinalConfig = SpinalConfig(
-      targetDirectory = "build/rtl",
-      mode = VHDL,
-      // synchronous resets
-      defaultConfigForClockDomains = ClockDomainConfig(
-        resetKind = SYNC
-      ),
-      // change (un)signed I/Os at toplevel into std_logic_vector
-      onlyStdLogicVectorAtTopLevelIo = true
-    )
-    val vhdlReport = spinalConfig.generateVhdl(new BlackwireReceive())
-    //vhdlReport.mergeRTLSource("merge")
+    val vhdlReport = Config.spinal.generateVhdl(new BlackwireReceive())
+    vhdlReport.mergeRTLSource("merge")
   }
 }
 
