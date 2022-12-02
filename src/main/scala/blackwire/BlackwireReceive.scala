@@ -14,7 +14,7 @@ import corundum._
 object BlackwireReceive {
   def main(args: Array[String]) {
     val vhdlReport = Config.spinal.generateVhdl(new BlackwireReceive())
-    vhdlReport.mergeRTLSource("merge")
+    //vhdlReport.mergeRTLSource("merge")
   }
 }
 
@@ -114,7 +114,8 @@ case class BlackwireReceive() extends Component {
       s_length.assignFromBits(p.payload.fragment(16, 16 bits).resize(12))
     }
     s <-< p
-    // @NOTE drop is valid on last beat
+    // @NOTE tag_valid is unknown before TLAST beats, so AND it with TLAST
+    // so that we do forward an unknown drop signal on non-last beats to the output
     s_drop := (p.last & !decrypt.io.tag_valid)
   }
   (!include_chacha) generate new Area {

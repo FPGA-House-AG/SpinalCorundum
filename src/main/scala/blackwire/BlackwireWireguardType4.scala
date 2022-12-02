@@ -10,7 +10,7 @@ import corundum._
 // companion object
 object BlackwireWireguardType4 {
   def main(args: Array[String]) {
-    Config.spinal.generateVhdl(new BlackwireWireguardType4())
+    val vhdlReport = Config.spinal.generateVhdl(new BlackwireWireguardType4())
     Config.spinal.generateVerilog(new BlackwireWireguardType4())
   }
 }
@@ -24,9 +24,6 @@ case class BlackwireWireguardType4() extends Component {
   // 1534 rounded up 2048/(512/8) == 32
 
   val io = new Bundle {
-
-    val clk = in Bool()
-    val rst = in Bool()
     // I/O is only the Corundum Frame tdata payload
     val sink = slave Stream Fragment(CorundumFrame(corundumDataWidth))
     val source = master Stream(Fragment(Bits(cryptoDataWidth bits)))
