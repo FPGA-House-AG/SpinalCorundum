@@ -61,5 +61,9 @@ cocotb/**/iverilog_dump.v
 vivado-test-*/
 vivado*.jou
 
+xsim.dir/
+
 # Generated Output
 build/
+
+MaximVHDL
