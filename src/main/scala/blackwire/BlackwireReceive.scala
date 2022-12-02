@@ -227,7 +227,7 @@ object BlackwireReceiveSim {
     .addRtl(s"MaximVHDL/new/AEAD_top.vhd")
     .addRtl(s"MaximVHDL/new/Poly_pipe_top_test.vhd")
     .addRtl(s"MaximVHDL/new/AEAD_decryption.vhd")
-    .addRtl(s"MaximVHDL/ChaCha20Poly1305Decrypt.vhd")
+    .addRtl(s"MaximVHDL/AEAD_decryption_wrapper.vhd")
 
     //.addSimulatorFlag("-Wno-TIMESCALEMOD")
     .doSim(BlackwireReceive()){dut =>

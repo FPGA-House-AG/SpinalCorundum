@@ -5,9 +5,9 @@ import corundum._
 import spinal.core._
 import spinal.lib._
 
-// Define ChaCha20Poly1305Decrypt
+// Define ChaCha20Poly1305Decrypt / AEAD_decryption_wrapper
 // This is called AEAD_decryption_wrapper by Maxim, renamed here
-class ChaCha20Poly1305Decrypt() extends BlackBox {
+class AEAD_decryption_wrapper() extends BlackBox {
   // Define IO of the VHDL entity / Verilog module
   val io = new Bundle {
     val clk = in Bool()
@@ -52,7 +52,7 @@ case class ChaCha20Poly1305DecryptSpinal() extends Component {
     val key    = in Bits (256 bit)
     val tag_valid = out Bool()
   }
-  val vhdl = new ChaCha20Poly1305Decrypt()
+  val vhdl = new AEAD_decryption_wrapper()
 
   // decrypted output
   val d = Stream(Fragment(Bits(128 bits)))
