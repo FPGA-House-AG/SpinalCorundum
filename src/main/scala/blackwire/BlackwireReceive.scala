@@ -115,7 +115,7 @@ case class BlackwireReceive() extends Component {
     }
     s <-< p
     // @NOTE drop is valid on last beat
-    s_drop := !decrypt.io.tag_valid
+    s_drop := (p.last & !decrypt.io.tag_valid)
   }
   (!include_chacha) generate new Area {
     s << k.haltWhen(output_stash_too_full)
@@ -268,9 +268,9 @@ object BlackwireReceiveSim {
 // "CCCCLLLLb315SSSS", DDDD=port 5555 (0x15b3)
 // "00000000FFFF0000"
 
-      var remaining_packets = 3
+      var packet_number = 0
       val inter_packet_gap = 1
-      while (remaining_packets > 0) {
+      while (packet_number < 3) {
 
         val plaintext1 = Vector(
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------> < L a  d  i  e  s
@@ -288,16 +288,42 @@ object BlackwireReceiveSim {
         //var packet_length = 16 + 114 // bytes
 
         val plaintext = Vector(
-          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>< L  a  d  i  e  s
-          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
-          //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
-          BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
-          //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 
-          //                                                                                                                                                                                    <-Poly 1305 Tag...
-          BigInt("8B 8C 98 03 AE E3 28 09 1B 58 FA B3 24 E4 FA D6 75 94 55 85 80 8B 48 31 D7 BC 3F F4 DE F0 8E 4B 7A 9D E5 76 D2 65 86 CE C6 4B 61 16 0C 03 CE 35 6C D7 A6 76 63 FB DD EF FF 64 20 57 AD C1 AF 44".split(" ").reverse.mkString(""), 16),
-          //      ...Poly 1305 Tag (16 bytes)->
-          //BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-          BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+          Vector(
+            //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>< L  a  d  i  e  s
+            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
+            //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
+            BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
+            //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 
+            //                                                                                                                                                                                    <-Poly 1305 Tag...
+            BigInt("8B 8C 98 03 AE E3 28 09 1B 58 FA B3 24 E4 FA D6 75 94 55 85 80 8B 48 31 D7 BC 3F F4 DE F0 8E 4B 7A 9D E5 76 D2 65 86 CE C6 4B 61 16 0C 03 CE 35 6C D7 A6 76 63 FB DD EF FF 64 20 57 AD C1 AF 44".split(" ").reverse.mkString(""), 16),
+            //      ...Poly 1305 Tag (16 bytes)->
+            //BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+            BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+          ),
+          Vector(
+            //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>< L  a  d  i  e  s
+            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
+            //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
+            BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
+            //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 
+            //                                                                                                                                                                                    <-Poly 1305 Tag...
+            BigInt("8B 8C 98 03 AE E3 28 09 1B 58 FA B3 24 E4 FA D6 75 94 55 85 80 8B 48 31 D7 BC 3F F4 DE F0 8E 4B 7A 9D E5 76 D2 65 86 CE C6 4B 61 16 0C 03 CE 35 6C D7 A6 76 63 FB DD EF FF 64 20 57 AD C1 AF 44".split(" ").reverse.mkString(""), 16),
+            //      ...Poly 1305 Tag (16 bytes)->
+            //BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+            BigInt("E7 01 50 87 55 CA 0A CC 8D 4F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+          ),
+          Vector(
+            //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>< L  a  d  i  e  s
+            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
+            //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
+            BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
+            //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 
+            //                                                                                                                                                                                    <-Poly 1305 Tag...
+            BigInt("8B 8C 98 03 AE E3 28 09 1B 58 FA B3 24 E4 FA D6 75 94 55 85 80 8B 48 31 D7 BC 3F F4 DE F0 8E 4B 7A 9D E5 76 D2 65 86 CE C6 4B 61 16 0C 03 CE 35 6C D7 A6 76 63 FB DD EF FF 64 20 57 AD C1 AF 44".split(" ").reverse.mkString(""), 16),
+            //      ...Poly 1305 Tag (16 bytes)->
+            //BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+            BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+          )
         )
         var packet_length = 3 * 64 + 10 //bytes
 
@@ -325,7 +351,7 @@ object BlackwireReceiveSim {
           }
 
           dut.io.sink.valid #= valid0
-          dut.io.sink.payload.tdata #= plaintext(word_index)
+          dut.io.sink.payload.tdata #= plaintext(packet_number)(word_index)
           dut.io.sink.last #= last0
           dut.io.sink.last #= last0
           dut.io.sink.payload.tkeep #= tkeep0
@@ -348,7 +374,7 @@ object BlackwireReceiveSim {
 
         dut.clockDomain.waitRisingEdge(inter_packet_gap)
 
-        remaining_packets -= 1
+        packet_number += 1
       } // while remaining_packets
 
       dut.io.source.ready #= true
