@@ -37,26 +37,38 @@ case class CorundumFrameMatchWireguard() extends Component {
   val is_frame_continuation = RegNextWhen(!x.last, x.valid) init(False)
   // purely for manual debug
   val is_first_beat = x.ready & x.valid & !is_frame_continuation
-  // byte 14 is IP header, byte 34 is UDP header, byte 42 is UDP payload
-  val is_ipv4l5  = x.payload.tdata(14 * 8,  8 bits) === B"8'h45"
-  val is_udp     = x.payload.tdata(23 * 8,  8 bits) === B"8'h11"
-  val is_type1   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000001"
-  val is_type2   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000002"
-  val is_type3   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000003"
-  val is_type4   = x.payload.tdata(42 * 8, 32 bits) === B"32'h00000004"
+  // byte 0 is Ethernet, byte 14 is IP, byte 34 is UDP header, byte 42 is UDP payload
+
+  // ARP: TYPE=0806, HTYPE=0001, PTYPE=0800, HLEN=6, PLEN=4
+  val is_etharp  = x.payload.tdata(12 * 8, 64 bits) === B"64'h0806000108000604"
+  // TYPE=0800
+  val is_ethip   = (x.payload.tdata(12 * 8, 16 bits) === B"16'h0800") & x.payload.tkeep(14)
+  val is_ipv4l5  = (x.payload.tdata(14 * 8,  8 bits) === B"8'h45") & x.payload.tkeep(14)
+  // IP protocol number x11
+  val is_udp     = (x.payload.tdata(23 * 8,  8 bits) === B"8'h11") & x.payload.tkeep(23)
+  // IP protocol number 0x01
+  val is_icmp    = (x.payload.tdata(23 * 8,  8 bits) === B"8'h01") & x.payload.tkeep(23)
+  val is_type1   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000001") & x.payload.tkeep(42, 4 bits).andR
+  val is_type2   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000002") & x.payload.tkeep(42, 4 bits).andR
+  val is_type3   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000003") & x.payload.tkeep(42, 4 bits).andR
+  val is_type4   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000004") & x.payload.tkeep(42, 4 bits).andR
   val type4_field = x.payload.tdata(42 * 8, 32 bits)
   val is_type123 = (x.payload.tdata(42 * 8 + 2,  6 bits) === B"6'b000000") &
-    (x.payload.tdata(43 * 8, 24 bits) === B"24'h000000")
+    (x.payload.tdata(43 * 8, 24 bits) === B"24'h000000") & x.payload.tkeep(42, 4 bits).andR
   val udp_length = x.payload.tdata(34 * 8, 16 bits)
   
   // all bytes required to match the filters are present in the input data?
-  val are_bytes_present = x.payload.tkeep(14) & x.payload.tkeep(23) & x.payload.tkeep(42, 4 bits).andR
-  val is_match_type123 = is_ipv4l5 & is_udp & is_type123
-  val is_match_type4 = is_ipv4l5 & is_udp & is_type4
+  //val are_bytes_present = x.payload.tkeep(14) & x.payload.tkeep(23) //& x.payload.tkeep(42, 4 bits).andR
+  val is_match_type123 = is_ethip & is_ipv4l5 & is_udp & is_type123
+  val is_match_type4 =   is_ethip & is_ipv4l5 & is_udp & is_type4
+  val is_match_arp =     is_etharp
+  val is_match_icmp =    is_ethip & is_ipv4l5 & is_icmp
 
   // the final keep and drop criteria for the frame
-  val is_type123_on_first_beat = RegNextWhen(is_match_type123 & are_bytes_present, !is_frame_continuation) init(False)
-  val is_type4_on_first_beat = RegNextWhen(is_match_type4 & are_bytes_present, !is_frame_continuation) init(False)
+  val is_type123_on_first_beat = RegNextWhen(is_match_type123, !is_frame_continuation) init(False)
+  val is_type4_on_first_beat = RegNextWhen(is_match_type4, !is_frame_continuation) init(False)
+  val is_arp_on_first_beat = RegNextWhen(is_match_arp, !is_frame_continuation) init(False)
+  val is_icmp_on_first_beat = RegNextWhen(is_match_icmp, !is_frame_continuation) init(False)
 
   io.is_type123 := is_type123_on_first_beat
   io.is_type4 := is_type4_on_first_beat
