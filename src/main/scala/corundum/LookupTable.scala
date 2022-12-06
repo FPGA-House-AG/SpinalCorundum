@@ -15,10 +15,40 @@ import scala.math.pow
 
 import java.util.Base64
 
-
 // from tester/src/main/scala/spinal/tester/code/Play2.scala
 
+// companion object for case class
+object LookupTable {
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl({
+      val toplevel = new LookupTable(memDataWidth = 33, wordCount = 1024, ClockDomain.external("portb"))
+      //toplevel.mem.initBigInt(Seq(BigInt("1AABBCC00", 16), BigInt("1AABBCC11", 16)))
 
+      val bytes = BigInt("1AABBCC00", 16).toByteArray
+      val encoded = Base64.getEncoder().encodeToString(bytes)
+      printf("encoded = %s\n", encoded)
+
+      val decoded = Base64.getDecoder().decode(encoded)
+      val bi: BigInt = new BigInt(new java.math.BigInteger(decoded))
+      printf("%s\n", bi.toString)
+
+      assert(bi == BigInt("1AABBCC00", 16))
+
+      // [192.168.255.0 - 192.168.255.255]
+      val first = BigInt("1C0A8FF00", 16)
+      val last = BigInt("1C0A90000", 16)
+     // Seq.range(first, last)
+
+      //toplevel.mem.initBigInt(Seq.fill(512)(Seq(BigInt("1AABBCC00", 16), BigInt("1AABBCC11", 16))).flatten)
+      toplevel.mem.initBigInt(Seq.fill(4)(Seq.range(first, last)).flatten)
+      // return this
+      toplevel
+      //XilinxPatch(toplevel)
+    })
+    //val verilogReport = Config.spinal.generateVerilog(new LookupTable(Config.corundumWidth, Config.cryptoWidth))
+  }
+}
 
 // true dual port ram with independent clocks, symmetric data widths
 case class LookupTable(memDataWidth : Int,
@@ -107,11 +137,9 @@ case class LookupTable(memDataWidth : Int,
 
     printf("memory_words                 = %d\n", wordCount)
 
-
     // this is the address space exposed on the control bus
     val memory_size = wordCount * cpu_words_per_memory_word * bytes_per_cpu_word
     printf("memory space size = %d (0x%x) bytes\n", memory_size, memory_size)
-
 
     val bytes_to_memory_word_mask = bytes_per_memory_word - 1
     val cpu_word_to_memory_word_mask = cpu_words_per_memory_word - 1
@@ -209,7 +237,6 @@ case class LookupTable(memDataWidth : Int,
     mem_read_addr := (busCtrl.readAddress >> bytes_to_memory_word_shift).resize(memAddressWidth)
     val expected_bus_read_addr = Reg(UInt(widthOf(busCtrl.readAddress) bits))
 
-
     // addresses the CPU word inside the memory word- @TODO what if zero?
     val read_cpu_word_of_memory_word = UInt(cpu_word_to_memory_word_shift bits)
     // calculate which CPU word is addressed, then reduce to only the CPU word index inside the memory word
@@ -277,9 +304,13 @@ case class LookupTable(memDataWidth : Int,
 // [Synth 8-3971] The signal "LookupTable/mem_reg" was recognized as a true dual port RAM template.
 // [Synth 8-7030] Implemented Non-Cascaded Block Ram (cascade_height = 1) of width 32 for RAM "LookupTable/mem_reg"
 
-// companion object
+// companion object for case class
 object LookupTableAxi4 {
-  //final val slaveAddressWidth = 10
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false), ClockDomain.external("portb")))
+    val verilogReport = Config.spinal.generateVerilog(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false), ClockDomain.external("portb")))
+  }
 }
 
 // slave must be naturally aligned
@@ -303,7 +334,6 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
     for (z <- 1 to 16) y = y | (y >> z)
     y + 1
   }
-
 
   /* calculate the bus slave address width needed to address the lookup table */
   val bytes_per_cpu_word = busCfg.dataWidth / 8
@@ -346,53 +376,10 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
   mem.io.portB.addr := io.addr
   mem.io.portB.wrData := io.wrData
   io.rdData := mem.io.portB.rdData
+
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))  
 }
-
-//Generate the CorundumFrameFilter's Verilog
-object LookupTableAxi4Verilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false), ClockDomain.external("portb"))
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-object LookupTableVerilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    //config.addStandardMemBlackboxing(blackboxAll)
-
-    val verilog = config.generateVerilog({
-      val toplevel = new LookupTable(memDataWidth = 33, wordCount = 1024, ClockDomain.external("portb"))
-      //toplevel.mem.initBigInt(Seq(BigInt("1AABBCC00", 16), BigInt("1AABBCC11", 16)))
-
-      val bytes = BigInt("1AABBCC00", 16).toByteArray
-      val encoded = Base64.getEncoder().encodeToString(bytes)
-      printf("encoded = %s\n", encoded)
-
-      val decoded = Base64.getDecoder().decode(encoded)
-      val bi: BigInt = new BigInt(new java.math.BigInteger(decoded))
-      printf("%s\n", bi.toString)
-
-      assert(bi == BigInt("1AABBCC00", 16))
-
-      // [192.168.255.0 - 192.168.255.255]
-      val first = BigInt("1C0A8FF00", 16)
-      val last = BigInt("1C0A90000", 16)
-     // Seq.range(first, last)
-
-      //toplevel.mem.initBigInt(Seq.fill(512)(Seq(BigInt("1AABBCC00", 16), BigInt("1AABBCC11", 16))).flatten)
-      toplevel.mem.initBigInt(Seq.fill(4)(Seq.range(first, last)).flatten)
-      // return this
-      toplevel
-      //XilinxPatch(toplevel)
-    })
-    //verilog.printPruned()
-  }
-}
-
 
 object Quicky {
   def main(args: Array[String]) {
