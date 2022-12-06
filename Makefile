@@ -129,30 +129,33 @@ rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
 rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 rtl: src/main/scala/blackwire/BlackwireReceive.scala
+rtl: src/main/scala/blackwire/BlackwireReceiveFmax.scala
 	set -e
 	sbt " \
-	runMain corundum.CorundumFrameMuxPrioVerilog; \
+	runMain corundum.CorundumFrameMuxPrio; \
 	runMain corundum.CorundumFrameDrop; \
-	runMain corundum.CorundumFrameMatchHeaderVerilog; \
+	runMain corundum.CorundumFrameMatchHeader; \
 	runMain corundum.CorundumFrameMatchWireguard; \
-	runMain corundum.CorundumFrameStashVerilog; \
-	runMain corundum.CorundumFrameStashVhdl; \
-	runMain corundum.CorundumFrameFilterVerilog; \
-	runMain corundum.CorundumFrameWriterAxi4Verilog; \
-	runMain corundum.CorundumFrameReaderAxi4Verilog; \
+	runMain corundum.CorundumFrameStash; \
+	runMain corundum.CorundumFrameFilter; \
+	runMain corundum.CorundumFrameWriterAxi4; \
+	runMain corundum.CorundumFrameReaderAxi4; \
 	runMain corundum.AxisExtractHeader; \
 	runMain corundum.AxisInsertHeader; \
 	runMain corundum.AxisDownSizer; \
 	runMain corundum.AxisUpSizer; \
 	runMain corundum.AxisToCorundumFrame; \
 	runMain corundum.AxisWireguardKeyLookup; \
-	runMain corundum.LookupTableVerilog; \
+	runMain corundum.LookupTable; \
 	runMain blackwire.BlackwireWireguardType4; \
+	runMain blackwire.BlackwireReceive; \
+	runMain blackwire.BlackwireReceiveFmax; \
 	"
 
 formal:
 	set -e
-	sbt "runMain corundum.CorundumFrameStashSystemVerilogWithFormal"
+	#sbt "runMain corundum.CorundumFrameStashSystemVerilogWithFormal"
+	sbt "runMain corundum.CorundumFrameStash"
 	sby -f CorundumFrameStash.sby task_proof -d formalWorkdir/CorundumFrameStash 
 	sby -f CorundumFrameStash.sby task_cover -d formalWorkdir/CorundumFrameStash/cover 
 
