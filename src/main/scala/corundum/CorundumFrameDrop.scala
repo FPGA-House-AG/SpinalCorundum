@@ -8,15 +8,16 @@ import spinal.lib.bus.amba4.axi._
 
 import scala.math._
 
-// companion object
+// companion object for case class
 object CorundumFrameDrop {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    SpinalVerilog(new CorundumFrameDrop(512))
-    SpinalVhdl(new CorundumFrameDrop(512))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameDrop(Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameDrop(Config.corundumWidth))
   }
 }
 
+/* Drops a Corundum Frame if drop is set during first beat */
 case class CorundumFrameDrop(dataWidth : Int) extends Component {
   val io = new Bundle {
     val sink = slave Stream Fragment(CorundumFrame(dataWidth))
@@ -54,6 +55,8 @@ case class CorundumFrameDrop(dataWidth : Int) extends Component {
   // component sink/slave port to fifo push/sink/slave port
   val z = Stream Fragment(CorundumFrame(dataWidth))
   // drop packet conditionally
+  // @TODO drop_y_packet can be one beat late,
+  // consider using: (y_drop & y.first) | drop_y_packet
   z << y.throwWhen(drop_y_packet)
   io.source << z
 

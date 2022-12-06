@@ -12,8 +12,8 @@ import scala.math._
 object CorundumFrameEndianess {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    SpinalVerilog(new CorundumFrameEndianess(512))
-    SpinalVhdl(new CorundumFrameEndianess(512))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameEndianess(Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameEndianess(Config.corundumWidth))
   }
 }
 

@@ -8,14 +8,16 @@ import spinal.lib.bus.amba4.axi._
 
 import scala.math._
 
-// companion object
+// companion object for case class
 object AxisToCorundumFrame {
+  // generate VHDL and Verilog
   def main(args: Array[String]) {
-    SpinalVerilog(new AxisToCorundumFrame(512))
-    SpinalVhdl(new AxisToCorundumFrame(512))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisToCorundumFrame(Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new AxisToCorundumFrame(Config.corundumWidth))
   }
 }
 
+/* Converts from TDATA+length to Corundum TDATA+TKEEP */
 case class AxisToCorundumFrame(dataWidth : Int) extends Component {
   val io = new Bundle {
     val sink = slave Stream Fragment(Bits(dataWidth bits))

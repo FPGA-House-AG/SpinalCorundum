@@ -28,3 +28,44 @@ import spinal.lib._
 //    that
 //  }
 //}
+
+//object FrameSpecRenamer{
+//  def apply[T <: Bundle with CorundumFrame](that : T): T ={
+//    def doIt = {
+//      that.flatten.foreach((bt) => {
+//        println(bt.getName())
+//        bt.setName(bt.getName().replace("_payload_",""))
+//        bt.setName(bt.getName().replace("_valid","valid"))
+//        bt.setName(bt.getName().replace("_ready","ready"))
+//        if(bt.getName().startsWith("io_")) bt.setName(bt.getName().replaceFirst("io_",""))
+//      })
+//    }
+//    if(Component.current == that.component)
+//      that.component.addPrePopTask(() => {doIt})
+//    else
+//      doIt
+//
+//    that
+//  }
+//}
+//
+//// https://gitter.im/SpinalHDL/SpinalHDL?at=5c2297c28d31aa78b1f8c969
+//object XilinxPatch {
+//  def apply[T <: Component](c : T) : T = {
+//    //Get the io bundle via java reflection
+//    val m = c.getClass.getMethod("io")
+//    val io = m.invoke(c).asInstanceOf[Bundle]
+//    println("getClass %s", m);
+//
+//    //Patch things
+//    io.elements.map(_._2).foreach {
+//      //case axi : AxiLite4 => AxiLite4SpecRenamer(axi)
+//      //case axi : Axi4 => Axi4SpecRenamer(axi)
+//      case axi : CorundumFrame => FrameSpecRenamer(axi)
+//      case _ => println("unknown")
+//    }
+//
+//    //Builder pattern return the input argument
+//    c 
+//  }
+//}

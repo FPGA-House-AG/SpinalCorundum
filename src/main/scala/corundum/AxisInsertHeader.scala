@@ -11,8 +11,8 @@ import scala.math._
 // companion object
 object AxisInsertHeader {
   def main(args: Array[String]) {
-    SpinalVhdl(new AxisInsertHeader(128, 14/*Ethernet header size in bytes*/))
-    SpinalVerilog(new AxisInsertHeader(128, 14/*Ethernet header size in bytes*/))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisInsertHeader(Config.corundumWidth, 14/*Ethernet header size in bytes*/))
+    val verilogReport = Config.spinal.generateVerilog(new AxisInsertHeader(Config.corundumWidth, 14/*Ethernet header size in bytes*/))
   }
 }
 

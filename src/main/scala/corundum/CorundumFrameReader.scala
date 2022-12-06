@@ -10,7 +10,6 @@ import scala.math._
 
 // companion object
 object CorundumFrameReader {
-  final val addressWidth = 10
 }
 
 // Write a stream of fragments (i.e. generate a packet stream)
@@ -36,6 +35,9 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
   // pass component input to output towards bus controller
   // (this is a recommended workaround for bus controllers in SpinalHDL)
   io.output << io.input
+
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 
   def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
     // address decoding assumes slave-local addresses
@@ -114,13 +116,19 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
 
 // companion object
 object CorundumFrameReaderAxi4 {
+  final val slaveAddressWidth = 10
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameReaderAxi4(Config.corundumWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameReaderAxi4(Config.corundumWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
+  }
 }
 
 // slave must be naturally aligned
 case class CorundumFrameReaderAxi4(dataWidth : Int, busCfg : Axi4Config) extends Component {
 
   // copy AXI4 properties from bus, but override address width for slave
-  val slaveCfg = busCfg.copy(addressWidth = CorundumFrameReader.addressWidth)
+  val slaveCfg = busCfg.copy(addressWidth = CorundumFrameReaderAxi4.slaveAddressWidth)
   
   val io = new Bundle {
     val input = slave(Stream(Fragment(CorundumFrame(dataWidth))))
@@ -131,33 +139,6 @@ case class CorundumFrameReaderAxi4(dataWidth : Int, busCfg : Axi4Config) extends
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
   val bridge = reader.driveFrom(ctrl, 0)
   reader.io.input << io.input
-}
 
-//Generate the CorundumFrameReader's Verilog
-object CorundumFrameReaderVerilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameReader(512)
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameReader's Verilog
-object CorundumFrameReaderAxi4Verilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameReaderAxi4(512, Axi4Config(CorundumFrameReader.addressWidth, 32, 2, useQos = false, useRegion = false))
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameReader's VHDL
-object CorundumFrameReaderVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameReader(512))
-  }
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))  
 }

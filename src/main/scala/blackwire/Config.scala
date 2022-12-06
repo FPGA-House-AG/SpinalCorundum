@@ -14,4 +14,6 @@ object Config {
     // change (un)signed I/Os at toplevel into std_logic_vector
     onlyStdLogicVectorAtTopLevelIo = true
   )
+  final val corundumWidth = 512
+  final val cryptoWidth = 128
 }

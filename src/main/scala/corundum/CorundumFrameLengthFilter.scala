@@ -10,8 +10,14 @@ import scala.math._
 
 // companion object
 object CorundumFrameLengthFilter {
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameLengthFilter(Config.corundumWidth, Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameLengthFilter(Config.corundumWidth, Config.corundumWidth))
+  }
 }
 
+// @NOTE Broken, unmaintained and currently unused - not sure if we need this 
 // @TODO WIP if want to filter on length and headers
 case class CorundumFrameLengthFilter(dataWidth : Int, maxBytes : Int) extends Component {
   val io = new Bundle {
@@ -28,33 +34,13 @@ case class CorundumFrameLengthFilter(dataWidth : Int, maxBytes : Int) extends Co
   val y = Stream Fragment(CorundumFrame(dataWidth))
   val stash = CorundumFrameStash(dataWidth)
   x << io.slave0
-  x.payload.tkeep := io.length.asBits
+  when (True) {
+    x.payload.tkeep := io.length.asBits.resize(dataWidth / 8)
+  }
   y << x.m2sPipe().s2mPipe().throwWhen(x.payload.tkeep.asUInt > 10)
   //stash.io.slave0 << io.slave0/*.throwWhen(io.slave0.payload.tuser(0))*/
   io.master0 << y
-}
 
-//Generate the CorundumFrameFilter's Verilog
-object CorundumFrameLengthFilterVerilog {
-//  def main(args: Array[String]) {
-//    SpinalVerilog(new CorundumFrameFilter)
-//  }
-  def main(args: Array[String]) {
-   val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameFilter(512)
-      XilinxPatch(toplevel)
-    })
-    config.generateVerilog({
-      val toplevel = new CorundumFrameFilter(512)
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameFilter's VHDL
-object CorundumFrameLengthFilterVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameFilter(512))
-  }
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }

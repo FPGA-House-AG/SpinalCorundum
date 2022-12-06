@@ -8,11 +8,12 @@ import spinal.lib.bus.amba4.axi._
 
 import scala.math._
 
-// companion object
+// companion object for case class
 object AxisWireguardKeyLookup {
+  // generate VHDL and Verilog
   def main(args: Array[String]) {
-    SpinalVerilog(new AxisWireguardKeyLookup(128, has_internal_test_lut = true))
-    SpinalVhdl(new AxisWireguardKeyLookup(128, has_internal_test_lut = true))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisWireguardKeyLookup(Config.cryptoWidth, has_internal_test_lut = true))
+    val verilogReport = Config.spinal.generateVerilog(new AxisWireguardKeyLookup(Config.cryptoWidth, has_internal_test_lut = true))
   }
 }
 
@@ -56,12 +57,12 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   }
 
   // register Wireguard Type 4 header fields, those are little endian fields
-  val receiver = RegNextWhen(io.sink.payload(4 * 8, 32 bits), io.sink.isFirst)
-  val counter = RegNextWhen (io.sink.payload(8 * 8, 64 bits), io.sink.isFirst)
+  val hdr_receiver = RegNextWhen(io.sink.payload(4 * 8, 32 bits), io.sink.isFirst)
+  val hdr_counter = RegNextWhen (io.sink.payload(8 * 8, 64 bits), io.sink.isFirst)
 
   // drive external key LUT, expect key_in valid after two clock cycles
-  io.receiver := receiver.asBits.subdivideIn(4 slices).reverse.asBits().asUInt
-  io.counter := counter.asBits.subdivideIn(8 slices).reverse.asBits().asUInt
+  io.receiver := hdr_receiver.asBits.subdivideIn(4 slices).reverse.asBits().asUInt
+  io.counter := hdr_counter.asBits.subdivideIn(8 slices).reverse.asBits().asUInt
 
   val sink_is_first = io.sink.isFirst
 
@@ -125,7 +126,7 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
     lut.io.portA.en := True
     lut.io.portA.wr := False
     lut.io.portA.wrData := 0
-    lut.io.portA.addr := receiver.resize(log2Up(keys_num)).asUInt
+    lut.io.portA.addr := hdr_receiver.resize(log2Up(keys_num)).asUInt
 
     io.key_out := lut.io.portA.rdData.subdivideIn((widthOf(io.key_out) / 8) slices).reverse.asBits()
 

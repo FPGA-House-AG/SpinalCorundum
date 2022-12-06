@@ -5,15 +5,19 @@ import spinal.lib._
 
 import scala.math._
 
-// companion object
+// companion object for case class
 object AxisEndianess {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    SpinalVerilog(new AxisEndianess(512))
-    SpinalVhdl(new AxisEndianess(512))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisEndianess(Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new AxisEndianess(Config.corundumWidth))
   }
 }
 
+/* Reverse byte order of AXIS
+ *
+ * Combinatorial implementation.
+ */
 case class AxisEndianess(dataWidth : Int) extends Component {
   val io = new Bundle {
     val sink = slave Stream Fragment(Bits(dataWidth bits))

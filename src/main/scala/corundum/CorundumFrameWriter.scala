@@ -37,6 +37,9 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
   }
   io.output << io.input
 
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
+
   def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
     // address decoding assumes slave-local addresses
     //assert(busCtrl.busAddressWidth == addressWidth)
@@ -138,12 +141,16 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 // companion object
 object CorundumFrameWriterAxi4 {
   final val slaveAddressWidth = 10
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameWriterAxi4(Config.corundumWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameWriterAxi4(Config.corundumWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
+  }
 }
 
 // slave must be naturally aligned
 case class CorundumFrameWriterAxi4(dataWidth : Int, busCfg : Axi4Config) extends Component {
-
-  // copy AXI4 properties from bus, but override address with from slave
+  // copy AXI4 properties from bus, but override address width from slave
   val slaveCfg = busCfg.copy(addressWidth = CorundumFrameWriterAxi4.slaveAddressWidth)
   
   val io = new Bundle {
@@ -155,33 +162,7 @@ case class CorundumFrameWriterAxi4(dataWidth : Int, busCfg : Axi4Config) extends
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
   val bridge = writer.driveFrom(ctrl, 0)
   io.output << writer.io.output
-}
 
-//Generate the CorundumFrameWriter's Verilog
-object CorundumFrameWriterVerilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameWriter(512)
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameWriter's Verilog
-object CorundumFrameWriterAxi4Verilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameWriterAxi4(512, Axi4Config(CorundumFrameWriterAxi4.slaveAddressWidth, 32, 2, useQos = false, useRegion = false))
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameWriter's VHDL
-object CorundumFrameWriterVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameWriter(512))
-  }
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }

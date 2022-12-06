@@ -25,17 +25,6 @@ case class CorundumFrameWriterDut(dataWidth : Int) extends Component {
   io.output << writer.io.output
 }
 
-//Generate the CorundumFrameWriter's Verilog
-object CorundumFrameWriterDutVerilog {
-  def main(args: Array[String]) {
-   val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameWriterDut(512)
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
 object CorundumFrameWriterSim {
 
   def main(args: Array[String]) {

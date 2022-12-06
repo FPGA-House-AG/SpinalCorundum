@@ -8,15 +8,29 @@ import spinal.lib.bus.amba4.axi._
 
 import scala.math._
 
+/* @NOTE Multiple classes here:
+ *
+ * CorundumFrameDemuxWireguard (hard-coded, used for PoC)
+ *
+ * Now of lesser importance:
+ * CorundumFrameMatchWireguard
+ * CorundumFrameMatchHeader
+ * CorundumFrameMatchHeaderAxi4
+ */
+ 
+
 // "0102030405060102030405060102" Ethernet
 // "xxxx11887766554433221145" IPv4, IHL=5, protocol=0x11 (UDP)
 // "0000FF0000000000000000FF"
 // "CCCCLLLLb315SSSS", DDDD=port 5555 (0x15b3)
 // "00000000FFFF0000"
 
-// companion object
-object CorundumFrameMatchHeader {
-  final val addressWidth = 10
+//Generate the CorundumFrameMatchWireguard's Verilog
+object CorundumFrameMatchWireguard {
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchWireguard())
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchWireguard())
+  }
 }
 
 case class CorundumFrameMatchWireguard() extends Component {
@@ -27,6 +41,8 @@ case class CorundumFrameMatchWireguard() extends Component {
     val source = master Stream Fragment(CorundumFrame(dataWidth))
     val is_type123 = out Bool()
     val is_type4 = out Bool()
+    val is_arp = out Bool()
+    val is_icmp = out Bool()
   }
 
   // component sink/slave port to fifo push/sink/slave port
@@ -72,13 +88,22 @@ case class CorundumFrameMatchWireguard() extends Component {
 
   io.is_type123 := is_type123_on_first_beat
   io.is_type4 := is_type4_on_first_beat
+  io.is_arp := is_arp_on_first_beat
+  io.is_icmp := is_icmp_on_first_beat
   io.source << x.stage()
 
   // Rename SpinalHDL library defaults to AXI naming convention
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
 
-class CorundumFrameDemuxWireguard() extends Component {
+object CorundumFrameDemuxWireguard {
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameDemuxWireguard())
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameDemuxWireguard())
+  }
+}
+
+case class CorundumFrameDemuxWireguard() extends Component {
   val dataWidth : Int = 512
   val io = new Bundle {
     val sink = slave Stream Fragment(CorundumFrame(dataWidth))
@@ -100,6 +125,15 @@ class CorundumFrameDemuxWireguard() extends Component {
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
 
+// companion object
+object CorundumFrameMatchHeader {
+  final val addressWidth = 10
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchHeader(Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchHeader(Config.corundumWidth))
+  }
+}
 
 case class CorundumFrameMatchHeader(dataWidth : Int) extends Component {
   val io = new Bundle {
@@ -138,6 +172,9 @@ case class CorundumFrameMatchHeader(dataWidth : Int) extends Component {
   //printf("hashString = %s\n", SourceCodeGitHash())
   //printf("commitCount = %d\n", SourceCodeGitCommits())
 
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
+
   def driveFrom(busCtrl : BusSlaveFactory) = new Area {
     // leet code for Blackwire 1 Filter
     busCtrl.read(B"32'hB1F117E5", 0x00, documentation = null)
@@ -161,6 +198,11 @@ case class CorundumFrameMatchHeader(dataWidth : Int) extends Component {
 
 // companion object
 object CorundumFrameMatchHeaderAxi4 {
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchHeaderAxi4(Config.corundumWidth, Axi4Config(CorundumFrameMatchHeader.addressWidth, 32, 2, useQos = false, useRegion = false)))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchHeaderAxi4(Config.corundumWidth, Axi4Config(CorundumFrameMatchHeader.addressWidth, 32, 2, useQos = false, useRegion = false)))
+  }
 }
 
 // slave must be naturally aligned
@@ -180,63 +222,7 @@ case class CorundumFrameMatchHeaderAxi4(dataWidth : Int, busCfg : Axi4Config) ex
   val bridge = filter.driveFrom(ctrl)
   filter.io.sink << io.sink
   io.source << filter.io.source
-}
 
-//Generate the CorundumFrameMatchHeader's Verilog
-object CorundumFrameMatchHeaderVerilog {
-//  def main(args: Array[String]) {
-//    SpinalVerilog(new CorundumFrameMatchHeader)
-//  }
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameMatchHeader(512)
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameMatchHeader's Verilog
-object CorundumFrameMatchHeaderAxi4Verilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameMatchHeaderAxi4(512, Axi4Config(CorundumFrameMatchHeader.addressWidth, 32, 2, useQos = false, useRegion = false))
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameMatchWireguard's Verilog
-object CorundumFrameMatchWireguard {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameMatchWireguard()
-      toplevel
-    })
-    config.generateVhdl({
-      val toplevel = new CorundumFrameMatchWireguard()
-      toplevel
-    })
-  }
-}
-
-//Generate the CorundumFrameMatchHeader's VHDL
-object CorundumFrameMatchHeaderVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameMatchHeader(512))
-  }
-}
-
-//Generate the CorundumFrameDemuxWireguard's Verilog
-object CorundumFrameDemuxWireguardVerilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameDemuxWireguard()
-      //XilinxPatch(toplevel)
-      toplevel
-    })
-  }
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }

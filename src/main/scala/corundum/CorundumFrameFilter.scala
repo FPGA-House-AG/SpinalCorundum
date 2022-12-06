@@ -17,8 +17,14 @@ import scala.math._
 // companion object
 object CorundumFrameFilter {
   final val addressWidth = 10
+  // generate VHDL and Verilog
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameFilter(Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameFilter(Config.corundumWidth))
+  }
 }
 
+// Currently unused 
 case class CorundumFrameFilter(dataWidth : Int) extends Component {
   val io = new Bundle {
     val sink = slave Stream Fragment(CorundumFrame(dataWidth))
@@ -63,6 +69,9 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
   x << io.sink
   io.source << y
 
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
+
   //printf("hashString = %s\n", SourceCodeGitHash())
   //printf("commitCount = %d\n", SourceCodeGitCommits())
 
@@ -96,6 +105,10 @@ case class CorundumFrameFilter(dataWidth : Int) extends Component {
 
 // companion object
 object CorundumFrameFilterAxi4 {
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameFilterAxi4(512, Axi4Config(CorundumFrameFilter.addressWidth, 32, 2, useQos = false, useRegion = false)))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameFilterAxi4(512, Axi4Config(CorundumFrameFilter.addressWidth, 32, 2, useQos = false, useRegion = false)))
+  }
 }
 
 // slave must be naturally aligned
@@ -115,36 +128,7 @@ case class CorundumFrameFilterAxi4(dataWidth : Int, busCfg : Axi4Config) extends
   val bridge = filter.driveFrom(ctrl)
   filter.io.sink << io.sink
   io.source << filter.io.source
-}
 
-//Generate the CorundumFrameFilter's Verilog
-object CorundumFrameFilterVerilog {
-//  def main(args: Array[String]) {
-//    SpinalVerilog(new CorundumFrameFilter)
-//  }
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameFilter(512)
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameFilter's Verilog
-object CorundumFrameFilterAxi4Verilog {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = new CorundumFrameFilterAxi4(512, Axi4Config(CorundumFrameFilter.addressWidth, 32, 2, useQos = false, useRegion = false))
-      XilinxPatch(toplevel)
-    })
-  }
-}
-
-//Generate the CorundumFrameFilter's VHDL
-object CorundumFrameFilterVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(new CorundumFrameFilter(512))
-  }
+  // Execute the function renameAxiIO after the creation of the component
+  addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }

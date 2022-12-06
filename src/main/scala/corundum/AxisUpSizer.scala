@@ -8,11 +8,12 @@ import spinal.lib.bus.amba4.axi._
 
 import scala.math._
 
-// companion object
+// companion object for case class
 object AxisUpSizer {
+  // generate VHDL and Verilog
   def main(args: Array[String]) {
-    SpinalVerilog(new AxisUpSizer(128, 512))
-    SpinalVhdl(new AxisUpSizer(128, 512))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisUpSizer(Config.cryptoWidth, Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(new AxisUpSizer(Config.cryptoWidth, Config.corundumWidth))
   }
 }
 

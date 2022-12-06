@@ -61,6 +61,12 @@ object CorundumFrameStash {
     val fifoSize = nextPowerofTwo2((1532 + (dataWidth/8) - 1) / (dataWidth/8))
     new CorundumFrameStash(dataWidth, fifoSize)
   }
+  // generate VHDL and Verilog, and SystemVerilog with Formal
+  def main(args: Array[String]) {
+    val vhdlReport = Config.spinal.generateVhdl(CorundumFrameStash(Config.corundumWidth))
+    val verilogReport = Config.spinal.generateVerilog(CorundumFrameStash(Config.corundumWidth))
+    val formalReport = Config.spinal.includeFormal.generateSystemVerilog(CorundumFrameStash(Config.corundumWidth, 32))
+  }
 }
 
 case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component {
@@ -322,39 +328,6 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
     cover(is_intermediate_beat)
     // leave following state commented out, it cannot be reached, expect failure when uncommented
     //cover((io.length === 0x7FF) & (io.length_valid))
-  }
-}
-
-//Generate the CorundumFrameStash's Verilog
-object CorundumFrameStashVerilog {
-//  def main(args: Array[String]) {
-//    SpinalVerilog(new CorundumFrameStash)
-//  }
-  def main(args: Array[String]) {
-   val config = SpinalConfig()
-    config.generateVerilog({
-      val toplevel = CorundumFrameStash(dataWidth = 512)
-      //XilinxPatch(toplevel)
-      toplevel
-    })
-  }
-}
-//Generate the CorundumFrameStashSystemVerilogWithFormal's Verilog
-object CorundumFrameStashSystemVerilogWithFormal {
-  def main(args: Array[String]) {
-    val config = SpinalConfig()
-    config.includeFormal.generateSystemVerilog({
-      val toplevel = CorundumFrameStash(dataWidth = 512, 32)
-      //XilinxPatch(toplevel)
-      toplevel
-    })
-  }
-}
-
-//Generate the CorundumFrameStash's VHDL
-object CorundumFrameStashVhdl {
-  def main(args: Array[String]) {
-    SpinalVhdl(CorundumFrameStash(dataWidth = 512))
   }
 }
 

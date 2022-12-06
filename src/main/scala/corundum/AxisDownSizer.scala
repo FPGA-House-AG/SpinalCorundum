@@ -8,11 +8,12 @@ import spinal.lib.bus.amba4.axi._
 
 import scala.math._
 
-// companion object
+// companion object for case class
 object AxisDownSizer {
+  // generate VHDL and Verilog
   def main(args: Array[String]) {
-    SpinalVhdl(new AxisDownSizer(512, 128))
-    SpinalVerilog(new AxisDownSizer(512, 128))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisDownSizer(Config.corundumWidth, Config.cryptoWidth))
+    val verilogReport = Config.spinal.generateVerilog(new AxisDownSizer(Config.corundumWidth, Config.cryptoWidth))
   }
 }
 
