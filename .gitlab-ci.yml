@@ -36,7 +36,7 @@ build-job:
     # @TODO This should be default in SpinalCorundum.
     # Developers should switch locally to a non-release
     # build of SpinalHDL in the future (after PoC?)
-    - mv release-build.sbt build.sbt
+    - cp -a release-build.sbt build.sbt
     - git config --global --add safe.directory $PWD
     - make
     - echo "Build complete."
