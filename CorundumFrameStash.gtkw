@@ -27,8 +27,8 @@ TOP.CorundumFrameStash.clk
 @28
 TOP.CorundumFrameStash.x_ready
 TOP.CorundumFrameStash.x_valid
-TOP.CorundumFrameStash.is_first_beat
-TOP.CorundumFrameStash.is_frame_continuation
+TOP.CorundumFrameStash.x_is_first_beat
+TOP.CorundumFrameStash.x_is_frame_continuation
 TOP.CorundumFrameStash.x_payload_last
 @22
 TOP.CorundumFrameStash.x_payload_fragment_tdata[23:0]
