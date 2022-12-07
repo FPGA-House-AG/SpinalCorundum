@@ -13,9 +13,11 @@
 
 .ONESHELL:
 
-.PHONY: spinal clean simulate repl sim_repl build
+.PHONY: spinal clean simulate repl sim_repl build blackwire rtl
 
 build: rtl
+
+test: rtl formal
 
 # continuous build (using sbt "~" REPL feature) on save in editor
 repl:
@@ -112,7 +114,18 @@ spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
 	sbt "runMain corundum.CorundumFrameMuxPrioVerilog"
 
-# generate Verilog (and sometimes VHDL)
+# generate Verilog, VHDL and SystemVerilog RTL
+# this requires external VHDL modules
+blackwire:
+blackwire: src/main/scala/blackwire/BlackwireReceive.scala
+blackwire: src/main/scala/blackwire/BlackwireReceiveFmax.scala
+	set -e
+	sbt " \	
+	runMain blackwire.BlackwireReceive; \
+	runMain blackwire.BlackwireReceiveFmax; \
+	"
+
+# generate Verilog, VHDL and SystemVerilog RTL
 rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameDrop.scala
 rtl: src/main/scala/corundum/CorundumFrameMatchHeader.scala
@@ -128,8 +141,6 @@ rtl: src/main/scala/corundum/AxisToCorundumFrame.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
 rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
-rtl: src/main/scala/blackwire/BlackwireReceive.scala
-rtl: src/main/scala/blackwire/BlackwireReceiveFmax.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrio; \
@@ -148,17 +159,19 @@ rtl: src/main/scala/blackwire/BlackwireReceiveFmax.scala
 	runMain corundum.AxisWireguardKeyLookup; \
 	runMain corundum.LookupTable; \
 	runMain blackwire.BlackwireWireguardType4; \
-	runMain blackwire.BlackwireReceive; \
-	runMain blackwire.BlackwireReceiveFmax; \
 	"
 
+# formal verification. first generate SystemVerilog RTL, then use the .sby
+# file with SymbiYosys to test. @TODO convert to SpinalFormal maybe, this
+# used SymbiYosys as a back-end. See if feature-complete or not.
 formal:
 	set -e
-	#sbt "runMain corundum.CorundumFrameStashSystemVerilogWithFormal"
 	sbt "runMain corundum.CorundumFrameStash"
 	sby -f CorundumFrameStash.sby task_proof -d formalWorkdir/CorundumFrameStash 
 	sby -f CorundumFrameStash.sby task_cover -d formalWorkdir/CorundumFrameStash/cover 
 
+# The following two targets build an SVG diagram of the Priority Mux
+# @TODO support these tools in our Docker image
 CorundumFrameMuxPrio.json: CorundumFrameMuxPrio.v CorundumFrameMuxPrio.ys
 	set -e
 	yosys CorundumFrameMuxPrio.ys
@@ -183,6 +196,8 @@ clean:
 	set -e
 	netlistsvg $< -o $@
 
+# The paths in .gtkw files are absolute, not very handy
+# make them relative 
 fix_gtkw:
 	sed -i -e "s@$(PWD)@.@" *.gtkw
 	sed -i -e "s@./SpinalCorundum@.@" *.gtkw

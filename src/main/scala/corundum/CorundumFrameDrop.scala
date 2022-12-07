@@ -12,8 +12,8 @@ import scala.math._
 object CorundumFrameDrop {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameDrop(Config.corundumWidth))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameDrop(Config.corundumWidth))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameDrop(Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameDrop(Config.corundumDataWidth))
   }
 }
 

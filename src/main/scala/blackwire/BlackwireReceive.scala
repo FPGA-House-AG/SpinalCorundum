@@ -37,10 +37,10 @@ case class BlackwireReceive() extends Component {
   x << io.sink
 
   // fork x into two streams, Wireguard Type4 and other packet
-  val type4_demux = new CorundumFrameDemuxWireguard()
+  val type4_demux = new CorundumFrameDemuxWireguardType4(corundumDataWidth)
   type4_demux.io.sink << x
 
-  // nob-Type4 packet are dropped here (in fuller design, go into RISC-V Reader)
+  // non-Type4 packet are dropped here (in fuller design, go into RISC-V Reader)
   val other_sinkhole = Stream Fragment(CorundumFrame(corundumDataWidth))
   other_sinkhole.ready := True
 
@@ -291,7 +291,7 @@ object BlackwireReceiveSim {
         val plaintext = Vector(
           Vector(
             //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>< L  a  d  i  e  s
-            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
+            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
             //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
             BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
             //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 

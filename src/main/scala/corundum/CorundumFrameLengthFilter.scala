@@ -12,8 +12,8 @@ import scala.math._
 object CorundumFrameLengthFilter {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameLengthFilter(Config.corundumWidth, Config.corundumWidth))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameLengthFilter(Config.corundumWidth, Config.corundumWidth))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameLengthFilter(Config.corundumDataWidth, Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameLengthFilter(Config.corundumDataWidth, Config.corundumDataWidth))
   }
 }
 

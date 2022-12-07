@@ -46,7 +46,7 @@ object LookupTable {
       toplevel
       //XilinxPatch(toplevel)
     })
-    //val verilogReport = Config.spinal.generateVerilog(new LookupTable(Config.corundumWidth, Config.cryptoWidth))
+    //val verilogReport = Config.spinal.generateVerilog(new LookupTable(Config.corundumDataWidth, Config.cryptoDataWidth))
   }
 }
 

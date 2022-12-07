@@ -143,8 +143,8 @@ object CorundumFrameWriterAxi4 {
   final val slaveAddressWidth = 10
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameWriterAxi4(Config.corundumWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameWriterAxi4(Config.corundumWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameWriterAxi4(Config.corundumDataWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameWriterAxi4(Config.corundumDataWidth, Axi4Config(32, 32, 2, useQos = false, useRegion = false)))
   }
 }
 

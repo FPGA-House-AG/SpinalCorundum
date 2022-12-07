@@ -1,0 +1,84 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Tue Nov 15 22:57:00 2022
+[*]
+[dumpfile] "./simWorkspace/CorundumFrameDemuxWireguardType4/test.fst"
+[dumpfile_mtime] "Tue Nov 15 22:52:03 2022"
+[dumpfile_size] 2629
+[savefile] "./CorundumFrameDemuxWireguardType4.gtkw"
+[timestart] 0
+[size] 3379 1866
+[pos] -1 -1
+*-7.128177 230 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.CorundumFrameDemuxWireguardType4.
+[sst_width] 692
+[signals_width] 638
+[sst_expanded] 1
+[sst_vpaned_height] 575
+@28
+TOP.CorundumFrameDemuxWireguardType4.clk
+TOP.CorundumFrameDemuxWireguardType4.reset
+@200
+-
+-Input
+@22
+TOP.CorundumFrameDemuxWireguardType4.sink_tdata[511:0]
+TOP.CorundumFrameDemuxWireguardType4.sink_tkeep[63:0]
+@28
+TOP.CorundumFrameDemuxWireguardType4.sink_tlast
+TOP.CorundumFrameDemuxWireguardType4.sink_tready
+TOP.CorundumFrameDemuxWireguardType4.sink_tvalid
+@200
+-
+-MatchWireguard
+@22
+TOP.CorundumFrameDemuxWireguardType4.matcher.x_payload_fragment_tdata[511:0]
+TOP.CorundumFrameDemuxWireguardType4.matcher.x_payload_fragment_tkeep[63:0]
+@28
+TOP.CorundumFrameDemuxWireguardType4.matcher.x_payload_last
+TOP.CorundumFrameDemuxWireguardType4.matcher.x_ready
+TOP.CorundumFrameDemuxWireguardType4.matcher.x_valid
+TOP.CorundumFrameDemuxWireguardType4.matcher.is_type4_on_first_beat
+TOP.CorundumFrameDemuxWireguardType4.matcher.is_type123_on_first_beat
+@22
+TOP.CorundumFrameDemuxWireguardType4.matcher.sink_tdata[511:0]
+TOP.CorundumFrameDemuxWireguardType4.matcher.sink_tkeep[63:0]
+@28
+TOP.CorundumFrameDemuxWireguardType4.matcher.sink_tlast
+TOP.CorundumFrameDemuxWireguardType4.matcher.sink_tready
+TOP.CorundumFrameDemuxWireguardType4.matcher.sink_tuser
+TOP.CorundumFrameDemuxWireguardType4.matcher.sink_tvalid
+@200
+-
+-StreamDemux
+@22
+TOP.CorundumFrameDemuxWireguardType4.streamDemux_1.io_input_payload_fragment_tdata[511:0]
+TOP.CorundumFrameDemuxWireguardType4.streamDemux_1.io_input_payload_fragment_tkeep[63:0]
+@28
+TOP.CorundumFrameDemuxWireguardType4.streamDemux_1.io_input_payload_last
+TOP.CorundumFrameDemuxWireguardType4.streamDemux_1.io_input_ready
+TOP.CorundumFrameDemuxWireguardType4.streamDemux_1.io_input_valid
+TOP.CorundumFrameDemuxWireguardType4.streamDemux_1.io_select
+@200
+-
+-Stream Type4
+@22
+TOP.CorundumFrameDemuxWireguardType4.source_type4_tdata[511:0]
+TOP.CorundumFrameDemuxWireguardType4.source_type4_tkeep[63:0]
+@28
+TOP.CorundumFrameDemuxWireguardType4.source_type4_tlast
+TOP.CorundumFrameDemuxWireguardType4.source_type4_tready
+TOP.CorundumFrameDemuxWireguardType4.source_type4_tvalid
+@200
+-
+-Stream Type123
+@22
+TOP.CorundumFrameDemuxWireguardType4.source_type123_tdata[511:0]
+TOP.CorundumFrameDemuxWireguardType4.source_type123_tkeep[63:0]
+@28
+TOP.CorundumFrameDemuxWireguardType4.source_type123_tlast
+TOP.CorundumFrameDemuxWireguardType4.source_type123_tready
+TOP.CorundumFrameDemuxWireguardType4.source_type123_tvalid
+[pattern_trace] 1
+[pattern_trace] 0

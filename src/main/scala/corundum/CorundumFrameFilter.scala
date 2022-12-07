@@ -19,8 +19,8 @@ object CorundumFrameFilter {
   final val addressWidth = 10
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameFilter(Config.corundumWidth))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameFilter(Config.corundumWidth))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameFilter(Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameFilter(Config.corundumDataWidth))
   }
 }
 

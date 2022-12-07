@@ -12,8 +12,8 @@ import scala.math._
 object AxisToCorundumFrame {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new AxisToCorundumFrame(Config.corundumWidth))
-    val verilogReport = Config.spinal.generateVerilog(new AxisToCorundumFrame(Config.corundumWidth))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisToCorundumFrame(Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new AxisToCorundumFrame(Config.corundumDataWidth))
   }
 }
 

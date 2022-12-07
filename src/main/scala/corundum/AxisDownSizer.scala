@@ -12,8 +12,8 @@ import scala.math._
 object AxisDownSizer {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new AxisDownSizer(Config.corundumWidth, Config.cryptoWidth))
-    val verilogReport = Config.spinal.generateVerilog(new AxisDownSizer(Config.corundumWidth, Config.cryptoWidth))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisDownSizer(Config.corundumDataWidth, Config.cryptoDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new AxisDownSizer(Config.corundumDataWidth, Config.cryptoDataWidth))
   }
 }
 

@@ -9,8 +9,8 @@ import scala.util.Random
 object CorundumFrameMuxPrio {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMuxPrio(Config.corundumWidth))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMuxPrio(Config.corundumWidth))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMuxPrio(Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMuxPrio(Config.corundumDataWidth))
   }
 }
 

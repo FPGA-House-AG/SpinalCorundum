@@ -11,18 +11,18 @@ import scala.math._
 // companion object
 object AxisInsertHeader {
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new AxisInsertHeader(Config.corundumWidth, 14/*Ethernet header size in bytes*/))
-    val verilogReport = Config.spinal.generateVerilog(new AxisInsertHeader(Config.corundumWidth, 14/*Ethernet header size in bytes*/))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisInsertHeader(Config.corundumDataWidth, 14/*Ethernet header size in bytes*/))
+    val verilogReport = Config.spinal.generateVerilog(new AxisInsertHeader(Config.corundumDataWidth, 14/*Ethernet header size in bytes*/))
   }
 }
 
-/* Split off a fixed size header (for example 14 bytes Ethernet header in the first bytes), pass the remaining payload
+/* Prefix a fixed size header (for example 14 bytes Ethernet header in the first bytes) to the input payload
  *
- * sink accepts AXIS frames (Ethernet packet)
+ * sink accepts AXIS frames (for example an Ethernet payload)
  * sink_length is the input packet length in bytes, this packet arrives on the sink
  *
- * source is the output packet (Ethernet payload)
- * source_length is the output packet (Ethernet payload)
+ * source is the output packet (in the example an Ethernet packet)
+ * source_length is the output packet (of the example an Ethernet packet)
  */
 
 case class AxisInsertHeader(dataWidth : Int, headerWidthBytes: Int) extends Component {
@@ -70,7 +70,6 @@ case class AxisInsertHeader(dataWidth : Int, headerWidthBytes: Int) extends Comp
   val data_payload =   x.payload(dataWidth - headerWidth - 1 downto 0) ## buffer
   val y_payload = Mux(y.isFirst, header_payload, data_payload)
   val y_length = x_length + headerWidthBytes
-
 
   val dataWidthBytes = dataWidth/8
   val x_length_min = x_length.min(dataWidthBytes)

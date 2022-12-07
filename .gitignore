@@ -63,7 +63,12 @@ vivado*.jou
 
 xsim.dir/
 
+# GHDL
+*.o
+*.ghw
+
 # Generated Output
 build/
 
 MaximVHDL
+cocotb/BlackwireReceive/e~blackwirereceive.o

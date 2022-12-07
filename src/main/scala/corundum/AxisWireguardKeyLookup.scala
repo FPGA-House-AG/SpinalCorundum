@@ -12,8 +12,8 @@ import scala.math._
 object AxisWireguardKeyLookup {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new AxisWireguardKeyLookup(Config.cryptoWidth, has_internal_test_lut = true))
-    val verilogReport = Config.spinal.generateVerilog(new AxisWireguardKeyLookup(Config.cryptoWidth, has_internal_test_lut = true))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisWireguardKeyLookup(Config.cryptoDataWidth, has_internal_test_lut = true))
+    val verilogReport = Config.spinal.generateVerilog(new AxisWireguardKeyLookup(Config.cryptoDataWidth, has_internal_test_lut = true))
   }
 }
 

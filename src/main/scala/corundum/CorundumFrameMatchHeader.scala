@@ -10,7 +10,7 @@ import scala.math._
 
 /* @NOTE Multiple classes here:
  *
- * CorundumFrameDemuxWireguard (hard-coded, used for PoC)
+ * CorundumFrameDemuxWireguardType4 (hard-coded, used for PoC)
  *
  * Now of lesser importance:
  * CorundumFrameMatchWireguard
@@ -56,9 +56,11 @@ case class CorundumFrameMatchWireguard() extends Component {
   // byte 0 is Ethernet, byte 14 is IP, byte 34 is UDP header, byte 42 is UDP payload
 
   // ARP: TYPE=0806, HTYPE=0001, PTYPE=0800, HLEN=6, PLEN=4
-  val is_etharp  = x.payload.tdata(12 * 8, 64 bits) === B"64'h0806000108000604"
+  val is_etharp  = x.payload.tdata(12 * 8, 64 bits).subdivideIn(8 bits).reverse.asBits() === B"64'h0806000108000604"
   // TYPE=0800
-  val is_ethip   = (x.payload.tdata(12 * 8, 16 bits) === B"16'h0800") & x.payload.tkeep(14)
+  val ethtype = x.payload.tdata(12 * 8, 16 bits).subdivideIn(8 bits).reverse.asBits()
+  val is_ethip   = (x.payload.tdata(12 * 8, 16 bits).subdivideIn(8 bits).reverse.asBits() === B"16'h0800") & x.payload.tkeep(13)
+  // IPv4 but only with length 5 (*4 == 20 bytes header during PoC @TODO Change for release later)
   val is_ipv4l5  = (x.payload.tdata(14 * 8,  8 bits) === B"8'h45") & x.payload.tkeep(14)
   // IP protocol number x11
   val is_udp     = (x.payload.tdata(23 * 8,  8 bits) === B"8'h11") & x.payload.tkeep(23)
@@ -67,7 +69,7 @@ case class CorundumFrameMatchWireguard() extends Component {
   val is_type1   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000001") & x.payload.tkeep(42, 4 bits).andR
   val is_type2   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000002") & x.payload.tkeep(42, 4 bits).andR
   val is_type3   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000003") & x.payload.tkeep(42, 4 bits).andR
-  val is_type4   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000004") & x.payload.tkeep(42, 4 bits).andR
+  val is_type4   = (x.payload.tdata(42 * 8, 32 bits) === B"32'h00000004") //& x.payload.tkeep(42, 4 bits).andR
   val type4_field = x.payload.tdata(42 * 8, 32 bits)
   val is_type123 = (x.payload.tdata(42 * 8 + 2,  6 bits) === B"6'b000000") &
     (x.payload.tdata(43 * 8, 24 bits) === B"24'h000000") & x.payload.tkeep(42, 4 bits).andR
@@ -96,15 +98,17 @@ case class CorundumFrameMatchWireguard() extends Component {
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
 
-object CorundumFrameDemuxWireguard {
+object CorundumFrameDemuxWireguardType4 {
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameDemuxWireguard())
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameDemuxWireguard())
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameDemuxWireguardType4(Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameDemuxWireguardType4(Config.corundumDataWidth))
   }
 }
 
-case class CorundumFrameDemuxWireguard() extends Component {
-  val dataWidth : Int = 512
+/* Demuxes Wireguard Type 4 packets
+ * Wireguard Type 4 packets are output on a second, separate, stream source
+ */
+case class CorundumFrameDemuxWireguardType4(dataWidth : Int) extends Component {
   val io = new Bundle {
     val sink = slave Stream Fragment(CorundumFrame(dataWidth))
     val source_other = master Stream Fragment(CorundumFrame(dataWidth))
@@ -130,8 +134,8 @@ object CorundumFrameMatchHeader {
   final val addressWidth = 10
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchHeader(Config.corundumWidth))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchHeader(Config.corundumWidth))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchHeader(Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchHeader(Config.corundumDataWidth))
   }
 }
 
@@ -200,8 +204,8 @@ case class CorundumFrameMatchHeader(dataWidth : Int) extends Component {
 object CorundumFrameMatchHeaderAxi4 {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchHeaderAxi4(Config.corundumWidth, Axi4Config(CorundumFrameMatchHeader.addressWidth, 32, 2, useQos = false, useRegion = false)))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchHeaderAxi4(Config.corundumWidth, Axi4Config(CorundumFrameMatchHeader.addressWidth, 32, 2, useQos = false, useRegion = false)))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchHeaderAxi4(Config.corundumDataWidth, Axi4Config(CorundumFrameMatchHeader.addressWidth, 32, 2, useQos = false, useRegion = false)))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchHeaderAxi4(Config.corundumDataWidth, Axi4Config(CorundumFrameMatchHeader.addressWidth, 32, 2, useQos = false, useRegion = false)))
   }
 }
 

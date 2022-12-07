@@ -63,9 +63,9 @@ object CorundumFrameStash {
   }
   // generate VHDL and Verilog, and SystemVerilog with Formal
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(CorundumFrameStash(Config.corundumWidth))
-    val verilogReport = Config.spinal.generateVerilog(CorundumFrameStash(Config.corundumWidth))
-    val formalReport = Config.spinal.includeFormal.generateSystemVerilog(CorundumFrameStash(Config.corundumWidth, 32))
+    val vhdlReport = Config.spinal.generateVhdl(CorundumFrameStash(Config.corundumDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(CorundumFrameStash(Config.corundumDataWidth))
+    val formalReport = Config.spinal.includeFormal.generateSystemVerilog(CorundumFrameStash(Config.corundumDataWidth, 32))
   }
 }
 
