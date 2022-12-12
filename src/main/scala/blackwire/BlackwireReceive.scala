@@ -192,15 +192,20 @@ object BlackwireReceiveSim {
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
     SimConfig
-    .withVcdWave
-    .withGhdl
+
+    // GHDL
+    //.withGhdl.withFstWave
+    //.addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
+    //.addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    //.addRunFlag("--backtrace-severity=warning")
+    
     //.withXSim.withXilinxDevice("xcu50-fsvh2104-2-e")
-    //.addRtl(s"/home/vexriscv/project/SpinalCorundum/MaximVHDL/AEAD_decryption_wrapper.vhd")
     //.addSimulatorFlag("--ieee=standard")
     //.addSimulatorFlag("-v")
     //.addSimulatorFlag("-P/project-on-host/SpinalCorundum/xilinx-vivado/unisim/v93")
     //.addSimulatorFlag("-P/project-on-host/SpinalCorundum/xilinx-vivado/unimacro/v93") 
     // these define bus_pkg and bus_pkg1
+
     .addRtl(s"MaximVHDL/imports/project_1/ChaCha20.vhd")
     .addRtl(s"MaximVHDL/new/AEAD_ChaCha_Poly.vhd")
 
