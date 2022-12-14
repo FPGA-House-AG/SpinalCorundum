@@ -26,4 +26,4 @@ prep -top CorundumFrameStash
 
 [files]
 # should all files be named differently?
-CorundumFrameStash.sv
+build/rtl/CorundumFrameStash.sv
