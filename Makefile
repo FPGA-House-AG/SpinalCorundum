@@ -161,14 +161,28 @@ rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 	runMain blackwire.BlackwireWireguardType4; \
 	"
 
+
+
 # formal verification. first generate SystemVerilog RTL, then use the .sby
 # file with SymbiYosys to test. @TODO convert to SpinalFormal maybe, this
 # used SymbiYosys as a back-end. See if feature-complete or not.
-formal:
+formal: formal_drop formal_stash
+
+formal_stash:
 	set -e
+	sby -h || . /home/vivado/oss-cad-suite/environment
+	sby -h || false
 	sbt "runMain corundum.CorundumFrameStash"
 	sby -f CorundumFrameStash.sby task_proof -d formalWorkdir/CorundumFrameStash 
 	sby -f CorundumFrameStash.sby task_cover -d formalWorkdir/CorundumFrameStash/cover 
+
+
+formal_drop: formal_sby
+	set -e
+	sby -h || . /home/vivado/oss-cad-suite/environment
+	sby -h || false
+	sbt "runMain corundum.CorundumFrameDropFormal"
+
 
 # The following two targets build an SVG diagram of the Priority Mux
 # @TODO support these tools in our Docker image
