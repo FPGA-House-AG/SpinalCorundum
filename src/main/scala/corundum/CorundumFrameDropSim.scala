@@ -95,3 +95,26 @@ object CorundumFrameDropSim {
     }
   }
 }
+
+object CorundumFrameDropFormal extends App {
+  import spinal.core.formal._
+
+  FormalConfig.withCover(15).withBMC(15).withProve(15).doVerify(new Component {    
+    val dut = FormalDut(CorundumFrameDrop(8))
+    assumeInitial(ClockDomain.current.isResetActive)
+
+    anyseq(dut.io.source.ready)
+
+    anyseq(dut.io.drop)
+    anyseq(dut.io.sink.valid)
+    anyseq(dut.io.sink.last)
+    anyseq(dut.io.sink.payload.tkeep)
+    anyseq(dut.io.sink.payload.tdata)
+    anyseq(dut.io.sink.payload.tuser)
+    assume(!dut.io.sink.valid | stable(dut.io.sink.last))
+    assume(!dut.io.sink.valid | stable(dut.io.sink.payload.tkeep))
+    assume(!dut.io.sink.valid | stable(dut.io.sink.payload.tdata))
+    assume(!dut.io.sink.valid | stable(dut.io.sink.payload.tuser))
+    assert((!dut.y.tail) | stable(dut.drop_y_packet))
+  })
+}
