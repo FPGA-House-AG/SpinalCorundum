@@ -260,33 +260,36 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
       message   = "Pushing length into Length FIFO, but FIFO is not ready",
       severity  = ERROR
     )
-    assert(
-      assertion = (
-        (past(length_fifo.io.occupancy) === length_fifo.io.occupancy) |
-        (past(length_fifo.io.occupancy) === length_fifo.io.occupancy - 1) |
-        (past(length_fifo.io.occupancy) === length_fifo.io.occupancy + 1)
-      ),
-      message   = "Length FIFO occupancy should change by at most 1",
-      severity  = ERROR
-    )
-    assert(
-      assertion = (
-        (past(fifo.io.occupancy) === fifo.io.occupancy) |
-        (past(fifo.io.occupancy) === fifo.io.occupancy - 1) |
-        (past(fifo.io.occupancy) === fifo.io.occupancy + 1)
-      ),
-      message   = "Frame FIFO occupancy should change by at most 1",
-      severity  = ERROR
-    )
-    assert(
-      assertion = (
-        !( (past(fifo.io.occupancy === fifoSize, 1) & past(io.packets === 0, 1)) &&
-           (past(fifo.io.occupancy === fifoSize, 2) & past(io.packets === 0, 2))
-        )
-      ),
-      message   = "Frame FIFO full but holds no complete frame.",
-      severity  = ERROR
-    )
+    when (pastValidAfterReset) {
+      assert(
+        assertion = (
+          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy) |
+          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy - 1) |
+          (past(length_fifo.io.occupancy) === length_fifo.io.occupancy + 1)
+        ),
+        message   = "Length FIFO occupancy should change by at most 1",
+        severity  = ERROR
+      )
+      assert(
+        assertion = (
+          (past(fifo.io.occupancy) === fifo.io.occupancy) |
+          (past(fifo.io.occupancy) === fifo.io.occupancy - 1) |
+          (past(fifo.io.occupancy) === fifo.io.occupancy + 1)
+        ),
+        message   = "Frame FIFO occupancy should change by at most 1",
+        severity  = ERROR
+      )
+      assert(
+        assertion = (
+          !( (past(fifo.io.occupancy === fifoSize, 1) & past(io.packets === 0, 1)) &&
+            (past(fifo.io.occupancy === fifoSize, 2) & past(io.packets === 0, 2))
+          )
+        ),
+        message   = "Frame FIFO full but holds no complete frame.",
+        severity  = ERROR
+      )
+    }
+
     assert(
       assertion = !(frame_too_large & frame_going_oversize_event),
       message = "Truncated last beat and truncated tail do not overlap",
