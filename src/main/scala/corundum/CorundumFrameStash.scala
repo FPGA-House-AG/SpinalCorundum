@@ -308,13 +308,13 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
 }
 
 // companion object
-object CorundumFrameOutputStash {
+object CorundumFrameFlowStash {
 }
 
 // Stash that never de-asserts sink_ready during a packet on sink
 // in other words: does not apply backpressure during a packet on sink
 // assuming packets are not bigger than maxPacketFifoWords
-case class CorundumFrameOutputStash(dataWidth : Int, fifoSize : Int, maxPacketFifoWords: Int) extends Component {
+case class CorundumFrameFlowStash(dataWidth : Int, fifoSize : Int, maxPacketFifoWords: Int) extends Component {
   val keepWidth = dataWidth / 8
   val maxFrameBytes = fifoSize * keepWidth
   val io = new Bundle {

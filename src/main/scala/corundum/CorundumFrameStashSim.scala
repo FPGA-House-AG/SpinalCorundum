@@ -122,7 +122,7 @@ object CorundumFrameOutputStashSim {
     var maxFrameWords = 16
     SimConfig
     .withFstWave
-    .doSim(CorundumFrameOutputStash(dataWidth, 32, maxFrameWords)){dut =>
+    .doSim(CorundumFrameFlowStash(dataWidth, 32, maxFrameWords)){dut =>
 
       var maxPacketSizeBytes = (maxFrameWords + 1) * keepWidth
 

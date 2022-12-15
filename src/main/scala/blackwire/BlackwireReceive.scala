@@ -150,7 +150,7 @@ case class BlackwireReceive() extends Component {
   // r can receive back pressure from Corundum
   val r = Stream Fragment(CorundumFrame(corundumDataWidth))
 
-  val outstash = CorundumFrameOutputStash(corundumDataWidth, 32, 26)
+  val outstash = CorundumFrameFlowStash(corundumDataWidth, 32, 26)
   outstash.io.sink << c
   r << outstash.io.source
 
