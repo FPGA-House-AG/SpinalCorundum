@@ -345,6 +345,7 @@ object CorundumFrameOutputStash {
 }
 
 // Stash that never de-asserts sink_ready during a packet on sink
+// in other words: does not apply backpressure during a packet on sink
 // assuming packets are not bigger than maxPacketFifoWords
 case class CorundumFrameOutputStash(dataWidth : Int, fifoSize : Int, maxPacketFifoWords: Int) extends Component {
   val keepWidth = dataWidth / 8
