@@ -177,7 +177,7 @@ formal_stash:
 	sby -f CorundumFrameStash.sby task_cover -d formalWorkdir/CorundumFrameStash/cover 
 
 
-formal_drop: formal_sby
+formal_drop:
 	set -e
 	sby -h || . /home/vivado/oss-cad-suite/environment
 	sby -h || false
