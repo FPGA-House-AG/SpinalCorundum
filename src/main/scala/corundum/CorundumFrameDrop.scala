@@ -41,23 +41,27 @@ case class CorundumFrameDrop(dataWidth : Int) extends Component {
   // such that both sink and sink_length are skid buffered
   val x = Stream Fragment(CorundumFrame(dataWidth))
   x << io.sink
-  when (io.drop) {
-    x.payload.fragment.tuser(0) := True
+
+  val x_drop_packet = RegNextWhen(io.drop, x.isFirst, False)
+
+  when (io.sink.isFirst) {
+    x.payload.fragment.tuser(0) := io.drop
+  } elsewhen (io.sink.tail) {
+    x.payload.fragment.tuser(0) := x_drop_packet
+  } otherwise {
+    x.payload.fragment.tuser(0) := False
   }
    
   val y = Stream Fragment(CorundumFrame(dataWidth))
   y << x.s2mPipe().m2sPipe()
-  val y_drop = y.payload.fragment.tuser(0)
-
-  // capture the drop flag on first
-  val drop_y_packet = RegNextWhen(y_drop, y.isFirst, False)
+  val y_drop_packet = y.payload.fragment.tuser(0)
 
   // component sink/slave port to fifo push/sink/slave port
   val z = Stream Fragment(CorundumFrame(dataWidth))
   // drop packet conditionally
-  // @TODO drop_y_packet can be one beat late,
-  // consider using: (y_drop & y.first) | drop_y_packet
-  z << y.throwWhen(drop_y_packet)
+  // @TODO y_drop_packet can be one beat late,
+  // consider using: (y_drop & y.first) | y_drop_packet
+  z <-< y.throwWhen(y_drop_packet)
   io.source << z
 
   // Execute the function renameAxiIO after the creation of the component

@@ -103,6 +103,7 @@ object CorundumFrameDropFormal extends App {
     val dut = FormalDut(CorundumFrameDrop(8))
     assumeInitial(ClockDomain.current.isResetActive)
 
+    // randomize DUT inputs
     anyseq(dut.io.source.ready)
 
     anyseq(dut.io.drop)
@@ -111,10 +112,21 @@ object CorundumFrameDropFormal extends App {
     anyseq(dut.io.sink.payload.tkeep)
     anyseq(dut.io.sink.payload.tdata)
     anyseq(dut.io.sink.payload.tuser)
-    assume(!dut.io.sink.valid | stable(dut.io.sink.last))
-    assume(!dut.io.sink.valid | stable(dut.io.sink.payload.tkeep))
-    assume(!dut.io.sink.valid | stable(dut.io.sink.payload.tdata))
-    assume(!dut.io.sink.valid | stable(dut.io.sink.payload.tuser))
-    assert((!dut.y.tail) | stable(dut.drop_y_packet))
+
+    // Assume AXI data remains stable when the stream is stalled
+    // (VALID & !READY) -> STABLE(DATA)
+    // A -> B, or A "implies" B, or if (A) then (B)
+    // if "A" then assert("B") or assert(!A or B)
+
+    assume(!dut.io.sink.isStall | stable(dut.io.sink.last))
+    assume(!dut.io.sink.isStall | stable(dut.io.sink.payload.tkeep))
+    assume(!dut.io.sink.isStall | stable(dut.io.sink.payload.tdata))
+    assume(!dut.io.sink.isStall | stable(dut.io.sink.payload.tuser))
+
+    // during a packet tail, drop must remain stable
+    assert((!dut.y.tail) | stable(dut.y_drop_packet))
+
+    // same ?
+    when (dut.y.tail) { assert(stable(dut.y_drop_packet)) }
   })
 }
