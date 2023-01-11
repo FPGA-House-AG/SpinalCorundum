@@ -24,10 +24,64 @@ object Crc {
   }
 }
 
-// true dual port ram with independent clocks, symmetric data widths
+// parallel CRC implementation, LUT based
 case class Crc(dataWidth: Int) extends Component {
 
+  // Calculation of the CRC over a multiple bytes can be split
+  // CRC(X + Y) = CRC(X) + CRC(Y)
+
+  // copied from SpinalSimMacTester
+  // convert hexadecimal string to a sequence of Int with values in range [0-255] (bytes)
+  def hexStringToFrame(str : String) = {
+    val spaceLess = str.replace(" ","")
+    Seq.tabulate[Int](spaceLess.size/2)(i => Integer.parseInt(spaceLess.substring(i*2, i*2+2), 16))
+  }
+
+  // copied from SpinalSimMacTester
+  // pretty reference bit-by-bit CRC32 calculator
+  // input 'that' is a sequence of Int with values in range [0-255] (bytes)
+  def calcCrc32(that : Seq[Int]): Int ={
+    def getBit(id : Int) = (that(id/8) >> ((id % 8))) & 1
+    var crc = -1
+    for(bitId <- 0 until that.size*8){
+      val bit = getBit(bitId) ^ ((crc >> 31) & 1)
+      crc = (crc << 1) ^ ((if(bit == 1) 0x04C11DB7 else 0))
+    }
+    val crcReversed = (0 until 32).map(i => ((crc >> i) & 1) << (31-i)).reduce(_ | _)
+    ~crcReversed
+  }
+
+    def calcCrc32_using_lut(that : Seq[Int]): Int ={
+    def getBit(id : Int) = (that(id/8) >> ((id % 8))) & 1
+    var crc = -1
+    for (byteId <- 0 until that.size){
+      val byte_value = that(byteId)
+      crc = crc ^ luts(byteId)(byte_value).toInt
+    }
+    val crcReversed = (0 until 32).map(i => ((crc >> i) & 1) << (31-i)).reduce(_ | _)
+    ~crcReversed
+  }
+
+  def testit() = {
+    val frameCorrectA = hexStringToFrame("33330000 0002000A CD2C1594 86DD600B DD410008 3AFFFE80 00000000 0000FC3B 9A3CE0E2 3955FF02 00000000 00000000 00000000 00028500 CC860000 00005901 A328")
+    val frameCorrectB = hexStringToFrame("33330000 00FB000A CD2C1594 86DD600C 36DF0091 11FFFE80 00000000 0000FC3B 9A3CE0E2 3955FF02 00000000 00000000 00000000 00FB14E9 14E90091 C6390000 84000000 00020000 00000135 01350139 01330132 01650130 01650163 01330161 01390162 01330163 01660130 01300130 01300130 01300130 01300130 01300130 01300130 01380165 01660369 70360461 72706100 000C8001 00000078 000D0572 61777272 056C6F63 616C00C0 60001C80 01000000 780010FE 80000000 000000FC 3B9A3CE0 E239550D 5BA667")
+    val crc = calcCrc32(frameCorrectA)
+    if (crc != 0x2144DF1C) {
+      printf("CRC mismatch\n")
+    }
+    // reference crc
+    val frameSmall = hexStringToFrame("33330000")
+    val crc_good = calcCrc32(frameSmall)
+
+    val crc_lut = calcCrc32_using_lut(frameSmall)
+    if (crc_lut != crc_good) {
+      printf("CRC mismatch\n")
+    }
+    //printf("calculated CRC = 0x%s, expected = 0x2144DF1C\n", crc.toString(16))
+  }
+
   // i is the number of zero bytes after byte value j
+  // result is 32-bit CRC
   def partial_crc(i: Int, j: Int) : BigInt = {
     require (j >= 0 && j <= 255);
     val b = j;
@@ -42,7 +96,7 @@ case class Crc(dataWidth: Int) extends Component {
         crc = (crc << 1)
       }
     }
-    // evolve it now, iterate over trailing zero bytes
+    // evolve it now, iterate over i trailing zero bytes
     for (k <- 0 until i) {
       val b = 0;
       // move byte into most significant byte of 32-bit
@@ -82,7 +136,18 @@ case class Crc(dataWidth: Int) extends Component {
 
   //var luts = List.tabulate(3, x => List.tabulate(3, y => (x, y)).toArray).toArray
 
+  // The datawidth is split in smaller sized vectors (currently hardcoded a byte)
+  // Then for each byte in each location (i), a LUT is generated. Each LUT entry contains
+  // the partial CRC contribution for each possible byte value (0<=j<256) at byte position (i).
+
+  // populate the LUTs with precalculated partial CRC contribution
   var luts = Array.range(0, dataWidth / 8).map(i => Array.range(0, 256).map(j => partial_crc(i, j)))
+
+  var memluts = List.fill(dataWidth / 8)(Mem(UInt(32 bits), 256))
+  for (i <- 0 until dataWidth / 8) {
+    memluts(i).initBigInt(luts(i))
+  }
+
   // luts.foreach { row => row foreach print; println }
   for(i <- 0 until dataWidth / 8; j <- 0 until 256)
   {
@@ -90,43 +155,10 @@ case class Crc(dataWidth: Int) extends Component {
     printf("@(i, j) = @(%2d, %3d) = 0x8%s\n", i, j, luts(i)(j).toString(16))
   }
 
+
+  testit()
+
   io.o := 0 //io.i + io.j
-
-  var memluts = List.fill(dataWidth / 8)(Mem(UInt(32 bits), 256))
-  for (i <- 0 until dataWidth / 8) {
-    memluts(i).initBigInt(luts(i))
-  }
-
-  // the following code does nothing, it is now in partial_crc()
-  // @TODO to be removed later
-  for (i <- 0 until dataWidth / 8; j <- 0 until 256) {
-    val b = j;
-    var crc = 0;
-    // move byte into most significant byte of 32-bit
-    crc ^= b << 24; 
-    for (k <- 0 until 8) {
-      // CRC most significant bit == 1?
-      if ((crc & 0x80000000) != 0) {
-        crc = (crc << 1) ^ polynomial;
-      } else {
-        crc <<= 1;
-      }
-    }
-    // evolve it now, iterate over trailing zero bytes
-    for (k <- 0 until i) {
-      val b = 0;
-      // move byte into most significant byte of 32-bit
-      crc ^= b << 24;
-      // iterate over all bits in byte, starting with msb
-      for (k <- 0 until 8) {
-        if ((crc & 0x80000000) != 0) {
-            crc = (crc << 1) ^ polynomial;
-        } else {
-            crc <<= 1;
-        }
-      }
-    }
-  }
 }
 
 import spinal.sim._
