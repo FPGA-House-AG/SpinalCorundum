@@ -10,7 +10,9 @@ val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-
 
 val sourceCode = "com.lihaoyi" %% "sourcecode" % "0.2.7"
 val scalaTest = "org.scalatest" % "scalatest_2.11" % "2.2.1"
-      
+// for {Dense,Sparse}{Vector,Matrix) used by LowCost.scala_
+//val breeze = "org.scalanlp" %% "breeze" % "0.11.2"
+
 lazy val spinalCorundum = (project in file("."))
   .settings(
     name := "SpinalCorundum",
