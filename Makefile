@@ -11,6 +11,7 @@
 # sudo apt-get install nodejs npm
 # sudo npm install -g netlistsvg
 
+# Run all commands of one make target in the same shell, by default
 .ONESHELL:
 
 .PHONY: spinal clean simulate repl sim_repl build blackwire rtl
@@ -166,7 +167,10 @@ rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 # formal verification. first generate SystemVerilog RTL, then use the .sby
 # file with SymbiYosys to test. @TODO convert to SpinalFormal maybe, this
 # used SymbiYosys as a back-end. See if feature-complete or not.
-formal: formal_drop formal_stash
+formal: formal_stash
+
+# Drop is known-broken, but unused.
+#formal: formal_drop 
 
 formal_stash:
 	set -e
@@ -178,9 +182,11 @@ formal_stash:
 
 
 formal_drop:
+# fail on first error
 	set -e
+# add SymbiYosys (sby) to PATH if not yet in PATH	
 	sby -h || . /home/vivado/oss-cad-suite/environment
-	sby -h || false
+	sby -h
 	sbt "runMain corundum.CorundumFrameDropFormal"
 
 
