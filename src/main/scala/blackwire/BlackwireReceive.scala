@@ -150,7 +150,9 @@ case class BlackwireReceive() extends Component {
   // r can receive back pressure from Corundum
   val r = Stream Fragment(CorundumFrame(corundumDataWidth))
 
-  val outstash = CorundumFrameFlowStash(corundumDataWidth, 32, 26)
+  // should be room for 1534 + latency of ChaCha20 to FlowStash
+  // Flow goes ready after packet last, and room for 26*64=1664 bytes
+  val outstash = CorundumFrameFlowStash(corundumDataWidth, fifoSize = 32, 26)
   outstash.io.sink << c
   r << outstash.io.source
 
@@ -193,11 +195,11 @@ object BlackwireReceiveSim {
     val keepWidth = dataWidth/8
     SimConfig
 
-    // GHDL
-    //.withGhdl.withFstWave
-    //.addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
-    //.addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
-    //.addRunFlag("--backtrace-severity=warning")
+    // GHDL can simulate VHDL, required for ChaCha20Poly1305
+    .withGhdl.withFstWave
+    .addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
+    .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    .addRunFlag("--backtrace-severity=warning")
     
     //.withXSim.withXilinxDevice("xcu50-fsvh2104-2-e")
     //.addSimulatorFlag("--ieee=standard")
@@ -206,34 +208,34 @@ object BlackwireReceiveSim {
     //.addSimulatorFlag("-P/project-on-host/SpinalCorundum/xilinx-vivado/unimacro/v93") 
     // these define bus_pkg and bus_pkg1
 
-    .addRtl(s"MaximVHDL/imports/project_1/ChaCha20.vhd")
-    .addRtl(s"MaximVHDL/new/AEAD_ChaCha_Poly.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/ChaCha20.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/AEAD_ChaCha_Poly.vhd")
 
-    .addRtl(s"MaximVHDL/imports/project_1/q_round.vhd")
-    .addRtl(s"MaximVHDL/imports/project_1/diag_round.vhd")
-    .addRtl(s"MaximVHDL/imports/project_1/col_round.vhd")
-    .addRtl(s"MaximVHDL/imports/project_1/half_round.vhd")
-    .addRtl(s"MaximVHDL/new/test_top_ChaCha.vhd")
-    .addRtl(s"MaximVHDL/new/Poly1305.vhd")
-    .addRtl(s"MaximVHDL/new/ChaCha20_128.vhd")
-    .addRtl(s"MaximVHDL/new/mul136_mod_red.vhd")
-    .addRtl(s"MaximVHDL/new/mul_red_pipeline.vhd")
-    .addRtl(s"MaximVHDL/new/test_top_mod_red.vhd")
-    .addRtl(s"MaximVHDL/new/ChaCha_int.vhd")
-    .addRtl(s"MaximVHDL/new/r_power_n.vhd")
-    .addRtl(s"MaximVHDL/mul_gen_0.vhd")
-    .addRtl(s"MaximVHDL/new/mul_36.vhd")
-    .addRtl(s"MaximVHDL/new/mul_72.vhd")
-    .addRtl(s"MaximVHDL/new/mul_144.vhd")
-    .addRtl(s"MaximVHDL/new/mod_red_1305.vhd")
-    .addRtl(s"MaximVHDL/new/Poly_1305_pipe_top.vhd")
-    //.addRtl(s"MaximVHDL/new/test_top_Poly.vhd")
-    .addRtl(s"MaximVHDL/new/Poly_1305_pipe.vhd")
-    .addRtl(s"MaximVHDL/new/AEAD_decryption_top.vhd")
-    .addRtl(s"MaximVHDL/new/AEAD_top.vhd")
-    .addRtl(s"MaximVHDL/new/Poly_pipe_top_test.vhd")
-    .addRtl(s"MaximVHDL/new/AEAD_decryption.vhd")
-    .addRtl(s"MaximVHDL/AEAD_decryption_wrapper.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/q_round.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/diag_round.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/col_round.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/half_round.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/test_top_ChaCha.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/Poly1305.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/ChaCha20_128.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/mul136_mod_red.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/mul_red_pipeline.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/test_top_mod_red.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/ChaCha_int.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/r_power_n.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/mul_gen_0.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/mul_36.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/mul_72.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/mul_144.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/mod_red_1305.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/Poly_1305_pipe_top.vhd")
+    //.addRtl(s"ChaCha20Poly1305/src/test_top_Poly.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/Poly_1305_pipe.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/AEAD_decryption_top.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/AEAD_top.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/Poly_pipe_top_test.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/AEAD_decryption.vhd")
+    .addRtl(s"ChaCha20Poly1305/src/AEAD_decryption_wrapper.vhd")
 
     //.addSimulatorFlag("-Wno-TIMESCALEMOD")
     .doSim(BlackwireReceive()){dut =>
