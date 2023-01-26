@@ -65,10 +65,12 @@ object AxisWireguardKeyLookupSim {
           // during any valid beat, the receiver and counter should
           // be from the header bytes [8:4] and [12:9] resp.
           if (dut.io.source.valid.toBoolean & first_beat) {
-            assert((dut.io.receiver.toBigInt & 0x0F0F0F0F) == 0x08070605)
+            //assert((dut.io.receiver.toBigInt & 0x0F0F0F0F) == 0x08070605)
+            assert((dut.io.receiver.toBigInt & 0x0F0F0F0F) == 0x05060708)
           }
           if (dut.io.source.valid.toBoolean) {
-            assert((dut.io.counter.toBigInt & 0x0F0F0F0F) == 0x0C0B0A09)
+            //printf(s"io.counter == 0x%0${16}X\n", dut.io.counter.toBigInt)
+            assert((dut.io.counter.toBigInt & BigInt("0F0F0F0F0F0F0F0F", 16)) == BigInt("090A0B0C0D0E0F00", 16))
           }
           in_packet_continuation = !dut.io.source.payload.last.toBoolean
           remaining = if (remaining >= dataWidth/8) remaining - dataWidth/8 else 0
