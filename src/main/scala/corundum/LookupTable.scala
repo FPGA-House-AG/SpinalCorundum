@@ -22,7 +22,7 @@ object LookupTable {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new LookupTable(memDataWidth = 33, wordCount = 1024, ClockDomain.external("portb"))
+      val toplevel = new LookupTable(memDataWidth = 33, wordCount = 1024/*, ClockDomain.external("portb")*/)
       //toplevel.mem.initBigInt(Seq(BigInt("1AABBCC00", 16), BigInt("1AABBCC11", 16)))
 
       val bytes = BigInt("1AABBCC00", 16).toByteArray
@@ -46,24 +46,18 @@ object LookupTable {
       toplevel
       //XilinxPatch(toplevel)
     })
-    //val verilogReport = Config.spinal.generateVerilog(new LookupTable(Config.corundumDataWidth, Config.cryptoDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new LookupTable(Config.corundumDataWidth, Config.cryptoDataWidth))
   }
 }
 
 // true dual port ram with independent clocks, symmetric data widths
 case class LookupTable(memDataWidth : Int,
-                     wordCount : Int,
-                     lookupCD: ClockDomain) extends Component {
-
-  //val bram_bus_config = BRAMConfig(memDataWidth, log2Up(wordCount))
-
-  //val x =  Axi4SharedToBram(addressAxiWidth = 8, addressBRAMWidth = 8, dataWidth = 32, idWidth = 0)
+                       wordCount : Int
+                       /*,lookupCD: ClockDomain*/) extends Component {
   val memAddressWidth = log2Up(wordCount)
 
   val io = new Bundle {
     val portA = new Bundle {
-      //val clk = in Bool()
-     // val rst = in Bool()
       val en = in Bool()
       val wr = in Bool()
       val addr = in UInt (memAddressWidth bits)
@@ -71,9 +65,6 @@ case class LookupTable(memDataWidth : Int,
       val rdData = out Bits (memDataWidth bits)
     }
     val portB = new Bundle {
-      //val clk = in Bool()
-      //val rst = in Bool()
-      //val portB = BRAM()
       val en = in Bool()
       val wr = in Bool()
       val addr = in UInt (memAddressWidth bits)
@@ -93,7 +84,8 @@ case class LookupTable(memDataWidth : Int,
       data    = io.portA.wrData
     ))
   }
-  val areaB = new ClockingArea(lookupCD) {
+  // create read/write port B
+  val areaB = new Area { //new ClockingArea(lookupCD) {
     io.portB.rdData := RegNext(mem.readWriteSync(
       enable  = io.portB.en,
       address = io.portB.addr,
@@ -102,17 +94,8 @@ case class LookupTable(memDataWidth : Int,
     ))
   }
 
-  // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
   def nextPowerofTwo(x: Int): Int = {
-    var y = x
-    y = y - 1
-    y = y | (y >> 1)
-    y = y | (y >> 2)
-    y = y | (y >> 4)
-    y = y | (y >> 8)
-    y = y | (y >> 16)
-    y = y + 1
-    y
+    1 << log2Up(x)
   }
 
   // address decoding assumes slave-local addresses
@@ -178,8 +161,6 @@ case class LookupTable(memDataWidth : Int,
     val is_written_last = isLastWritten()
 
     printf("isLastWritten = MaskMapping(0x%08x, 0x%08x)\n", (bus_words_per_memory_word - 1) * bytes_per_cpu_word, bytes_to_memory_word_mask)
-
-
 
     // write bus data on 'bus_wr_data' signal
     val bus_wr_data = Bits(busCtrl.busDataWidth bits)
@@ -308,31 +289,17 @@ case class LookupTable(memDataWidth : Int,
 object LookupTableAxi4 {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false), ClockDomain.external("portb")))
-    val verilogReport = Config.spinal.generateVerilog(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false), ClockDomain.external("portb")))
+    val vhdlReport = Config.spinal.generateVhdl(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false)/*, ClockDomain.external("portb")*/))
+    val verilogReport = Config.spinal.generateVerilog(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false)/*, ClockDomain.external("portb")*/))
   }
 }
 
 // slave must be naturally aligned
-case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config ,lookupCD: ClockDomain) extends Component {
+case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config) extends Component {
 
   // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
   def nextPowerofTwo(x: Int): Int = {
-    var y = x
-    y = y - 1
-    y = y | (y >> 1)
-    y = y | (y >> 2)
-    y = y | (y >> 4)
-    y = y | (y >> 8)
-    y = y | (y >> 16)
-    y = y + 1
-    y
-  }
-
-  def nextPowerofTwo2(x: Int): Int = {
-    var y = x - 1
-    for (z <- 1 to 16) y = y | (y >> z)
-    y + 1
+    1 << log2Up(x)
   }
 
   /* calculate the bus slave address width needed to address the lookup table */
@@ -356,8 +323,6 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
     val ctrlbus = slave(Axi4(slaveCfg))
 
     // lookup
-    //val clk = in Bool()
-    //val rst = in Bool()
     val en = in Bool()
     val wr = in Bool()
     val addr = in UInt (memAddressWidth bits)
@@ -365,12 +330,10 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
     val rdData = out Bits (wordWidth bits)
   }
 
-  val mem = LookupTable(wordWidth, wordCount, lookupCD)
+  val mem = LookupTable(wordWidth, wordCount)
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
   val bridge = mem.driveFrom(ctrl)
 
-  //mem.io.portB.clk := io.clk
-  //mem.io.portB.rst := io.rst
   mem.io.portB.en := io.en
   mem.io.portB.wr := io.wr
   mem.io.portB.addr := io.addr

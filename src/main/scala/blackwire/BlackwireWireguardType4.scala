@@ -71,7 +71,7 @@ case class BlackwireWireguardType4() extends Component {
   io.source << p
 
   val keys_num = 256
-  val lut = LookupTable(256/*bits*/, keys_num, ClockDomain.current)
+  val lut = LookupTable(256/*bits*/, keys_num/*, ClockDomain.current*/)
   lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
 
   lut.io.portA.en := True
