@@ -1,0 +1,46 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sun Jan 29 22:25:14 2023
+[*]
+[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/CorundumFrameInsertHeader/test.fst"
+[dumpfile_mtime] "Sun Jan 29 22:19:24 2023"
+[dumpfile_size] 10127
+[savefile] "/project-on-host/SpinalCorundum/CorundumFrameInsertHeader.gtkw"
+[timestart] 0
+[size] 1000 600
+[pos] -1 -1
+*0.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 204
+[signals_width] 174
+[sst_expanded] 1
+[sst_vpaned_height] 152
+@28
+TOP.CorundumFrameInsertHeader.clk
+TOP.CorundumFrameInsertHeader.reset
+@200
+-
+@22
+TOP.CorundumFrameInsertHeader.header[7:0]
+@201
+-
+@22
+TOP.CorundumFrameInsertHeader.sink_tdata[23:0]
+@28
+TOP.CorundumFrameInsertHeader.sink_tkeep[2:0]
+TOP.CorundumFrameInsertHeader.sink_tlast
+TOP.CorundumFrameInsertHeader.sink_tready
+TOP.CorundumFrameInsertHeader.sink_tuser[0]
+TOP.CorundumFrameInsertHeader.sink_tvalid
+@200
+-
+@22
+TOP.CorundumFrameInsertHeader.source_tdata[23:0]
+@28
+TOP.CorundumFrameInsertHeader.source_tkeep[2:0]
+TOP.CorundumFrameInsertHeader.source_tlast
+TOP.CorundumFrameInsertHeader.source_tready
+TOP.CorundumFrameInsertHeader.source_tuser[0]
+TOP.CorundumFrameInsertHeader.source_tvalid
+[pattern_trace] 1
+[pattern_trace] 0
