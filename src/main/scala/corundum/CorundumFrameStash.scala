@@ -343,6 +343,7 @@ case class CorundumFrameFlowStash(dataWidth : Int, fifoSize : Int, maxPacketFifo
   //x.ready := !fifo_too_full
   //when (fifo_too_full) { x.valid := False }
 
+  // .haltWhen deasserts READY on condition
   stash.io.sink << x.haltWhen(fifo_too_full)
 
   io.source << stash.io.source
