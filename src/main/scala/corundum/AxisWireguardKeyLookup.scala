@@ -64,8 +64,6 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   io.receiver := hdr_receiver.asBits.subdivideIn(4 slices).reverse.asBits().asUInt
   io.counter := hdr_counter.asBits.subdivideIn(8 slices).reverse.asBits().asUInt
 
-  val sink_is_first = io.sink.isFirst
-
    // round up to next 16 bytes (should we always do this? -- Ethernet MTU?)
   val padded16_length_out = RegNextWhen(((io.sink_length + 15) >> 4) << 4, io.sink.isFirst)
   // remove 128 bits Wireguard Type 4 header and 128 bits tag from output length
@@ -76,10 +74,11 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
 
   val x = Stream(Fragment(Bits(dataWidth bits)))
 
-  // two cycles latency
+  // two cycles latency (one using <-<, second)
   x <-< io.sink.stage()
 
   val y = Stream(Fragment(Bits(dataWidth bits)))
+
   // pipeline x into y, thereby replacing first beat
   // modify 128 bits Wireguard Type 4 header on output by clearing valid
   // register to achieve one pipeline stage
@@ -88,22 +87,18 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
 
   // prepare output for ChaCha20-Poly1305
   val header_payload =
-    x.payload(7 downto 0) ## // type 4 byte
-    plaintext_length_out.resize(24) ## // reserved replaced by plaintext_length_out in big-endian
-    x.payload( 63 downto 32).asBits.subdivideIn(4 slices).reverse.asBits() ## // receiver in big-endian
-    x.payload(127 downto 64).asBits.subdivideIn(8 slices).reverse.asBits()    // counter  in big-endian
+    // pass type 4 byte as-is
+    x.payload(7 downto 0) ##
+    // 3-bytes reserved are replaced by plaintext_length_out in big-endian
+    plaintext_length_out.resize(24) ##
+    // receiver in big-endian
+    x.payload( 63 downto 32).asBits.subdivideIn(4 slices).reverse.asBits() ##
+    // counter in big-endian
+    x.payload(127 downto 64).asBits.subdivideIn(8 slices).reverse.asBits()
   val data_payload = x.payload.subdivideIn((dataWidth / 8) slices).reverse.asBits()
-  //val y_payload = Bits(dataWidth bits)
-  //y_payload.assignFromBits(Mux(x.isFirst, header_payload, data_payload))
-
-  //val delete_header = x.isFirst & False
-  //// we keep the header; it carries the counter and the payload length in the reserved field
-  //y.valid := RegNextWhen(x.valid /*& !delete_header*/, x.ready) init(False)
-  //y.payload := RegNextWhen(y_payload, x.ready)
-  //y.last := RegNextWhen(x.last, x.ready)
-  //x.ready := y.ready
 
   y << x
+  // re-assign payload, prevent re-assignment warning using when (True)
   when (True) {
     y.payload.fragment.assignFromBits(Mux(x.isFirst, header_payload, data_payload))
   }
@@ -126,12 +121,11 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
     lut.io.portA.en := True
     lut.io.portA.wr := False
     lut.io.portA.wrData := 0
-    lut.io.portA.addr := hdr_receiver.resize(log2Up(keys_num)).asUInt
 
+    // key lookup based on receiver index of the Type 4
+    lut.io.portA.addr := hdr_receiver.resize(log2Up(keys_num)).asUInt
     io.key_out := lut.io.portA.rdData.subdivideIn((widthOf(io.key_out) / 8) slices).reverse.asBits()
 
-    //lut.io.portB.clk := ClockDomain.current.readClockWire
-    //lut.io.portB.rst := False
     lut.io.portB.en := True
     lut.io.portB.wr := False
     lut.io.portB.wrData := 0
