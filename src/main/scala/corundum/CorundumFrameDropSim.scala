@@ -99,7 +99,7 @@ object CorundumFrameDropSim {
 object CorundumFrameDropFormal extends App {
   import spinal.core.formal._
 
-  FormalConfig.withCover(15).withBMC(15).withProve(15).doVerify(new Component {    
+  FormalConfig.withCover(15).withBMC(15).withProve(15).doVerify(new Component {
     val dut = FormalDut(CorundumFrameDrop(8))
     assumeInitial(ClockDomain.current.isResetActive)
 
@@ -115,18 +115,24 @@ object CorundumFrameDropFormal extends App {
 
     // Assume AXI data remains stable when the stream is stalled
     // (VALID & !READY) -> STABLE(DATA)
+    // (VALID & !READY) -> STABLE(VALID)
+    // (.isStall)
+
+
     // A -> B, or A "implies" B, or if (A) then (B)
     // if "A" then assert("B") or assert(!A or B)
 
+    assume(!dut.io.sink.isStall | stable(dut.io.sink.valid))
     assume(!dut.io.sink.isStall | stable(dut.io.sink.last))
     assume(!dut.io.sink.isStall | stable(dut.io.sink.payload.tkeep))
     assume(!dut.io.sink.isStall | stable(dut.io.sink.payload.tdata))
     assume(!dut.io.sink.isStall | stable(dut.io.sink.payload.tuser))
 
-    // during a packet tail, drop must remain stable
-    assert((!dut.y.tail) | stable(dut.y_drop_packet))
 
-    // same ?
+
+    // during a packet tail, drop must remain stable
+    //assert((!dut.y.tail) || stable(dut.y_drop_packet))
+
     when (dut.y.tail) { assert(stable(dut.y_drop_packet)) }
   })
 }
