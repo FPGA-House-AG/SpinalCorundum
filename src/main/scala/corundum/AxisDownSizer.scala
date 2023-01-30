@@ -43,6 +43,10 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
 
   // translateWith() for Stream(Fragment())
   // (before this we needed to work-around this, see AxisUpSizer.scala commented out code)
+
+  // With that you could write io.sink.~~(_.~~(io.sink_length.asBits ## _))
+  // Q: How should I interpret the _ and _.~~ here?
+  // A: io.sink ~~ (x => x ~~ (y => io.sink_length.asBits ## y))
   implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
     def ~~[T2 <: Data](trans: T => T2) = {
       val that = trans(v.fragment)
