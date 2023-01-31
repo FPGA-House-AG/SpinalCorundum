@@ -4,7 +4,7 @@ ThisBuild / organization := "online.blackwire"
 
 // sometimes we want to work against a local SpinalHDL checkout
 
-val spinalVersion = "1.7.3a"
+val spinalVersion = "dev"
 val spinalDir = "../SpinalHDL.upstream"
 //val spinalVersion = "dev"
 //val spinalDir = "../SpinalHDL.dev"
@@ -15,11 +15,14 @@ val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-
 
 val sourceCode = "com.lihaoyi" %% "sourcecode" % "0.2.7"
 val scalaTest = "org.scalatest" % "scalatest_2.11" % "2.2.1"
+// for {Dense,Sparse}{Vector,Matrix) used by LowCost.scala_
+//val breeze = "org.scalanlp" %% "breeze" % "0.11.2"
 
 lazy val spinalCorundum = (project in file("."))
   .settings(
     name := "SpinalCorundum",
     libraryDependencies ++= Seq(sourceCode, scalaTest),
+    //libraryDependencies ++= Seq(breeze),
     //libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin)
 
     // the following 3 lines take SpinalHDL from a local checkout, above line must be commented out
