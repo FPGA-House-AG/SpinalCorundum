@@ -122,7 +122,7 @@ case class LookupTable(memDataWidth : Int,
 
     // this is the address space exposed on the control bus
     val memory_size = wordCount * cpu_words_per_memory_word * bytes_per_cpu_word
-    printf("memory space size = %d (0x%x) bytes\n", memory_size, memory_size)
+    printf("memory space size = %d (0x%x) bytes, addr = %d bits\n", memory_size, memory_size, log2Up(memory_size))
 
     val bytes_to_memory_word_mask = bytes_per_memory_word - 1
     val cpu_word_to_memory_word_mask = cpu_words_per_memory_word - 1
@@ -322,6 +322,8 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
     1 << log2Up(x)
   }
   val memory_space_address_bits = LookupTableAxi4.slave_width(wordWidth, wordCount, busCfg);
+  printf("LookupTableAxi4() requires %d address bits.\n", memory_space_address_bits)
+  printf("LookupTableAxi4() bus configuration has %d address bits.\n", busCfg.addressWidth)
 
   // the driving bus must have all address bits
   require(busCfg.addressWidth >= memory_space_address_bits)
@@ -347,6 +349,7 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
   val bridge = mem.driveFrom(ctrl)
 
+  // only port B currently does lookups
   mem.io.portB.en := io.en
   mem.io.portB.wr := io.wr
   mem.io.portB.addr := io.addr

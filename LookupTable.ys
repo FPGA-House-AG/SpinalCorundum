@@ -1,0 +1,12 @@
+read_verilog -defer build/rtl/LookupTable.v
+
+#chparam -set N 64
+hierarchy -check 
+prep -top LookupTable
+#json -o LookupTable.json
+
+proc; opt; fsm; opt; memory; opt
+
+synth_xilinx
+
+json -o LookupTable.json
