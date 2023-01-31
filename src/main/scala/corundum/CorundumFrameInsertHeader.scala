@@ -48,8 +48,7 @@ case class CorundumFrameInsertHeader(dataWidth : Int, headerWidthBytes : Int) ex
   val y_payload = Mux(y.isFirst, header_payload, data_payload)
 
   val all_tkeep   = x.payload.tkeep(dataWidth/8 - headerWidth/8 - 1 downto 0) ## B(headerWidth/8 bits, default -> True)
-  val extra_tkeep = RegNext(x.payload.tkeep(dataWidth/8 - 1 downto dataWidth/8 - headerWidth/8))
-  val y_tkeep = Mux(in_extra_beat, extra_tkeep.resize(dataWidth/8), all_tkeep)
+  val y_tkeep = Mux(in_extra_beat, tkeep_buffer.resize(dataWidth/8), all_tkeep)
 
   val y_is_last = Mux(have_extra_beat | in_extra_beat, in_extra_beat, x.lastFire)
 
