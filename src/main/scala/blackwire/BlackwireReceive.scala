@@ -172,7 +172,12 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = fals
   val h = Stream Fragment(CorundumFrame(corundumDataWidth))
   h << ethhdr.io.source
 
-  io.source << h
+  val fcs = CorundumFrameAppendTailer(corundumDataWidth, 4)
+  fcs.io.sink << h
+  val f = Stream Fragment(CorundumFrame(corundumDataWidth))
+  f << fcs.io.source
+
+  io.source << f
 
   //printf("x to r = %d clock cycles.\n", LatencyAnalysis(x.valid, r.valid))
 
