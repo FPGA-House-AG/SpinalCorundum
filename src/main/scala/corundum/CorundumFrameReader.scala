@@ -39,43 +39,40 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 
-  def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
+  def driveFrom(busCtrl : BusSlaveFactory) = new Area {
     // address decoding assumes slave-local addresses
     //assert(busCtrl.busAddressWidth == addressWidth)
     // mostly tkeep is still hardcoded for 32-bit bus controller
     assert(busCtrl.busDataWidth == 32)
 
-    //val busCtrlWrapped = new BusSlaveFactoryAddressWrapper(busCtrl, baseAddress)
-    val busCtrlWrapped = busCtrl
-
     val keepWidth = dataWidth / 8
 
     // will be used for identification purposes
-    busCtrlWrapped.read(B"32'hBBBBBBBB", 0x000, documentation = null)
+    busCtrl.read(B"32'hBBBBBBBB", 0x000, documentation = null)
     // 16'b version and 16'b revision
-    busCtrlWrapped.read(B"32'b00010001", 0x004, documentation = null)
+    busCtrl.read(B"32'b00010001", 0x004, documentation = null)
     // some strictly increasing (not per se incrementing) build number
     val gitCommits = B(BigInt(SourceCodeGitCommits()), 32 bits)
-    busCtrlWrapped.read(gitCommits, 0x008, 0, null)
+    busCtrl.read(gitCommits, 0x008, 0, null)
     // GIT hash
     val gitHash = B(BigInt(SourceCodeGitHash(), 16), 160 bits)
-    busCtrlWrapped.readMultiWord(gitHash, 0x00c, documentation = null)
+    busCtrl.readMultiWord(gitHash, 0x00c, documentation = null)
     // dataWidth
     val instanceDataWidth = U(dataWidth, 32 bits)
-    busCtrlWrapped.read(instanceDataWidth, 0x020, 0, null)
+    busCtrl.read(instanceDataWidth, 0x020, 0, null)
 
     // read the packet through a FIFO (@TODO maybe remove, not much use...)
     val fifoDepth = 4
     val (fifo, fifoOccupancy) = io.output.queueWithOccupancy(fifoDepth) //.init(0)
-    busCtrlWrapped.read(fifoOccupancy, address = 0x40)
+    busCtrl.read(fifoOccupancy, address = 0x40)
 
     val empty_bytes = LeadingZeroes(fifo.payload.tkeep)
     val tkeep_empty = RegNext(fifo.valid.asUInt ## fifo.last.asUInt ## empty_bytes.resize(30))
-    busCtrlWrapped.read(tkeep_empty, 0x080, documentation = null)
+    busCtrl.read(tkeep_empty, 0x080, documentation = null)
 
     // 0x100.. write into wide (512-bits?) register
     //val stream_word = RegNext(io.input.payload.tdata)
-    busCtrlWrapped.readMultiWord(fifo.payload.tdata, 0x100, documentation = null)
+    busCtrl.readMultiWord(fifo.payload.tdata, 0x100, documentation = null)
 
     // match a range of addresses using mask
     import spinal.lib.bus.misc.MaskMapping
@@ -85,7 +82,7 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
       //val mask_mapping = MaskMapping(0xFFFFC0L/*64 addresses, 16 32-bit regs*/, 0x000100L)
       val size_mapping = SizeMapping(0x100, dataWidth / 8)
       val ret = False
-      busCtrlWrapped.onReadPrimitive(address = size_mapping, false, ""){ ret := True }
+      busCtrl.onReadPrimitive(address = size_mapping, false, ""){ ret := True }
       ret
     }
 
@@ -94,7 +91,7 @@ case class CorundumFrameReader(dataWidth : Int) extends Component {
     // valid will push the current packet word out
     val valid = Reg(Bool) init(False)
 
-    val reg_idx = busCtrlWrapped.readAddress.resize(log2Up(dataWidth / 8)) / (busCtrl.busDataWidth / 8)
+    val reg_idx = busCtrl.readAddress.resize(log2Up(dataWidth / 8)) / (busCtrl.busDataWidth / 8)
     val full_bytes = keepWidth - empty_bytes
     val full_words = (full_bytes + busCtrl.busDataWidth / 8 - 1) / (busCtrl.busDataWidth / 8)
 
@@ -137,7 +134,7 @@ case class CorundumFrameReaderAxi4(dataWidth : Int, busCfg : Axi4Config) extends
 
   val reader = CorundumFrameReader(dataWidth)
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
-  val bridge = reader.driveFrom(ctrl, 0)
+  val bridge = reader.driveFrom(ctrl)
   reader.io.input << io.input
 
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))  

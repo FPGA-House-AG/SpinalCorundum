@@ -21,7 +21,7 @@ case class CorundumFrameWriterDut(dataWidth : Int) extends Component {
 
   val ctrl = new Axi4SlaveFactory(io.slave0)
   val writer = CorundumFrameWriter(dataWidth)
-  val bridge = writer.driveFrom(ctrl, 0)
+  val bridge = writer.driveFrom(ctrl)
   io.output << writer.io.output
 }
 

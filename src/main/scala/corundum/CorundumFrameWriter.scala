@@ -40,37 +40,34 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 
-  def driveFrom(busCtrl : BusSlaveFactory, baseAddress : BigInt) = new Area {
+  def driveFrom(busCtrl : BusSlaveFactory) = new Area {
     // address decoding assumes slave-local addresses
     //assert(busCtrl.busAddressWidth == addressWidth)
     // mostly tkeep is still hardcoded for 32-bit bus controller
     assert(busCtrl.busDataWidth == 32)
 
-    //val busCtrlWrapped = new BusSlaveFactoryAddressWrapper(busCtrl, baseAddress)
-    val busCtrlWrapped = busCtrl
-
     val keepWidth = dataWidth / 8
 
     // will be used for identification purposes @TODO
-    busCtrlWrapped.read(B"32'hAABBCCDD", 0x000, documentation = null)
+    busCtrl.read(B"32'hAABBCCDD", 0x000, documentation = null)
     // 16'b version and 16'b revision
-    busCtrlWrapped.read(B"32'b00010001", 0x004, documentation = null)
+    busCtrl.read(B"32'b00010001", 0x004, documentation = null)
     // some strictly increasing (not per se incrementing) build number
     val gitCommits = B(BigInt(SourceCodeGitCommits()), 32 bits)
-    busCtrlWrapped.read(gitCommits, 0x008, 0, null)
+    busCtrl.read(gitCommits, 0x008, 0, null)
     // GIT hash
     val gitHash = B(BigInt(SourceCodeGitHash(), 16), 160 bits)
-    busCtrlWrapped.readMultiWord(gitHash, 0x00c, documentation = null)
+    busCtrl.readMultiWord(gitHash, 0x00c, documentation = null)
     // dataWidth
     val instanceDataWidth = U(dataWidth, 32 bits)
-    busCtrlWrapped.read(instanceDataWidth, 0x020, 0, null)
+    busCtrl.read(instanceDataWidth, 0x020, 0, null)
 
     val empty_bytes = Reg(UInt(log2Up(busCtrl.busDataWidth / 8 - 1) bits)) init (0)
-    busCtrlWrapped.write(empty_bytes, 0x080, documentation = null)
+    busCtrl.write(empty_bytes, 0x080, documentation = null)
 
     // 0x100.. write into wide (512-bits?) register
     val stream_word = Reg(Bits(dataWidth bits))
-    busCtrlWrapped.writeMultiWord(stream_word, 0x100, documentation = null)
+    busCtrl.writeMultiWord(stream_word, 0x100, documentation = null)
 
     // match a range of addresses using mask
     import spinal.lib.bus.misc.MaskMapping
@@ -80,7 +77,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
       //val mask_mapping = MaskMapping(0xFFFFC0L/*64 addresses, 16 32-bit regs*/, 0x000100L)
       val size_mapping = SizeMapping(0x100, dataWidth / 8)
       val ret = False
-      busCtrlWrapped.onWritePrimitive(address = size_mapping, false, ""){ ret := True }
+      busCtrl.onWritePrimitive(address = size_mapping, false, ""){ ret := True }
       ret
     }
 
@@ -93,7 +90,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     // tlast indicates if the next write on the bus completes the packet
     val tlast = Reg(Bool) init(False)
 
-    val reg_idx = busCtrlWrapped.writeAddress.resize(log2Up(dataWidth / 8)) / (busCtrl.busDataWidth / 8)
+    val reg_idx = busCtrl.writeAddress.resize(log2Up(dataWidth / 8)) / (busCtrl.busDataWidth / 8)
 
     valid := False
 
@@ -120,7 +117,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
     when (valid) {
       tlast := False
     }
-    busCtrlWrapped.onWrite(0x80, null){
+    busCtrl.onWrite(0x80, null){
       tlast := True
     }
 
@@ -133,7 +130,7 @@ case class CorundumFrameWriter(dataWidth : Int) extends Component {
 
     val fifoDepth = 4
     val (fifo, fifoAvailability) = corundum.queueWithAvailability(fifoDepth) //.init(0)
-    busCtrlWrapped.read(fifoAvailability, address = 0x40)
+    busCtrl.read(fifoAvailability, address = 0x40)
     io.input << fifo
   }
 }
@@ -160,7 +157,7 @@ case class CorundumFrameWriterAxi4(dataWidth : Int, busCfg : Axi4Config) extends
 
   val writer = CorundumFrameWriter(dataWidth)
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
-  val bridge = writer.driveFrom(ctrl, 0)
+  val bridge = writer.driveFrom(ctrl)
   io.output << writer.io.output
 
   // Execute the function renameAxiIO after the creation of the component
