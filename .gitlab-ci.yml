@@ -38,7 +38,7 @@ build-job:
     # build of SpinalHDL in the future (after PoC?)
     #- cp -a release-build.sbt build.sbt
     - git config --global --add safe.directory $PWD
-    - make
+    - make test
     - echo "Build complete."
 
 # Multiple jobs within same stage run in parallel

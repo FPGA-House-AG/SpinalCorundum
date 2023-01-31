@@ -18,7 +18,7 @@
 
 build: rtl
 
-test: rtl formal
+test: build formal
 
 # continuous build (using sbt "~" REPL feature) on save in editor
 repl:
@@ -189,6 +189,11 @@ formal_drop:
 	sby -h
 	sbt "runMain corundum.CorundumFrameDropFormal"
 
+LookupTable_netlist:
+	yosys -h || . /home/vivado/oss-cad-suite/environment
+	yosys LookupTable.ys
+	netlistsvg LookupTable.json -o LookupTable.svg
+	xviewer LookupTable.svg
 
 # The following two targets build an SVG diagram of the Priority Mux
 # @TODO support these tools in our Docker image

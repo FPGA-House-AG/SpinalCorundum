@@ -227,11 +227,11 @@ object BlackwireReceiveSim {
 
     SimConfig
     // GHDL can simulate VHDL, required for ChaCha20Poly1305
-    .withGhdl.withFstWave
-    // this is work for newer versions of SpinalHDL
-    .addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
-    .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
-    .addRunFlag("--backtrace-severity=warning")
+    //.withGhdl.withFstWave
+    // addRunFlag support is not (yet?) in upstream SpinalHDL
+    //.addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
+    //.addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    //.addRunFlag("--backtrace-severity=warning")
     
     //.withXSim.withXilinxDevice("xcu50-fsvh2104-2-e")
     //.addSimulatorFlag("--ieee=standard")

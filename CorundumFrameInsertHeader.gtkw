@@ -1,33 +1,33 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Sun Jan 29 22:25:14 2023
+[*] Tue Jan 31 15:12:47 2023
 [*]
 [dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/CorundumFrameInsertHeader/test.fst"
-[dumpfile_mtime] "Sun Jan 29 22:19:24 2023"
-[dumpfile_size] 10127
+[dumpfile_mtime] "Tue Jan 31 15:08:33 2023"
+[dumpfile_size] 15648
 [savefile] "/project-on-host/SpinalCorundum/CorundumFrameInsertHeader.gtkw"
-[timestart] 0
-[size] 1000 600
+[timestart] 1264
+[size] 1556 898
 [pos] -1 -1
-*0.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-7.000000 1430 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
-[sst_width] 204
-[signals_width] 174
+[sst_width] 257
+[signals_width] 418
 [sst_expanded] 1
-[sst_vpaned_height] 152
+[sst_vpaned_height] 257
 @28
 TOP.CorundumFrameInsertHeader.clk
 TOP.CorundumFrameInsertHeader.reset
 @200
 -
 @22
-TOP.CorundumFrameInsertHeader.header[7:0]
-@201
+TOP.CorundumFrameInsertHeader.header[111:0]
+@200
 -
 @22
-TOP.CorundumFrameInsertHeader.sink_tdata[23:0]
+TOP.CorundumFrameInsertHeader.sink_tdata[127:0]
+TOP.CorundumFrameInsertHeader.sink_tkeep[15:0]
 @28
-TOP.CorundumFrameInsertHeader.sink_tkeep[2:0]
 TOP.CorundumFrameInsertHeader.sink_tlast
 TOP.CorundumFrameInsertHeader.sink_tready
 TOP.CorundumFrameInsertHeader.sink_tuser[0]
@@ -35,12 +35,18 @@ TOP.CorundumFrameInsertHeader.sink_tvalid
 @200
 -
 @22
-TOP.CorundumFrameInsertHeader.source_tdata[23:0]
+TOP.CorundumFrameInsertHeader.source_tdata[127:0]
+TOP.CorundumFrameInsertHeader.source_tkeep[15:0]
 @28
-TOP.CorundumFrameInsertHeader.source_tkeep[2:0]
 TOP.CorundumFrameInsertHeader.source_tlast
 TOP.CorundumFrameInsertHeader.source_tready
 TOP.CorundumFrameInsertHeader.source_tuser[0]
 TOP.CorundumFrameInsertHeader.source_tvalid
+@200
+-
+@22
+TOP.CorundumFrameInsertHeader.tkeep_buffer[13:0]
+@28
+TOP.CorundumFrameInsertHeader.in_extra_beat
 [pattern_trace] 1
 [pattern_trace] 0
