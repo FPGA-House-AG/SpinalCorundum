@@ -246,7 +246,8 @@ case class LookupTable(memDataWidth : Int,
     val cycle = Bool()
     val all = Bool()
 
-    // if haltSentive is false, then the call back is made durring the whole access, while if that's true it is only done the last cycle of the access.
+    // if haltSensitive is false the callback is made during the whole access
+    // if haltSensitive is  true the callback is made last cycle of the access.
     // haltSensitive = false => all cycles
     all := False
     busCtrl.onReadPrimitive(SizeMapping(0, memory_size), haltSensitive = false, documentation = null) {
@@ -292,6 +293,25 @@ object LookupTableAxi4 {
     val vhdlReport = Config.spinal.generateVhdl(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false)/*, ClockDomain.external("portb")*/))
     val verilogReport = Config.spinal.generateVerilog(new LookupTableAxi4(33, 1024, Axi4Config(32, 32, 2, useQos = false, useRegion = false)/*, ClockDomain.external("portb")*/))
   }
+  // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+  def nextPowerofTwo(x: Int): Int = {
+    1 << log2Up(x)
+  }
+
+  def slave_width(wordWidth : Int, wordCount : Int, busCfg : Axi4Config) : Int = {
+    /* calculate the bus slave address width needed to address the lookup table */
+    val bytes_per_cpu_word = busCfg.dataWidth / 8
+    val bus_words_per_memory_word = (wordWidth + busCfg.dataWidth - 1) / busCfg.dataWidth
+    val cpu_words_per_memory_word = nextPowerofTwo(bus_words_per_memory_word)
+    val bytes_per_memory_word = cpu_words_per_memory_word * bytes_per_cpu_word
+    val memory_space = wordCount * bytes_per_memory_word
+    val memory_space_address_bits = log2Up(memory_space)
+
+    // the driving bus must have all address bits
+    require(busCfg.addressWidth >= memory_space_address_bits)
+
+    memory_space_address_bits
+  }
 }
 
 // slave must be naturally aligned
@@ -301,14 +321,7 @@ case class LookupTableAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Config
   def nextPowerofTwo(x: Int): Int = {
     1 << log2Up(x)
   }
-
-  /* calculate the bus slave address width needed to address the lookup table */
-  val bytes_per_cpu_word = busCfg.dataWidth / 8
-  val bus_words_per_memory_word = (wordWidth + busCfg.dataWidth - 1) / busCfg.dataWidth
-  val cpu_words_per_memory_word = nextPowerofTwo(bus_words_per_memory_word)
-  val bytes_per_memory_word = cpu_words_per_memory_word * bytes_per_cpu_word
-  val memory_space = wordCount * bytes_per_memory_word
-  val memory_space_address_bits = log2Up(memory_space)
+  val memory_space_address_bits = LookupTableAxi4.slave_width(wordWidth, wordCount, busCfg);
 
   // the driving bus must have all address bits
   require(busCfg.addressWidth >= memory_space_address_bits)

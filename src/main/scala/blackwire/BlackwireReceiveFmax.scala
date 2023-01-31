@@ -41,7 +41,7 @@ case class BlackwireReceiveFmax() extends Component {
 
   source.fragment.tuser := 0
 
-  val rx = BlackwireReceive()
+  val rx = BlackwireReceive(BlackwireReceive.busconfig)
 
   rx.io.sink << source
   rx.io.source.ready := lfsr.io.lfsr(1)

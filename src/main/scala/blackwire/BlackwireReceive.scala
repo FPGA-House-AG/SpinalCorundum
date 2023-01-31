@@ -12,24 +12,34 @@ import corundum._
 
 // companion object
 object BlackwireReceive {
+  val busconfig = Axi4Config(13, 32, 2, useLock = false, useQos = false, useRegion = false)
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new BlackwireReceive())
+    val vhdlReport = Config.spinal.generateVhdl(new BlackwireReceive(busconfig))
+    val verilogReport = Config.spinal.generateVerilog(new BlackwireReceive(busconfig))
     //vhdlReport.mergeRTLSource("merge")
   }
 }
 
 // composition of the RX data flow towards ChaCha20-Poly1305
 // stash -> downsizer -> key lookup ->
-case class BlackwireReceive() extends Component {
+case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = false) extends Component {
   final val corundumDataWidth = 512
   final val cryptoDataWidth = 128
   final val maxPacketLength = 1534
   // 1534 rounded up 2048/(512/8) == 32
 
+  final val rxkey_addr_width = LookupTableAxi4.slave_width(256, 256, busCfg)
+  println("rxkey_addr_width = " + rxkey_addr_width)
+
+  val rxkeySlaveCfg = busCfg.copy(addressWidth = rxkey_addr_width)
+
   val io = new Bundle {
     // I/O is only the Corundum Frame tdata payload
     val sink = slave Stream Fragment(CorundumFrame(corundumDataWidth))
     val source = master Stream Fragment(CorundumFrame(corundumDataWidth))
+
+    val source_handshake = master Stream Fragment(CorundumFrame(corundumDataWidth))
+    val ctrl_rxkey = slave(Axi4(rxkeySlaveCfg))
   }
 
   // x is TDATA+TKEEP Ethernet frame from Corundum
@@ -40,16 +50,13 @@ case class BlackwireReceive() extends Component {
   val type4_demux = new CorundumFrameDemuxWireguardType4(corundumDataWidth)
   type4_demux.io.sink << x
 
-  // non-Type4 packet are dropped here (in fuller design, go into RISC-V Reader)
-  val other_sinkhole = Stream Fragment(CorundumFrame(corundumDataWidth))
-  other_sinkhole.ready := True
-
+  // non-Type4 packet are routed here
   val dropOnFull = CorundumFrameDrop(corundumDataWidth)
   val readerStash = CorundumFrameStash(corundumDataWidth, 32)
   dropOnFull.io.sink << type4_demux.io.source_other
   readerStash.io.sink << dropOnFull.io.source 
   dropOnFull.io.drop := (readerStash.io.availability < 2)
-  other_sinkhole << readerStash.io.source
+  io.source_handshake << readerStash.io.source
 
   // Type4 goes into stash
   val stash = CorundumFrameStash(corundumDataWidth, 32)
@@ -98,7 +105,7 @@ case class BlackwireReceive() extends Component {
   val s_length = Reg(UInt(12 bits))
   val s_drop = Reg(Bool()) init(False)
 
-  val include_chacha = true
+  //val include_chacha = false
   (include_chacha) generate new Area {
 
     // p is the decrypted Type 4 payload
@@ -121,6 +128,7 @@ case class BlackwireReceive() extends Component {
   (!include_chacha) generate new Area {
     s << k.haltWhen(output_stash_too_full)
     s_length := k_length
+    s_drop := False
   }
 
   // u is the decrypted Type 4 payload but in 512 bits
@@ -158,13 +166,22 @@ case class BlackwireReceive() extends Component {
 
   output_stash_too_full := !outstash.io.sink.ready
 
-  io.source << r
+  val ethhdr = CorundumFrameInsertHeader(corundumDataWidth, 14)
+  ethhdr.io.sink << r
+  ethhdr.io.header := B("112'x000a3506a3beaabbcc2222220800")
+  val h = Stream Fragment(CorundumFrame(corundumDataWidth))
+  h << ethhdr.io.source
+
+  io.source << h
 
   //printf("x to r = %d clock cycles.\n", LatencyAnalysis(x.valid, r.valid))
 
 
   val keys_num = 256
+  val has_busctrl = true
+  (!has_busctrl) generate new Area {
   val lut = LookupTable(256/*bits*/, keys_num/*, ClockDomain.current*/)
+
   lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
 
   lut.io.portA.en := True
@@ -179,7 +196,18 @@ case class BlackwireReceive() extends Component {
   lut.io.portB.wr := False
   lut.io.portB.wrData := 0
   lut.io.portB.addr := 0
-
+  }
+  // RX key lookup and update via bus controller
+  (has_busctrl) generate new Area {
+  val lut = LookupTableAxi4(256/*bits*/, keys_num, busCfg)
+  lut.mem.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
+  lut.io.en := True
+  lut.io.wr := False
+  lut.io.wrData := 0
+  lut.io.addr := rxkey.io.receiver.resize(log2Up(keys_num))
+  rxkey.io.key_in := lut.io.rdData
+  io.ctrl_rxkey >> lut.io.ctrlbus
+  }
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
@@ -198,9 +226,9 @@ object BlackwireReceiveSim {
     // GHDL can simulate VHDL, required for ChaCha20Poly1305
     .withGhdl.withFstWave
     // this is work for newer versions of SpinalHDL
-    //.addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
-    //.addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
-    //.addRunFlag("--backtrace-severity=warning")
+    .addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
+    .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    .addRunFlag("--backtrace-severity=warning")
     
     //.withXSim.withXilinxDevice("xcu50-fsvh2104-2-e")
     //.addSimulatorFlag("--ieee=standard")
@@ -239,7 +267,7 @@ object BlackwireReceiveSim {
     .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption_wrapper.vhd")
 
     //.addSimulatorFlag("-Wno-TIMESCALEMOD")
-    .doSim(BlackwireReceive()){dut =>
+    .doSim(BlackwireReceive(BlackwireReceive.busconfig)){dut =>
 
       dut.io.sink.valid #= false
 
@@ -376,6 +404,9 @@ object BlackwireReceiveSim {
             remaining -= tkeep_len
             word_index += 1
           }
+
+          //if (dut.decrypt.io.sink.ready.toBoolean & dut.decrypt.io.sink.valid.toBoolean) {
+          //}
         }
         dut.io.sink.valid #= false
 
