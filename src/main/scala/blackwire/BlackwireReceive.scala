@@ -12,7 +12,7 @@ import corundum._
 
 // companion object
 object BlackwireReceive {
-  val busconfig = Axi4Config(13, 32, 2, useLock = false, useQos = false, useRegion = false)
+  val busconfig = Axi4Config(15, 32, 2, useLock = false, useQos = false, useRegion = false)
   def main(args: Array[String]) {
     val vhdlReport = Config.spinal.generateVhdl(new BlackwireReceive(busconfig))
     val verilogReport = Config.spinal.generateVerilog(new BlackwireReceive(busconfig))
@@ -26,9 +26,11 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = fals
   final val corundumDataWidth = 512
   final val cryptoDataWidth = 128
   final val maxPacketLength = 1534
+  final val keys_num = 4 * 256
+
   // 1534 rounded up 2048/(512/8) == 32
 
-  final val rxkey_addr_width = LookupTableAxi4.slave_width(256, 256, busCfg)
+  final val rxkey_addr_width = LookupTableAxi4.slave_width(256, keys_num, busCfg)
   println("rxkey_addr_width = " + rxkey_addr_width)
 
   val rxkeySlaveCfg = busCfg.copy(addressWidth = rxkey_addr_width)
@@ -181,8 +183,6 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = fals
 
   //printf("x to r = %d clock cycles.\n", LatencyAnalysis(x.valid, r.valid))
 
-
-  val keys_num = 256
   val has_busctrl = true
   (!has_busctrl) generate new Area {
   val lut = LookupTable(256/*bits*/, keys_num/*, ClockDomain.current*/)
@@ -195,8 +195,6 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = fals
   lut.io.portA.addr := rxkey.io.receiver.resize(log2Up(keys_num))
   rxkey.io.key_in := lut.io.portA.rdData
 
-  //lut.io.portB.clk := ClockDomain.current.readClockWire
-  //lut.io.portB.rst := False
   lut.io.portB.en := True
   lut.io.portB.wr := False
   lut.io.portB.wrData := 0
@@ -226,8 +224,8 @@ object BlackwireReceiveSim {
     val dataWidth = 512
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
-    SimConfig
 
+    SimConfig
     // GHDL can simulate VHDL, required for ChaCha20Poly1305
     .withGhdl.withFstWave
     // this is work for newer versions of SpinalHDL
