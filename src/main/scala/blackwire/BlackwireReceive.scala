@@ -22,7 +22,7 @@ object BlackwireReceive {
 
 // composition of the RX data flow towards ChaCha20-Poly1305
 // stash -> downsizer -> key lookup ->
-case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = false) extends Component {
+case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true) extends Component {
   final val corundumDataWidth = 512
   final val cryptoDataWidth = 128
   final val maxPacketLength = 1534
@@ -107,8 +107,8 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = fals
   val s_length = Reg(UInt(12 bits))
   val s_drop = Reg(Bool()) init(False)
 
-  //val include_chacha = false
-  (include_chacha) generate new Area {
+  //(include_chacha) generate new Area {
+  if (include_chacha) {
 
     // p is the decrypted Type 4 payload
     val p = Stream(Fragment(Bits(cryptoDataWidth bits)))
@@ -127,7 +127,8 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = fals
     // so that we do forward an unknown drop signal on non-last beats to the output
     s_drop := (p.last & !decrypt.io.tag_valid)
   }
-  (!include_chacha) generate new Area {
+  //(!include_chacha) generate new Area {
+  if (!include_chacha) {
     s << k.haltWhen(output_stash_too_full)
     s_length := k_length
     s_drop := False
@@ -227,11 +228,11 @@ object BlackwireReceiveSim {
 
     SimConfig
     // GHDL can simulate VHDL, required for ChaCha20Poly1305
-    //.withGhdl.withFstWave
+    .withGhdl.withFstWave
     // addRunFlag support is not (yet?) in upstream SpinalHDL
-    //.addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
-    //.addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
-    //.addRunFlag("--backtrace-severity=warning")
+    .addRunFlag("--unbuffered").addRunFlag("--disp-tree=inst")
+    .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    .addRunFlag("--backtrace-severity=warning")
     
     //.withXSim.withXilinxDevice("xcu50-fsvh2104-2-e")
     //.addSimulatorFlag("--ieee=standard")
@@ -270,7 +271,8 @@ object BlackwireReceiveSim {
     .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption_wrapper.vhd")
 
     //.addSimulatorFlag("-Wno-TIMESCALEMOD")
-    .doSim(BlackwireReceive(BlackwireReceive.busconfig)){dut =>
+    // include_chacha = true requires GHDL or XSim
+    .doSim(BlackwireReceive(BlackwireReceive.busconfig, include_chacha = true)){dut =>
 
       dut.io.sink.valid #= false
 
@@ -310,63 +312,36 @@ object BlackwireReceiveSim {
 
       var packet_number = 0
       val inter_packet_gap = 1
-      while (packet_number < 3) {
 
-        val plaintext1 = Vector(
-          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------> < L a  d  i  e  s
-          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 4c 61 64 69 65 73".split(" ").reverse.mkString(""), 16),
-          //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
-          BigInt("20 61 6e 64 20 47 65 6e 74 6c 65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73 73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63 6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f 6e 6c 79 20 6f 6e".split(" ").reverse.mkString(""), 16),
-          //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . <---------- Poly 1305 Tag (16 bytes) --------->
-          BigInt("65 20 74 69 70 20 66 6f 72 20 74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73 63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69 74 2e 13 05 13 05 13 05 13 05 13 05 13 05 13 05 13 05 00 00 00 00".split(" ").reverse.mkString(""), 16)
-        )
-        // 64 - 6 = 58 bytes for all headers
-        // 3 * 64 bytes - 4 = 188 bytes for full Ethernet packet (as above)
-        // 188 - 58 = 130 bytes for encrypted/decrypted (16 bytes ceiling padded) payload and the Poly1305 tag
-        // 130 - 16 = 114 bytes for encrypted/decrypted (16 bytes ceiling padded) )payload
-        // 114 bytes fits in 8 128-bit words
-        //var packet_length = 16 + 114 // bytes
+      val plaintext1 = Vector(
+        //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------> < L a  d  i  e  s
+        BigInt("01 02 03 04 05 06 01 02 03 04 05 06 01 02 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 11 22 33 44 c1 c2 c3 c4 c5 c6 c7 c8 4c 61 64 69 65 73".split(" ").reverse.mkString(""), 16),
+        //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
+        BigInt("20 61 6e 64 20 47 65 6e 74 6c 65 6d 65 6e 20 6f 66 20 74 68 65 20 63 6c 61 73 73 20 6f 66 20 27 39 39 3a 20 49 66 20 49 20 63 6f 75 6c 64 20 6f 66 66 65 72 20 79 6f 75 20 6f 6e 6c 79 20 6f 6e".split(" ").reverse.mkString(""), 16),
+        //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . <---------- Poly 1305 Tag (16 bytes) --------->
+        BigInt("65 20 74 69 70 20 66 6f 72 20 74 68 65 20 66 75 74 75 72 65 2c 20 73 75 6e 73 63 72 65 65 6e 20 77 6f 75 6c 64 20 62 65 20 69 74 2e 13 05 13 05 13 05 13 05 13 05 13 05 13 05 13 05 00 00 00 00".split(" ").reverse.mkString(""), 16)
+      )
+      // 64 - 6 = 58 bytes for all headers
+      // 3 * 64 bytes - 4 = 188 bytes for full Ethernet packet (as above)
+      // 188 - 58 = 130 bytes for encrypted/decrypted (16 bytes ceiling padded) payload and the Poly1305 tag
+      // 130 - 16 = 114 bytes for encrypted/decrypted (16 bytes ceiling padded) )payload
+      // 114 bytes fits in 8 128-bit words
+      //var packet_length = 16 + 114 // bytes
 
-        val plaintext = Vector(
-          Vector(
-            //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>< L  a  d  i  e  s
-            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
-            //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
-            BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
-            //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 
-            //                                                                                                                                                                                    <-Poly 1305 Tag...
-            BigInt("8B 8C 98 03 AE E3 28 09 1B 58 FA B3 24 E4 FA D6 75 94 55 85 80 8B 48 31 D7 BC 3F F4 DE F0 8E 4B 7A 9D E5 76 D2 65 86 CE C6 4B 61 16 0C 03 CE 35 6C D7 A6 76 63 FB DD EF FF 64 20 57 AD C1 AF 44".split(" ").reverse.mkString(""), 16),
-            //      ...Poly 1305 Tag (16 bytes)->
-            //BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-            BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-          ),
-          // invalid TAG (last byte wrong)
-          Vector(
-            //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 2 ------------------------>< L  a  d  i  e  s
-            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
-            //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
-            BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
-            //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 
-            //                                                                                                                                                                                    <-Poly 1305 Tag...
-            BigInt("8B 8C 98 03 AE E3 28 09 1B 58 FA B3 24 E4 FA D6 75 94 55 85 80 8B 48 31 D7 BC 3F F4 DE F0 8E 4B 7A 9D E5 76 D2 65 86 CE C6 4B 61 16 0C 03 CE 35 6C D7 A6 76 63 FB DD EF FF 64 20 57 AD C1 AF 44".split(" ").reverse.mkString(""), 16),
-            //      ...Poly 1305 Tag (16 bytes)->
-            //BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-            BigInt("E7 01 50 87 55 CA 0A CC 8D 4F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-          ),
-          Vector(
-            //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <----Wireguard Type 4 ------------------------>< L  a  d  i  e  s
-            BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 00 01 02 03 04 05 06 07 D3 1A 8D 34 64 8E".split(" ").reverse.mkString(""), 16),
-            //          a  n  d     G  e  n  t  l  e  m  e  n     o  f     t  h  e     c  l  a  s  s     o  f     '  9  9  :     I  f     I     c  o  u  l  d     o  f  f  e  r     y  o  u     o  n  l  y     o  n
-            BigInt("60 DB 7B 86 AF BC 53 EF 7E C2 A4 AD ED 51 29 6E 08 FE A9 E2 B5 A7 36 EE 62 D6 3D BE A4 5E 8C A9 67 12 82 FA FB 69 DA 92 72 8B 1A 71 DE 0A 9E 06 0B 29 05 D6 A5 B6 7E CD 3B 36 92 DD BD 7F 2D 77".split(" ").reverse.mkString(""), 16),
-            //       e     t  i  p     f  o  r     t  h  e     f  u  t  u  r  e  ,     s  u  n  s  c  r  e  e  n     w  o  u  l  d     b  e     i  t  . 
-            //                                                                                                                                                                                    <-Poly 1305 Tag...
-            BigInt("8B 8C 98 03 AE E3 28 09 1B 58 FA B3 24 E4 FA D6 75 94 55 85 80 8B 48 31 D7 BC 3F F4 DE F0 8E 4B 7A 9D E5 76 D2 65 86 CE C6 4B 61 16 0C 03 CE 35 6C D7 A6 76 63 FB DD EF FF 64 20 57 AD C1 AF 44".split(" ").reverse.mkString(""), 16),
-            //      ...Poly 1305 Tag (16 bytes)->
-            //BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-            BigInt("E7 01 50 87 55 CA 0A CC 8D 4E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-          )
+      val plaintext = Vector(
+        // RFC7539 2.8.2. Example and Test Vector for AEAD_CHACHA20_POLY1305
+        // but with zero-length AAD, and Wireguard 64-bit nonce
+        Vector(
+          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          //BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 47 46 45 44 43 42 41 40 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4 93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97".split(" ").reverse.mkString(""), 16),
+          BigInt("1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0 46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee".split(" ").reverse.mkString(""), 16),
+          BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         )
-        var packet_length = 3 * 64 + 10 //bytes
+      )
+      while (packet_number < 1) {
+        var packet_length = 3 * 64 + 10 //bytes Ethernet === 2 * 64 WGT4 payload + 16 bytes tag
 
         var remaining = packet_length
 
