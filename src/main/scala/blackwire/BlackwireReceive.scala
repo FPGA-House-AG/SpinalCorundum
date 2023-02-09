@@ -118,7 +118,6 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
 
     // from the first word, extract the IPv4 Total Length field to determine packet length
     when (p.isFirst) {
-      //s_length.assignFromBits(s.payload.fragment.asBits()(16, 16 bits))
       s_length.assignFromBits(p.payload.fragment(16, 16 bits).resize(12))
     }
     s <-< p
