@@ -107,11 +107,13 @@ object BlackwireWireguardType4Sim {
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
     SimConfig
-    .withGhdl
-    .withFstWave
+    .withGhdl.withFstWave
+    //.addRunFlag support is now in SpinalHDL dev branch
+    .addRunFlag("--unbuffered") //.addRunFlag("--disp-tree=inst")
+    .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    .addRunFlag("--backtrace-severity=warning")
     .addRtl(s"../ChaCha20Poly1305/src/ChaCha20.vhd")
     .addRtl(s"../ChaCha20Poly1305/src/AEAD_ChaCha_Poly.vhd")
-
     .addRtl(s"../ChaCha20Poly1305/src/q_round.vhd")
     .addRtl(s"../ChaCha20Poly1305/src/diag_round.vhd")
     .addRtl(s"../ChaCha20Poly1305/src/col_round.vhd")
@@ -137,6 +139,7 @@ object BlackwireWireguardType4Sim {
     .addRtl(s"../ChaCha20Poly1305/src/Poly_pipe_top_test.vhd")
     .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption.vhd")
     .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption_wrapper.vhd")
+    //.addRtl(s"../ChaCha20Poly1305/convert/AEAD_decryption_wrapper.v")
 
     //.withFstWave
     .doSim(BlackwireWireguardType4()){dut =>
@@ -160,31 +163,12 @@ object BlackwireWireguardType4Sim {
       var remaining_packets = 2
       val inter_packet_gap = 1
       while (remaining_packets > 0) {
-        
-        val plaintext3 = Vector(
-          // nonce hardcoded 07 00 00 00 40 41 42 43 44 45 46 47 in the aead_decryption_wrapper.vhd
-          BigInt("8B 72 92 DA 69 FB FA 82 12 67 A9 8C 5E A4 BE 3D D6 62 EE 36 A7 B5 E2 A9 FE 08 6E 29 51 ED AD A4 C2 7E EF 53 BC AF 86 7B DB 60 8E 64 34 8D 1A D3 47 46 45 44 43 42 41 40 01 00 00 00 70 00 00 04".split(" ")/*.reverse*/.mkString(""), 16),
-          BigInt("4B C6 CE 86 65 D2 76 E5 9D 7A 4B 8E F0 DE F4 3F BC D7 31 48 8B 80 85 55 94 75 D6 FA E4 24 B3 FA 58 1B 09 28 E3 AE 03 98 8C 8B 77 2D 7F BD DD 92 36 3B CD 7E B6 A5 D6 05 29 0B 06 9E 0A DE 71 1A".split(" ")/*.reverse*/.mkString(""), 16),
-          BigInt("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5a 12 89 4a 77 9a bf 9f ab 31 03 df 54 17 1e 80 64 FF EF DD FB 63 76 A6 D7 6C 35 CE 03 0C 16 61".split(" ")/*.reverse*/.mkString(""), 16)
-        )
         // nonce hardcoded 00 00 00 00 (40 41 42 43 44 45 46 47) in the aead_decryption_wrapper.vhd
         //       nonce         <= x"00000000"&msg_reordered(63 downto 0);
         val plaintext = Vector(
           BigInt("04 00 00 80 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89 46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4".split(" ").reverse.mkString(""), 16),
           BigInt("93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97 1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0".split(" ").reverse.mkString(""), 16),
           BigInt("46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee 98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-        )
-        // reversed byte order of TKEEP
-        val plaintext4 = Vector(
-          BigInt("8B 72 92 DA 69 FB FA 82 12 67 A9 8C 5E A4 BE 3D D6 62 EE 36 A7 B5 E2 A9 FE 08 6E 29 51 ED AD A4 C2 7E EF 53 BC AF 86 7B DB 60 8E 64 34 8D 1A D3 47 46 45 44 43 42 41 40 01 00 00 00 80 00 00 04".split(" ")/*.reverse*/.mkString(""), 16),
-          BigInt("4B C6 CE 86 65 D2 76 E5 9D 7A 4B 8E F0 DE F4 3F BC D7 31 48 8B 80 85 55 94 75 D6 FA E4 24 B3 FA 58 1B 09 28 E3 AE 03 98 8C 8B 77 2D 7F BD DD 92 36 3B CD 7E B6 A5 D6 05 29 0B 06 9E 0A DE 71 1A".split(" ")/*.reverse*/.mkString(""), 16),
-          BigInt("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 e4 cc 2d 43 7f b1 8b 64 e9 98 ee d2 ba f5 b1 2f 64 FF EF DD FB 63 76 A6 D7 6C 35 CE 03 0C 16 61".split(" ")/*.reverse*/.mkString(""), 16)
-        )
-        // reversed byte order of TKEEP
-        val plaintext2 = Vector(
-          BigInt("8B 72 92 DA 69 FB FA 82 12 67 A9 8C 5E A4 BE 3D D6 62 EE 36 A7 B5 E2 A9 FE 08 6E 29 51 ED AD A4 C2 7E EF 53 BC AF 86 7B DB 60 8E 64 34 8D 1A D3 47 46 45 44 43 42 41 40 01 00 00 00 90 00 00 04".split(" ")/*.reverse*/.mkString(""), 16),
-          BigInt("4B C6 CE 86 65 D2 76 E5 9D 7A 4B 8E F0 DE F4 3F BC D7 31 48 8B 80 85 55 94 75 D6 FA E4 24 B3 FA 58 1B 09 28 E3 AE 03 98 8C 8B 77 2D 7F BD DD 92 36 3B CD 7E B6 A5 D6 05 29 0B 06 9E 0A DE 71 1A".split(" ")/*.reverse*/.mkString(""), 16),
-          BigInt("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 e4 cc 2d 43 7f b1 8b 64 e9 98 ee d2 ba f5 b1 2f 64 FF EF DD FB 63 76 A6 D7 6C 35 CE 03 0C 16 61".split(" ")/*.reverse*/.mkString(""), 16)
         )
         // 512/8
         var packet_length = 64 + 64 + 16 + 16 // bytes
