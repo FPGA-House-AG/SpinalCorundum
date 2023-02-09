@@ -69,7 +69,7 @@ case class ChaCha20Poly1305DecryptSpinal() extends Component {
   vhdl.io.in_key  := U(io.key)
 
   d.valid                := vhdl.io.source_tvalid
-  d.payload.fragment     := B(vhdl.io.source_tdata)
+  d.payload.fragment     := B(vhdl.io.source_tdata).subdivideIn((128 / 8) slices).reverse.asBits()
   d.payload.last         := vhdl.io.source_tlast
   vhdl.io.source_tready  := d.ready
 
