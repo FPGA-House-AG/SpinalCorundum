@@ -85,7 +85,7 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   // replace reserved field with payload length
   //val header_payload = x.payload(127 downto 32) ## padded16_length_out.resize(24).asBits ## x.payload(7 downto 0)
 
-  // prepare output for ChaCha20-Poly1305
+  // prepare output for ChaCha20-Poly1305 which expects first byte in highest bits
   val header_payload =
     // pass type 4 byte as-is
     x.payload(7 downto 0) ##
