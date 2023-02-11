@@ -58,7 +58,7 @@ object AxisExtractHeaderFormal extends App {
     // (VALID & !READY) -> STABLE(DATA)
     // (VALID & !READY) -> STABLE(VALID)
     // (.isStall)
-    when (pastValid() & past(dut.io.sink.isStall)) {
+    when (pastValidAfterReset() & past(dut.io.sink.isStall)) {
         assume(stable(dut.io.sink.valid))
         assume(stable(dut.io.sink.last))
         assume(stable(dut.io.sink.payload.fragment))
@@ -70,13 +70,13 @@ object AxisExtractHeaderFormal extends App {
     val sink_in_packet_but_non_last = (dut.io.sink.isFirst | dut.io.sink.tail) & !dut.io.sink.isLast
 
     // assume input sink_length remains stable during a packet on input
-    when (pastValid() && past(sink_in_packet_but_non_last)) {
+    when (pastValidAfterReset() && past(sink_in_packet_but_non_last)) {
         assume(stable(dut.io.sink_length))
     }
     cover(sink_in_packet_but_non_last)
 
     // Assert AXI signals remain stable when the stream was stalled
-    when (pastValid() && past(dut.io.source.isStall)) {
+    when (pastValidAfterReset() && past(dut.io.source.isStall)) {
         assert(stable(dut.io.source.valid))
         assert(stable(dut.io.source.last))
         assert(stable(dut.io.source.payload.fragment))
@@ -94,7 +94,7 @@ object AxisExtractHeaderFormal extends App {
     val source_in_packet_but_non_last = (source_leon_isFirst | source_leon_tail) & !source_leon_isLast
 
     // assert output source_length remains stable during a packet on output
-    when (pastValid() && past(source_in_packet_but_non_last)) {
+    when (pastValidAfterReset() && past(source_in_packet_but_non_last)) {
       assert(stable(dut.io.source_length))
     }
 
