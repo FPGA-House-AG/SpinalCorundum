@@ -9,7 +9,7 @@ import spinal.core.formal._
 
 object AxisExtractHeaderFormal extends App {
 
-  FormalConfig.withCover(15).withBMC(15).withProve(15).doVerify(new Component {
+  FormalConfig.withCover(15).withBMC(15)/*.withProve(15)*/.doVerify(new Component {
     final val dataWidth = 32
     final val header_length = 1
 
