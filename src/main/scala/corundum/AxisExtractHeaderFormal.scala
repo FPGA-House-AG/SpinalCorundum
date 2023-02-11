@@ -58,29 +58,46 @@ object AxisExtractHeaderFormal extends App {
     // (VALID & !READY) -> STABLE(DATA)
     // (VALID & !READY) -> STABLE(VALID)
     // (.isStall)
-    assume(!dut.io.sink.isStall | stable(dut.io.sink.valid))
-    assume(!dut.io.sink.isStall | stable(dut.io.sink.last))
-    assume(!dut.io.sink.isStall | stable(dut.io.sink.payload.fragment))
-    assume(!dut.io.sink.isStall | stable(dut.io.sink_length))
+    when (pastValid() & past(dut.io.sink.isStall)) {
+        assume(stable(dut.io.sink.valid))
+        assume(stable(dut.io.sink.last))
+        assume(stable(dut.io.sink.payload.fragment))
+        assume(stable(dut.io.sink_length))
+    }
     cover(dut.io.sink.isStall)
 
-    // assume input sink_length remains stable during a packet on input
-    assert(past(dut.io.sink.last) | stable(dut.io.sink_length))
-    cover(!past(dut.io.sink.last))
+    // true during all but last beat (thus it is not true for single beat packet)
+    val sink_in_packet_but_non_last = (dut.io.sink.isFirst | dut.io.sink.tail) & !dut.io.sink.isLast
 
-    // Assert AXI output data remains stable when the stream is stalled
-    assert(!dut.io.source.isStall | stable(dut.io.source.valid))
-    assert(!dut.io.source.isStall | stable(dut.io.source.last))
-    assert(!dut.io.source.isStall | stable(dut.io.source.payload.fragment))
+    // assume input sink_length remains stable during a packet on input
+    when (pastValid() && past(sink_in_packet_but_non_last)) {
+        assume(stable(dut.io.sink_length))
+    }
+    cover(sink_in_packet_but_non_last)
+
+    // Assert AXI signals remain stable when the stream was stalled
+    when (pastValid() && past(dut.io.source.isStall)) {
+        assert(stable(dut.io.source.valid))
+        assert(stable(dut.io.source.last))
+        assert(stable(dut.io.source.payload.fragment))
+        assert(stable(dut.io.source_length))
+    }
     // Assert AXI output packet length remains stable when the stream is stalled
-    assert(!dut.io.source.isStall | stable(dut.io.source_length))
+    //assert(!dut.io.source.isStall | stable(dut.io.source_length))
     cover(dut.io.source.isStall)
 
+    val source_leon_isFirst = dut.io.source.firstFire
+    val source_leon_tail = dut.io.source.tail
+    val source_leon_isLast = dut.io.source.lastFire
+    // true during all but last beat (thus it is not true for single beat packet)
+    //val source_in_packet_but_non_last = (dut.io.source.isFirst | dut.io.source.tail) & !dut.io.source.isLast
+    val source_in_packet_but_non_last = (source_leon_isFirst | source_leon_tail) & !source_leon_isLast
+
     // assert output source_length remains stable during a packet on output
-    //  !past(last) -> stable(source_length)
-    //  A -> B
-    //  !A or B
-    assert(past(dut.io.source.last) | stable(dut.io.source_length))
-    cover(!past(dut.io.source.last))
+    when (pastValid() && past(source_in_packet_but_non_last)) {
+      assert(stable(dut.io.source_length))
+    }
+
+    cover(source_in_packet_but_non_last)
   })
 }
