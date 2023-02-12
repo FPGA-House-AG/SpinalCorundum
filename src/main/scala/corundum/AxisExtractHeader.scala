@@ -100,19 +100,7 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
     remaining := remaining
   }
 
-  when (x_is_first_beat) {
-    calculated_payload_length := dataWidth/8 - headerWidthBytes
-  } otherwise {
-    when (x.fire) {
-      calculated_payload_length := calculated_payload_length + dataWidth/8
-    }
-    when (z.fire) {
-      calculated_payload_length := calculated_payload_length - dataWidth/8
-    }
-  }
-
   // determine when y becomes valid or invalid
-
   val remaining_y = RegNextWhen(remaining - dataWidth/8, x.fire, S(0))
 
   // x is valid last word, last word for z comes from x and y combined
@@ -127,10 +115,6 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
 
   val y_has_last_data = y_valid & y_last & (remaining >= 1) & (remaining <= dataWidth/8)
   val x_has_last_data = y_valid & x.valid & x.last & (remaining >= 1) & (remaining <= dataWidth/8)
-  // unused
-  val y_has_last_data2 = y_valid & y_last & (calculated_payload_length >= 1) & (calculated_payload_length <= dataWidth/8)
-  val x_has_last_data2 = y_valid & x.valid & x.last & (calculated_payload_length >= 1) & (calculated_payload_length <= dataWidth/8)
-
 
   z.payload.last := y_has_last_data | x_has_last_data
   //z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
@@ -140,12 +124,7 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
   // z holds valid word when y is a single beat, or when we can combine x with a non-last y
   x.ready := z.ready
 
-  // drive payload
-  //.translateWith(x.payload(headerWidth - 1 downto  0) ## y.payload(dataWidth - 1 downto headerWidth))
-  // drive active
-  //.throwWhen(remaining <= 0)
-  // drive last
-  //io.source <-< z.addFragmentLast((remaining > 0) && (remaining <= (dataWidth/8)))
+
   io.source <-< z
   io.source_length := RegNextWhen(Mux(source_payload_length < 0, U(0), source_payload_length.asUInt.resize(12)), z.ready)
   io.source_remaining := RegNextWhen(Mux(remaining < 0, U(0), remaining.asUInt.resize(12)), z.ready)
