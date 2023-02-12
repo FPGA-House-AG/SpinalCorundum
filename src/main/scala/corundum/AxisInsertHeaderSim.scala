@@ -28,11 +28,11 @@ object AxisInsertHeaderSim {
       //Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
-      var modelState = 0
-
       val dataScoreboard = ScoreboardInOrder[BigInt]()
 
+      // monitor output (source) of DUT
       val monitorThread = fork {
+        // number of nibbles for printf formatters
         val dw = dataWidth / 4
         var not_last_seen = false
         var in_packet_continuation = false
@@ -41,6 +41,7 @@ object AxisInsertHeaderSim {
         var remaining = 0
         while (true) {
           dut.clockDomain.waitSamplingWhere(dut.io.source.valid.toBoolean & dut.io.source.ready.toBoolean)
+          // keep track of packet boundaries and remaining bytes
           first_beat = !in_packet_continuation
           if (first_beat) {
             packet_length = dut.io.source_length.toInt
@@ -48,7 +49,8 @@ object AxisInsertHeaderSim {
           }
           val bytes_in_beat = if (remaining >= dataWidth/8) dataWidth/8 else remaining
           
-          printf(s"DATA == 0x%0${dw}X %02d/%02d %02d bytes %s%s\n", dut.io.source.payload.fragment.toBigInt,
+          printf(s"DATA == 0x%0${dw}X %02d/%02d %02d bytes %s%s\n",
+            dut.io.source.payload.fragment.toBigInt,
             remaining, packet_length, bytes_in_beat,
             if (first_beat) "*" else s" ",
             if (dut.io.source.payload.last.toBoolean) "L" else s" ")
@@ -57,6 +59,7 @@ object AxisInsertHeaderSim {
               dataScoreboard.pushDut(data1 & 0xff)
               data1 = data1 >> 8
           }
+          // keep track of packet boundaries
           in_packet_continuation = !dut.io.source.payload.last.toBoolean
           remaining = if (remaining >= dataWidth/8) remaining - dataWidth/8 else 0
         }
@@ -145,7 +148,6 @@ object AxisInsertHeaderSim {
                 dataScoreboard.pushRef(data0 & 0xff)
                 data0 = data0 >> 8
             }
-
           }
         }
         // after each packet, introduce delay for now
