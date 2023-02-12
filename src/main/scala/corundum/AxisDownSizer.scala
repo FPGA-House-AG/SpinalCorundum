@@ -56,8 +56,8 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
       res
     }
   }
-  // x is sink, but adds the sink_length as stream payload
-  // such that both sink and sink_length are skid buffered
+  // x is sink, but with sink_length added into stream payload
+  // such that both sink and sink_length are skid buffered together
   val x = Stream(Fragment(Bits(dataWidthIn + 12 bits)))
   x << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
    
