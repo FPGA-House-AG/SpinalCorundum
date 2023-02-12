@@ -27,6 +27,7 @@ object AxisExtractHeader {
 
 case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Component {
   val headerWidth = headerWidthBytes * 8
+  val dataWidthBytes = dataWidth / 8
   // currently only single beat headers are supported to be stripped off
   require(headerWidth <= dataWidth, s"headerWidth <= dataWidth, needed because AxisExtractHeader does not support multibeat headers yet.")
   val io = new Bundle {
@@ -87,10 +88,15 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
   val y = RegNextWhen(x.payload |>> headerWidth, x.fire)
   val y_is_single_beat = RegNextWhen(x_is_single_beat, x.fire)
 
-
+  val bytes_in_last_input_beat = Reg(UInt(log2Up(dataWidthBytes) + 1 bits))
   when (x_is_first_beat) {
     remaining := x_length.asSInt.resize(13 bits) - headerWidthBytes
     source_payload_length := x_length.asSInt.resize(13 bits) - headerWidthBytes
+    // calculate number of bytes in last input beat of packet
+    bytes_in_last_input_beat := x_length % dataWidthBytes
+    when (bytes_in_last_input_beat === 0) {
+      bytes_in_last_input_beat := dataWidthBytes
+    }
   // can be removed, only for clearity during development cycle
   } elsewhen (y_last & z.fire) {
     remaining := 0
@@ -99,6 +105,9 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
   } otherwise {
     remaining := remaining
   }
+
+  // if output packet is one beat smaller than input packet
+  val is_one_beat_less = (bytes_in_last_input_beat <= headerWidthBytes)
 
   // determine when y becomes valid or invalid
   val remaining_y = RegNextWhen(remaining - dataWidth/8, x.fire, S(0))
