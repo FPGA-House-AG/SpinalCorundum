@@ -62,10 +62,10 @@ object AxisExtractHeaderSim {
 
           val bytes_in_beat = if (remaining >= dataWidth/8) dataWidth/8 else remaining
 
-          printf(s"DATA == 0x%0${dw}X %02d/%02d %02d bytes %s%s\n",
+          printf(s"DATA == 0x%0${dw}X remaining/total=%02d/%02d B, beat=%02d B %s%s\n",
             dut.io.source.payload.fragment.toBigInt,
             remaining, packet_length, bytes_in_beat,
-            if (first_beat) "*" else s" ",
+            if (first_beat) "F" else s" ",
             if (dut.io.source.payload.last.toBoolean) "L" else s" ")
           // store DUT output bytes from payload into scoreboard
           var data1 = dut.io.source.payload.fragment.toBigInt
@@ -87,16 +87,12 @@ object AxisExtractHeaderSim {
       var pause = false
 
       dut.clockDomain.waitSampling()
-
       // iterate over all frames to generate
-      for (packet_idx <- 1 until 31) {
-        var packet_length = packet_idx //1 + Random.nextInt(if (packet_idx > 3400) keepWidth else maxPacketSizeBytes)
-        if (packet_idx == 7) packet_length = dataWidth/8
-        //val packet_length = packet_idx match {
-        //case (packet_idx > 3400): 1 + Random.nextInt(keepWidth)
-        //case (packet_idx > 4800): 0
-        //case _: maxPacketSizeBytes
-        //}
+      for (packet_idx <- 1 until 3100) {
+        // switch between 
+        val max_packet_length = if ((packet_idx % 2) == 0) keepWidth else maxPacketSizeBytes
+        var packet_length = 1 + Random.nextInt(max_packet_length)
+        printf("%d: packet_length = %d, max_packet_length = %d\n", packet_idx, packet_length, max_packet_length)
         assert(packet_length <= maxPacketSizeBytes)
         var remaining = packet_length
         var byte_counter = 0
