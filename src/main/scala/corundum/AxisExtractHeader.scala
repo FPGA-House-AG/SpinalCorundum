@@ -97,8 +97,8 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
     when (bytes_in_last_input_beat === 0) {
       bytes_in_last_input_beat := dataWidthBytes
     }
-  // can be removed, only for clearity during development cycle
-  } elsewhen (y_last & z.fire) {
+  // elsewhen case can be removed, only for clearity during development cycle
+  } elsewhen (z.last & z.fire) {
     remaining := 0
   } elsewhen (z.fire) {
     remaining := remaining - dataWidth / 8
