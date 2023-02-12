@@ -109,15 +109,11 @@ object AxisExtractHeaderSim {
           // simulate source not always valid
           valid0 = (Random.nextInt(8) > 2) | (packet_idx > 3000)
           valid0 &= !pause
-          //valid0 = true
 
           //println(clock_counter + s" pause " + pause + s", valid " + valid0)
           clock_counter += 1
 
-          if (pause) pause ^= (Random.nextInt(16) >= 15)
-          else if (!pause) pause ^= (Random.nextInt(128) >= 127)
-          // limit to single beat activities
-          //pause = false
+          if (pause) pause ^= (Random.nextInt(128) >= 96)
 
           assert(tkeep_len <= keepWidth)
           tkeep0 = 0
