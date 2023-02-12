@@ -122,8 +122,8 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
     y_valid := False
   }
 
-  val y_has_last_data = y_valid & y_last & (remaining >= 1) & (remaining <= dataWidth/8)
-  val x_has_last_data = y_valid & x.valid & x.last & (remaining >= 1) & (remaining <= dataWidth/8)
+  val y_has_last_data = y_valid & x.valid  & ((remaining >= 1) & (remaining <= dataWidth/8))
+  val x_has_last_data = y_valid & x.valid & x.last & (remaining >= headerWidthBytes) & (remaining <= dataWidth/8)
 
   z.payload.last := y_has_last_data | x_has_last_data
   //z.valid := (y_valid & z.payload.last) | (x.valid & y_valid)
