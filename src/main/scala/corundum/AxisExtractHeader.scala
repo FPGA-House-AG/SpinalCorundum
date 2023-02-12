@@ -147,14 +147,9 @@ case class AxisExtractHeader(dataWidth : Int, headerWidthBytes: Int) extends Com
   // drive last
   //io.source <-< z.addFragmentLast((remaining > 0) && (remaining <= (dataWidth/8)))
   io.source <-< z
-  io.source_length := RegNext(Mux(source_payload_length < 0, U(0), source_payload_length.asUInt.resize(12)))
-  io.source_remaining := RegNext(Mux(remaining < 0, U(0), remaining.asUInt.resize(12)))
-  io.header := x_header
-
-  // input               io_sink_valid,
-  // output reg          io_sink_ready,
-  // input               io_sink_payload_last,
-  // input      [127:0]  io_sink_payload_fragment,
+  io.source_length := RegNextWhen(Mux(source_payload_length < 0, U(0), source_payload_length.asUInt.resize(12)), z.ready)
+  io.source_remaining := RegNextWhen(Mux(remaining < 0, U(0), remaining.asUInt.resize(12)), z.ready)
+  io.header := RegNextWhen(x_header, z.ready)
 
    // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
