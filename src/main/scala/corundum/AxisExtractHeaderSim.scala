@@ -89,7 +89,7 @@ object AxisExtractHeaderSim {
       dut.clockDomain.waitSampling()
       val packets = 50000
       // iterate over all frames to generate
-      for (packet_idx <- 1 until 50000) {
+      for (packet_idx <- 1 to packets) {
         // switch between 
         val max_packet_length = if ((packet_idx % 2) == 0) dataWidthBytes else maxPacketSizeBytes
         var packet_length = 1 + Random.nextInt(max_packet_length)
