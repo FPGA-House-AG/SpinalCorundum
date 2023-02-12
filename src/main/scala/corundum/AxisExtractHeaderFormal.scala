@@ -9,7 +9,12 @@ import spinal.core.formal._
 
 object AxisExtractHeaderFormal extends App {
 
-  FormalConfig.withCover(15).withBMC(15)/*.withProve(15)*/.doVerify(new Component {
+  FormalConfig
+  .withDebug
+  .withCover(15)
+  .withBMC(15)
+  /*.withProve(15)*/
+  .doVerify(new Component {
     final val dataWidth = 32
     final val header_length = 1
 
@@ -35,15 +40,22 @@ object AxisExtractHeaderFormal extends App {
     anyseq(dut.io.sink_length)
     assume(dut.io.sink_length >= header_length)
     // not larger than 3 beats (for now)
-    assume(dut.io.sink_length <= (dataWidthBytes * 3))
+    assume(dut.io.sink_length <= (dataWidthBytes * 4))
+
+    val sink_beats = (dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes
+    assumeInitial(sink_beats === ((dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes))
+    
+    val beats_left = Reg(sink_beats).init(0)
 
     // calculate number of input beats based on packet length
-    val sink_beats = Reg((dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes)
-    when (dut.io.sink.fire) {
-      sink_beats := sink_beats - 1
+    when (dut.io.sink.firstFire & !dut.io.sink.lastFire) {
+      beats_left := (dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes
+    }
+    .elsewhen (dut.io.sink.fire) {
+      beats_left := beats_left - 1
     }
     // drive sink.last based on chosen sink_length
-    dut.io.sink.last := (sink_beats === 1)
+    dut.io.sink.last := (beats_left === 1) | (dut.io.sink.firstFire & (dut.io.sink_length <= (dataWidthBytes)))
 
     // test for an implication with formal verification, can be written multiple ways:
     //   A -> B, or A "implies" B, or if (A) then (B)
@@ -99,5 +111,9 @@ object AxisExtractHeaderFormal extends App {
     }
 
     cover(source_in_packet_but_non_last)
+
+    cover(sink_beats === 1)
+    cover(sink_beats === 2)
+    cover(sink_beats === 3)
   })
 }
