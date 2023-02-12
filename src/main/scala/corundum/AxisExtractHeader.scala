@@ -10,7 +10,7 @@ import scala.math._
 
 // companion object
 object AxisExtractHeader {
-  def main(args: Array[String]) {
+  def main(args: Array[String]) : Unit = {
     val vhdlReport = Config.spinal.generateVhdl(new AxisExtractHeader(Config.cryptoDataWidth, 14/*Ethernet header size in bytes*/))
     val verilogReport = Config.spinal.generateVerilog(new AxisExtractHeader(Config.cryptoDataWidth, 14/*Ethernet header size in bytes*/))
   }
