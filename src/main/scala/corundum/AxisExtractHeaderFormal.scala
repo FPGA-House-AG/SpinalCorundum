@@ -9,21 +9,24 @@ import spinal.core.formal._
 
 object AxisExtractHeaderFormal extends App {
 
+  final val dataWidth = 32
+  final val header_length = 3
+
+  // in Blackwire we typically use:
+  //final val dataWidth = 512
+  //final val header_length = 14 + 20 + 8
+
+  final val dataWidthBytes = dataWidth / 8
+  assert(header_length <= dataWidthBytes)
+
+  final val maxPacketLength = (dataWidthBytes * 12)
+
   FormalConfig
   .withDebug
   .withCover(15)
   .withBMC(15)
   /*.withProve(15)*/
   .doVerify(new Component {
-    final val dataWidth = 32
-    final val header_length = 1
-
-    // in Blackwire we typically use:
-    //final val dataWidth = 512
-    //final val header_length = 14 + 20 + 8
-
-    final val dataWidthBytes = dataWidth / 8
-    assert(header_length <= dataWidthBytes)
 
     val dut = FormalDut(AxisExtractHeader(dataWidth, header_length))
     assumeInitial(ClockDomain.current.isResetActive)

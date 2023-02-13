@@ -1,35 +1,23 @@
 [*]
-[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Thu Oct 20 22:37:21 2022
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sun Feb 12 10:39:41 2023
 [*]
 [dumpfile] "./simWorkspace/AxisExtractHeader/test.fst"
-[dumpfile_mtime] "Thu Oct 20 22:36:03 2022"
-[dumpfile_size] 3091
+[dumpfile_mtime] "Sun Feb 12 10:38:05 2023"
+[dumpfile_size] 2959
 [savefile] "./AxisExtractHeader.gtkw"
-[timestart] 95
-[size] 3840 2066
+[timestart] 207
+[size] 1920 1016
 [pos] -1 -1
-*-5.000000 244 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 394 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
-[sst_width] 647
-[signals_width] 702
+[sst_width] 260
+[signals_width] 326
 [sst_expanded] 1
-[sst_vpaned_height] 657
+[sst_vpaned_height] 269
 @28
 TOP.AxisExtractHeader.clk
 TOP.AxisExtractHeader.reset
-@24
-TOP.AxisExtractHeader.io_sink_length[11:0]
-@22
-TOP.AxisExtractHeader.io_sink_payload_fragment[31:0]
-@28
-[color] 3
-TOP.AxisExtractHeader.io_sink_ready
-@200028
-[color] 2
-TOP.AxisExtractHeader.io_sink_valid
-@28
-TOP.AxisExtractHeader.io_sink_payload_last
 @200
 -
 -Registered Inputs
@@ -45,7 +33,7 @@ TOP.AxisExtractHeader.x_ready
 [color] 2
 TOP.AxisExtractHeader.x_valid
 TOP.AxisExtractHeader.x_payload_last
-@22
+@25
 TOP.AxisExtractHeader.x_length[11:0]
 @28
 TOP.AxisExtractHeader.x_has_last_data
@@ -62,7 +50,7 @@ TOP.AxisExtractHeader.y_is_single_beat
 TOP.AxisExtractHeader.y_has_last_data
 @200
 -
-@421
+@420
 TOP.AxisExtractHeader.remaining[12:0]
 TOP.AxisExtractHeader.remaining_y[12:0]
 @200
@@ -79,17 +67,15 @@ TOP.AxisExtractHeader.z_valid
 TOP.AxisExtractHeader.z_payload_last
 @200
 -
-@22
-TOP.AxisExtractHeader.io_source_payload_fragment[31:0]
-@28
-TOP.AxisExtractHeader.io_source_ready
-[color] 2
-TOP.AxisExtractHeader.io_source_valid
-TOP.AxisExtractHeader.io_source_payload_last
-@22
-TOP.io_source_length[11:0]
-TOP.AxisExtractHeader.io_source_remaining[11:0]
-@200
 -
+@22
+TOP.AxisExtractHeader.header[23:0]
+TOP.AxisExtractHeader.source_length[11:0]
+TOP.AxisExtractHeader.source_remaining[11:0]
+TOP.AxisExtractHeader.source_tdata[31:0]
+@28
+TOP.AxisExtractHeader.source_tlast
+TOP.AxisExtractHeader.source_tready
+TOP.AxisExtractHeader.source_tvalid
 [pattern_trace] 1
 [pattern_trace] 0
