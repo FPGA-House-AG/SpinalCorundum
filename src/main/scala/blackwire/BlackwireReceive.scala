@@ -26,7 +26,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
   final val corundumDataWidth = 512
   final val cryptoDataWidth = 128
   final val maxPacketLength = 1534
-  final val keys_num = 4 * 256
+  final val keys_num = 4/*sessions per peers*/ * 256/*maximum number of peers*/
 
   // 1534 rounded up 2048/(512/8) == 32
 
@@ -36,7 +36,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
   val rxkeySlaveCfg = busCfg.copy(addressWidth = rxkey_addr_width)
 
   val io = new Bundle {
-    // I/O is only the Corundum Frame tdata payload
+    // I/O is the Corundum Frame AXIS tdata/tkeep/tuser format payload
     val sink = slave Stream Fragment(CorundumFrame(corundumDataWidth))
     val source = master Stream Fragment(CorundumFrame(corundumDataWidth))
 
