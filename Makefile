@@ -18,7 +18,8 @@
 
 build: rtl
 
-test: build formal
+# CI/CD runs "make test"
+test: build formal sim_extract
 
 # continuous build (using sbt "~" REPL feature) on save in editor
 repl:
@@ -105,6 +106,11 @@ sim_reader:
 	gtkwave -F -f ./simWorkspace/CorundumFrameReaderAxi4/test.fst   -a ./CorundumFrameWriterAxi4.gtkw   &
 	sbt "~ test:runMain corundum.CorundumFrameReaderSim"
 
+# AxisExtractHeader simulation verification test
+sim_extract:
+	set -e
+	sbt "runMain corundumAxisExtractHeaderSim"
+
 stash:
 	set -e
 	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst -a ./CorundumFrameStash.gtkw &
@@ -167,7 +173,7 @@ rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 # formal verification. first generate SystemVerilog RTL, then use the .sby
 # file with SymbiYosys to test. @TODO convert to SpinalFormal maybe, this
 # used SymbiYosys as a back-end. See if feature-complete or not.
-formal: formal_stash
+formal: formal_stash formal_extract
 
 # Drop is known-broken, but unused.
 #formal: formal_drop 
@@ -180,6 +186,12 @@ formal_stash:
 	sby -f CorundumFrameStash.sby task_proof -d formalWorkdir/CorundumFrameStash 
 	sby -f CorundumFrameStash.sby task_cover -d formalWorkdir/CorundumFrameStash/cover 
 
+# AxisExtractHeader formal verification tests
+formal_extract:
+	set -e
+	sby -h || . /home/vivado/oss-cad-suite/environment
+	sby -h || false
+	sbt "runMain corundum.AxisExtractHeaderFormal"
 
 formal_drop:
 # fail on first error
