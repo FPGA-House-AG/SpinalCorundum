@@ -13,7 +13,7 @@ import corundum._
 // companion object
 object BlackwireReceive {
   val busconfig = Axi4Config(15, 32, 2, useLock = false, useQos = false, useRegion = false)
-  def main(args: Array[String]) {
+  def main(args: Array[String]) : Unit = {
     val vhdlReport = Config.spinal.generateVhdl(new BlackwireReceive(busconfig))
     val verilogReport = Config.spinal.generateVerilog(new BlackwireReceive(busconfig))
     //vhdlReport.mergeRTLSource("merge")
@@ -222,7 +222,7 @@ import spinal.core.sim._
 import scala.util.Random
 
 object BlackwireReceiveSim {
-  def main(args: Array[String]) {
+  def main(args: Array[String]) : Unit = {
     val dataWidth = 512
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
