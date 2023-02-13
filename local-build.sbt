@@ -2,8 +2,10 @@ ThisBuild / version := "1.0"
 ThisBuild / scalaVersion := "2.11.12"
 ThisBuild / organization := "online.blackwire"
 
-// sometimes we want to work against a local SpinalHDL checkout
-
+// sometimes we want to work against a local
+// SpinalHDL checkout of dev branch, or own fork
+// https://github.com/SpinalHDL/SpinalHDL.git
+// ad62c4ea3fc0acf70885441a88fe8f2336e4cb20
 val spinalVersion = "dev"
 val spinalDir = "../SpinalHDL.upstream"
 //val spinalVersion = "dev"
