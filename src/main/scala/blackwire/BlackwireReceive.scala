@@ -317,6 +317,7 @@ object BlackwireReceiveSim {
       val plaintext = Vector(
         // RFC7539 2.8.2. Example and Test Vector for AEAD_CHACHA20_POLY1305
         // but with zero-length AAD, and Wireguard 64-bit nonce
+        
         Vector(
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
           BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
@@ -337,11 +338,11 @@ object BlackwireReceiveSim {
           BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         )
       )
-      printf("%s\n", "04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 5a 70 0f 88 e7 87 fe 1c 1e f6 64 e6 01 ba 93 5f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ")/*.reverse*/.mkString(""))
 
       while (packet_number < 3) {
         // MUST MATCH "plaintext"
         var packet_length = Vector(3 * 64 + 10, 64 + 10, 3 * 64 + 10)
+        //var packet_length = Vector(64 + 10, 3 * 64 + 10)
 
         var remaining = packet_length(packet_number)
 
@@ -414,7 +415,7 @@ object BlackwireReceiveSim {
           dut.clockDomain.waitRisingEdge()
           limit -= 1//          limit -= 1
       }
-      assert(good_packets == 1)
+      assert(good_packets == 3)
       }
 
       dut.clockDomain.waitRisingEdge(8)
