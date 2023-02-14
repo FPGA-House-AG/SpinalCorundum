@@ -55,16 +55,16 @@ case class LookupTable(memDataWidth : Int,
     val portA = new Bundle {
       val en = in Bool()
       val wr = in Bool()
-      val addr = in UInt (memAddressWidth bits)
-      val wrData = in Bits (memDataWidth bits)
-      val rdData = out Bits (memDataWidth bits)
+      val addr = in UInt(memAddressWidth bits)
+      val wrData = in Bits(memDataWidth bits)
+      val rdData = out Bits(memDataWidth bits)
     }
     val portB = new Bundle {
       val en = in Bool()
       val wr = in Bool()
-      val addr = in UInt (memAddressWidth bits)
-      val wrData = in Bits (memDataWidth bits)
-      val rdData = out Bits (memDataWidth bits)
+      val addr = in UInt(memAddressWidth bits)
+      val wrData = in Bits(memDataWidth bits)
+      val rdData = out Bits(memDataWidth bits)
     }
   }
 
