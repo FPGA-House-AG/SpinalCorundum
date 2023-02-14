@@ -16,7 +16,7 @@ project/plugins/project/
 # Scala-IDE specific
 .scala_dependencies
 .worksheet
-
+.bloop
 .idea
 out
 
@@ -72,3 +72,4 @@ build/
 
 MaximVHDL
 cocotb/BlackwireReceive/e~blackwirereceive.o
+.bloop/tester/bloop-internal-classes/test-classes-Metals-b3bH5YcUQBG6TDCT40aJoA==-s28DMf0RR42kM9NN8deM3w==/META-INF/semanticdb/tester/src/test/scala/spinal/tester/scalatest/SpinalSimStreamWidthAdapterTester.scala.semanticdb

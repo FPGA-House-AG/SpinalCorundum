@@ -79,23 +79,17 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
 
   val y = Stream(Fragment(Bits(dataWidth bits)))
 
-  // pipeline x into y, thereby replacing first beat
-  // modify 128 bits Wireguard Type 4 header on output by clearing valid
-  // register to achieve one pipeline stage
-  // replace reserved field with payload length
-  //val header_payload = x.payload(127 downto 32) ## padded16_length_out.resize(24).asBits ## x.payload(7 downto 0)
-
-  // prepare output for ChaCha20-Poly1305 which expects first byte in highest bits
+  // prepare header for ChaCha20-Poly1305
   val header_payload =
+    // counter in little-endian
+    x.payload(127 downto 64).asBits ##
+    // receiver in little-endian
+    x.payload( 63 downto 32).asBits ##
+    // 3-bytes reserved are replaced by plaintext_length_out in little-endian
+    plaintext_length_out.resize(24).asBits.subdivideIn(3 slices).reverse.asBits ##
     // pass type 4 byte as-is
-    x.payload(7 downto 0) ##
-    // 3-bytes reserved are replaced by plaintext_length_out in big-endian
-    plaintext_length_out.resize(24) ##
-    // receiver in big-endian
-    x.payload( 63 downto 32).asBits.subdivideIn(4 slices).reverse.asBits() ##
-    // counter in big-endian
-    x.payload(127 downto 64).asBits.subdivideIn(8 slices).reverse.asBits()
-  val data_payload = x.payload.subdivideIn((dataWidth / 8) slices).reverse.asBits()
+    x.payload(7 downto 0)
+  val data_payload = x.payload
 
   y << x
   // re-assign payload, prevent re-assignment warning using when (True)
@@ -136,4 +130,3 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
-
