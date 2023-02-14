@@ -30,36 +30,36 @@ object CorundumFrameMuxPrioSim {
       for(idx <- 0 to 199){
 
         // active beat
-        if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) data0 += 1
+        if (dut.io.sink0.ready.toBoolean & dut.io.sink0.valid.toBoolean) data0 += 1
         // active beat, or slave was not active yet?
-        if ((dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean) || !valid0) {
+        if ((dut.io.sink0.ready.toBoolean & dut.io.sink0.valid.toBoolean) || !valid0) {
           valid0 = (Random.nextInt(8) > 2)
           last0 = (Random.nextInt(8) == 7) & valid0
         } 
         tkeep0 = 0
         if (valid0) tkeep0 = 1
 
-        if (dut.io.slave0.ready.toBoolean & dut.io.slave0.valid.toBoolean & dut.io.slave0.last.toBoolean) data0 = 0
-        dut.io.slave0.valid #= valid0
-        dut.io.slave0.payload.tkeep #= tkeep0
-        dut.io.slave0.payload.tdata #= data0
-        dut.io.slave0.last #= last0
+        if (dut.io.sink0.ready.toBoolean & dut.io.sink0.valid.toBoolean & dut.io.sink0.last.toBoolean) data0 = 0
+        dut.io.sink0.valid #= valid0
+        dut.io.sink0.payload.tkeep #= tkeep0
+        dut.io.sink0.payload.tdata #= data0
+        dut.io.sink0.last #= last0
 
         // active beat
-        if (dut.io.slave1.ready.toBoolean & dut.io.slave1.valid.toBoolean) data1 += 1
+        if (dut.io.sink1.ready.toBoolean & dut.io.sink1.valid.toBoolean) data1 += 1
         // active beat, or slave was not active yet?
-        if ((dut.io.slave1.ready.toBoolean & dut.io.slave1.valid.toBoolean) || !valid1) {
+        if ((dut.io.sink1.ready.toBoolean & dut.io.sink1.valid.toBoolean) || !valid1) {
           valid1 = (Random.nextInt(8) > 2)
           last1 = (Random.nextInt(8) == 7) & valid1
         } 
-        if (dut.io.slave1.ready.toBoolean & dut.io.slave1.valid.toBoolean & dut.io.slave1.last.toBoolean) data1 = 0
+        if (dut.io.sink1.ready.toBoolean & dut.io.sink1.valid.toBoolean & dut.io.sink1.last.toBoolean) data1 = 0
 
-        dut.io.slave1.valid #= valid1
-        dut.io.slave1.tkeep #= valid1.toInt
-        dut.io.slave1.payload.tdata #= 0xA0 + data1
-        dut.io.slave1.last #= last1
+        dut.io.sink1.valid #= valid1
+        dut.io.sink1.tkeep #= valid1.toInt
+        dut.io.sink1.payload.tdata #= 0xA0 + data1
+        dut.io.sink1.last #= last1
 
-        dut.io.master0.ready #= (Random.nextInt(8) > 1)
+        dut.io.source.ready #= (Random.nextInt(8) > 1)
 
         //Wait a rising edge on the clock
         dut.clockDomain.waitRisingEdge()

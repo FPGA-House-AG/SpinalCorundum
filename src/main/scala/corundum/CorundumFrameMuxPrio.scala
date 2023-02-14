@@ -14,21 +14,19 @@ object CorundumFrameMuxPrio {
   }
 }
 
-import corundum.CorundumFrameMuxPrio._
-
 // multiplexes two packet streams (Stream(Fragment) with lock), first port has priority
 case class CorundumFrameMuxPrio(dataWidth : Int) extends Component {
   val io = new Bundle {
-    val slave0 = slave Stream Fragment(CorundumFrame(dataWidth))
-    val slave1 = slave Stream Fragment(CorundumFrame(dataWidth))
-    val master0 = master Stream Fragment(CorundumFrame(dataWidth))
+    val sink0 = slave Stream Fragment(CorundumFrame(dataWidth))
+    val sink1 = slave Stream Fragment(CorundumFrame(dataWidth))
+    val source = master Stream Fragment(CorundumFrame(dataWidth))
   }
 
   val arbiter = StreamArbiterFactory.lowerFirst.fragmentLock.build(Fragment(CorundumFrame(dataWidth)), 2)
 
-  arbiter.io.inputs(0) << io.slave0.s2mPipe().m2sPipe()
-  arbiter.io.inputs(1) << io.slave1.s2mPipe().m2sPipe()
-  io.master0 << arbiter.io.output.s2mPipe().m2sPipe()
+  arbiter.io.inputs(0) << io.sink0.s2mPipe().m2sPipe()
+  arbiter.io.inputs(1) << io.sink1.s2mPipe().m2sPipe()
+  io.source <-< arbiter.io.output
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
