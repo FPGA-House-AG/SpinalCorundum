@@ -158,20 +158,45 @@ object BlackwireWireguardType4Sim {
 
       dut.clockDomain.waitSampling()
 
-          dut.io.sink.tuser #= 0
+      dut.io.sink.tuser #= 0
 
-      var remaining_packets = 2
-      val inter_packet_gap = 1
-      while (remaining_packets > 0) {
-        // nonce hardcoded 00 00 00 00 (40 41 42 43 44 45 46 47) in the aead_decryption_wrapper.vhd
-        //       nonce         <= x"00000000"&msg_reordered(63 downto 0);
-        val plaintext = Vector(
+      // nonce hardcoded 00 00 00 00 (40 41 42 43 44 45 46 47) in the aead_decryption_wrapper.vhd
+      //       nonce         <= x"00000000"&msg_reordered(63 downto 0);
+      val plaintext = Vector(
+        Vector(
+          BigInt("04 00 00 80 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89 46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4".split(" ").reverse.mkString(""), 16),
+          BigInt("93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97 1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0".split(" ").reverse.mkString(""), 16),
+          BigInt("46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee 98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+        ),
+        Vector(
+          BigInt("04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 5a 70 0f 88 e7 87 fe 1c 1e f6 64 e6 01 ba 93 5f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+        ),
+        Vector(
           BigInt("04 00 00 80 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89 46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4".split(" ").reverse.mkString(""), 16),
           BigInt("93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97 1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0".split(" ").reverse.mkString(""), 16),
           BigInt("46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee 98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         )
+      )
+
+      printf("%s\n", "04 00 00 80 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89 46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4".split(" ")/*.reverse*/.mkString(""))
+      printf("%s\n", "93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97 1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0".split(" ")/*.reverse*/.mkString(""))
+      printf("%s\n", "46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee 98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ")/*.reverse*/.mkString(""))
+      printf("<idle cycle>\n");
+      printf("%s\n", "04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 5a 70 0f 88 e7 87 fe 1c 1e f6 64 e6 01 ba 93 5f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ")/*.reverse*/.mkString(""))
+      printf("<idle cycle>\n");
+      printf("%s\n", "04 00 00 80 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89 46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4".split(" ")/*.reverse*/.mkString(""))
+      printf("%s\n", "93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97 1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0".split(" ")/*.reverse*/.mkString(""))
+      printf("%s\n", "46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee 98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ")/*.reverse*/.mkString(""))
+      printf("<idle cycle>\n");
+
+      var packet_lengths = Vector(64 + 64 + 16 + 16, 16 + 16, 64 + 64 + 16 + 16)
+
+      var remaining_packets = 3
+      val inter_packet_gap = 10
+      var packet_idx = 0
+      while (remaining_packets > 0) {
         // 512/8
-        var packet_length = 64 + 64 + 16 + 16 // bytes
+        var packet_length = packet_lengths(packet_idx)
         var remaining = packet_length
 
         var word_index = 0
@@ -205,9 +230,10 @@ object BlackwireWireguardType4Sim {
           }
 
           dut.io.sink.valid #= valid0
-          dut.io.sink.payload.tdata #= plaintext(word_index)
+          dut.io.sink.payload.tdata #= plaintext(packet_idx)(word_index)
           dut.io.sink.last #= last0
           dut.io.sink.payload.tkeep #= tkeep0
+
 
           // do not apply backpressure on ChaCha20
           dut.io.source.ready #= true
@@ -228,6 +254,7 @@ object BlackwireWireguardType4Sim {
         dut.clockDomain.waitRisingEdge(inter_packet_gap)
 
         remaining_packets -= 1
+        packet_idx += 1
       } // while remaining_packets
 
       //dut.io.sink.valid #= false
