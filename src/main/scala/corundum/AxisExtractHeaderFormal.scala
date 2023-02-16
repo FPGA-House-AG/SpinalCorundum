@@ -48,21 +48,27 @@ object AxisExtractHeaderFormal extends App {
     val sink_beats = (dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes
     assumeInitial(sink_beats === ((dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes))
     
-    val beats_left = Reg(sink_beats).init(0)
-
+    // drive last based on chosen input packet length
+    val is_single_beat_packet = dut.io.sink.firstFire & (dut.io.sink_length <= (dataWidthBytes))
+    val beats_remaining = Reg(sink_beats).init(0)
     // calculate number of input beats based on packet length
-    when (dut.io.sink.firstFire & !dut.io.sink.lastFire) {
-      beats_left := (dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes
+    when (is_single_beat_packet) {
+      // single-beat packet, this handled seperately below
+      beats_remaining := 0
+    }
+    .elsewhen (dut.io.sink.firstFire & !dut.io.sink.lastFire) {
+      beats_remaining := (dut.io.sink_length + dataWidthBytes - 1)/dataWidthBytes - 1 
     }
     .elsewhen (dut.io.sink.fire) {
-      beats_left := beats_left - 1
+      beats_remaining := beats_remaining - 1
     }
     // drive sink.last based on chosen sink_length
-    dut.io.sink.last := (beats_left === 1) | (dut.io.sink.firstFire & (dut.io.sink_length <= (dataWidthBytes)))
+    dut.io.sink.last := (beats_remaining === 1) | is_single_beat_packet
 
     // test for an implication with formal verification, can be written multiple ways:
-    //   A -> B, or A "implies" B, or if (A) then (B)
-    //   or if "A" then assert("B") or assert(!A or B)
+    //   A -> B, or A implies B, or if (A) then (B)
+    //   or if (A) then assert(B) or assert(!A or B)
+    //   A is called the precondition
     // in SpinalHDL we thus can write:
     //   assert(!A | B)
     //   or when (A) assert(B)
@@ -79,7 +85,7 @@ object AxisExtractHeaderFormal extends App {
         assume(stable(dut.io.sink.payload.fragment))
         assume(stable(dut.io.sink_length))
     }
-    cover(dut.io.sink.isStall)
+    cover(pastValidAfterReset() & past(dut.io.sink.isStall))
 
     // true during all but last beat (thus it is not true for single beat packet)
     val sink_in_packet_but_non_last = (dut.io.sink.isFirst | dut.io.sink.tail) & !dut.io.sink.isLast
@@ -88,7 +94,7 @@ object AxisExtractHeaderFormal extends App {
     when (pastValidAfterReset() && past(sink_in_packet_but_non_last)) {
         assume(stable(dut.io.sink_length))
     }
-    cover(sink_in_packet_but_non_last)
+    cover(pastValidAfterReset() && past(sink_in_packet_but_non_last))
 
     // Assert AXI signals remain stable when the stream was stalled
     when (pastValidAfterReset() && past(dut.io.source.isStall)) {
@@ -97,9 +103,7 @@ object AxisExtractHeaderFormal extends App {
         assert(stable(dut.io.source.payload.fragment))
         assert(stable(dut.io.source_length))
     }
-    // Assert AXI output packet length remains stable when the stream is stalled
-    //assert(!dut.io.source.isStall | stable(dut.io.source_length))
-    cover(dut.io.source.isStall)
+    cover(pastValidAfterReset() && past(dut.io.source.isStall))
 
     val source_leon_isFirst = dut.io.source.firstFire
     val source_leon_tail = dut.io.source.tail
@@ -112,29 +116,43 @@ object AxisExtractHeaderFormal extends App {
     when (pastValidAfterReset() && past(source_in_packet_but_non_last)) {
       assert(stable(dut.io.source_length))
     }
+    cover(pastValidAfterReset() && past(source_in_packet_but_non_last))
 
-    cover(source_in_packet_but_non_last)
+    cover(pastValidAfterReset() && (sink_beats === 1))
+    cover(pastValidAfterReset() && (sink_beats === 2))
+    cover(pastValidAfterReset() && (sink_beats === 3))
 
-    cover(sink_beats === 1)
-    cover(sink_beats === 2)
-    cover(sink_beats === 3)
+    // calculate number of bytes in last input beat of packet
+    val bytes_in_last_input_beat = dut.io.sink_length % dataWidthBytes
+    when ((dut.io.sink_length % dataWidthBytes) === 0) {
+      bytes_in_last_input_beat := dataWidthBytes
+    }
+    // output packet is one beat shorter?
+    val is_one_beat_less = (bytes_in_last_input_beat <= header_length)
 
     // Count number of ingoing beats, substract number of outgoing beats
-    val leftover_beats_count = Reg(UInt(widthOf(dut.io.sink_length) + 1 bits)) init(0)
-    when (dut.io.sink.fire && !dut.io.source.fire) {
-      leftover_beats_count := leftover_beats_count + 1
+    val beats_in_flight = Reg(UInt(widthOf(dut.io.sink_length) + 1 bits)) init(0)
+    val increment = False
+    val decrement = False
+    // last input beat gets dropped on output due to header removal?
+    when (dut.io.sink.fire && dut.io.sink.last && is_one_beat_less) {
+      increment := False
     }
-    .elsewhen (!dut.io.sink.fire && dut.io.source.fire) {
-      leftover_beats_count := leftover_beats_count - 1
+    .elsewhen (dut.io.sink.fire) {
+      increment := True
+    }
+    when (dut.io.source.fire) {
+      decrement := True
+    }
+    when (increment & !decrement) {
+      beats_in_flight := beats_in_flight + 1
+    } elsewhen (!increment & decrement) {
+      beats_in_flight := beats_in_flight - 1
     }
 
-    def lock_up_threshold = 5
-
-    // Component is locked-up when count is incremented beyond threshold
-    when (pastValidAfterReset()) {
-      assert(leftover_beats_count < lock_up_threshold)
-    }
-    cover(leftover_beats_count =/= 0)
-
+    def max_beats_in_flight = 5
+    // check no beats are lost or generated unexpectedly
+    assert(beats_in_flight < max_beats_in_flight)
+    cover(beats_in_flight =/= 0)
   })
 }

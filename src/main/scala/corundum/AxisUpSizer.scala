@@ -56,8 +56,8 @@ case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
     }
   }
 
-  // x is sink, but adds the sink_length as stream payload
-  // such that both sink and sink_length are skid buffered
+  // x is sink, but adds the sink_length and drop flag as stream payload
+  // such that both sink and sink_length and drop flag are skid buffered
   val x = Stream(Fragment(Bits(dataWidthIn + 12 + 1 bits)))
   x << io.sink.~~(_.~~(io.sink_drop ## io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
    

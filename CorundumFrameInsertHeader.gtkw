@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
 [*] Tue Jan 31 15:12:47 2023
 [*]
-[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/CorundumFrameInsertHeader/test.fst"
+[dumpfile] "./simWorkspace/CorundumFrameInsertHeader/test.fst"
 [dumpfile_mtime] "Tue Jan 31 15:08:33 2023"
 [dumpfile_size] 15648
-[savefile] "/project-on-host/SpinalCorundum/CorundumFrameInsertHeader.gtkw"
+[savefile] "./CorundumFrameInsertHeader.gtkw"
 [timestart] 1264
 [size] 1556 898
 [pos] -1 -1
