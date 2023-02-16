@@ -1,0 +1,176 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Wed Feb 15 14:32:32 2023
+[*]
+[dumpfile] "./simWorkspace/AxisLatency/test.fst"
+[dumpfile_mtime] "Wed Feb 15 14:27:49 2023"
+[dumpfile_size] 1856050
+[savefile] "./AxisLatency.gtkw"
+[timestart] 1201
+[size] 1860 811
+[pos] -1 -1
+*-8.000000 600 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.AxisLatency.
+[sst_width] 487
+[signals_width] 386
+[sst_expanded] 1
+[sst_vpaned_height] 227
+@28
+TOP.AxisLatency.clk
+TOP.AxisLatency.reset
+@200
+-
+@c00024
+#{x_tdata[7:0]} (12)TOP.AxisLatency.x_payload_fragment[19:0] (13)TOP.AxisLatency.x_payload_fragment[19:0] (14)TOP.AxisLatency.x_payload_fragment[19:0] (15)TOP.AxisLatency.x_payload_fragment[19:0] (16)TOP.AxisLatency.x_payload_fragment[19:0] (17)TOP.AxisLatency.x_payload_fragment[19:0] (18)TOP.AxisLatency.x_payload_fragment[19:0] (19)TOP.AxisLatency.x_payload_fragment[19:0]
+@28
+(12)TOP.AxisLatency.x_payload_fragment[19:0]
+(13)TOP.AxisLatency.x_payload_fragment[19:0]
+(14)TOP.AxisLatency.x_payload_fragment[19:0]
+(15)TOP.AxisLatency.x_payload_fragment[19:0]
+(16)TOP.AxisLatency.x_payload_fragment[19:0]
+(17)TOP.AxisLatency.x_payload_fragment[19:0]
+(18)TOP.AxisLatency.x_payload_fragment[19:0]
+(19)TOP.AxisLatency.x_payload_fragment[19:0]
+@1401200
+-group_end
+@28
+TOP.AxisLatency.x_payload_last
+TOP.AxisLatency.x_ready
+TOP.AxisLatency.x_valid
+@200
+-
+-Sink with Source Backpressure Applied
+@c00024
+#{TOP.AxisLatency.h_payload_fragment[7:0]} (12)TOP.AxisLatency.h_payload_fragment[19:0] (13)TOP.AxisLatency.h_payload_fragment[19:0] (14)TOP.AxisLatency.h_payload_fragment[19:0] (15)TOP.AxisLatency.h_payload_fragment[19:0] (16)TOP.AxisLatency.h_payload_fragment[19:0] (17)TOP.AxisLatency.h_payload_fragment[19:0] (18)TOP.AxisLatency.h_payload_fragment[19:0] (19)TOP.AxisLatency.h_payload_fragment[19:0]
+@28
+(12)TOP.AxisLatency.h_payload_fragment[19:0]
+(13)TOP.AxisLatency.h_payload_fragment[19:0]
+(14)TOP.AxisLatency.h_payload_fragment[19:0]
+(15)TOP.AxisLatency.h_payload_fragment[19:0]
+(16)TOP.AxisLatency.h_payload_fragment[19:0]
+(17)TOP.AxisLatency.h_payload_fragment[19:0]
+(18)TOP.AxisLatency.h_payload_fragment[19:0]
+(19)TOP.AxisLatency.h_payload_fragment[19:0]
+@1401200
+-group_end
+@28
+TOP.AxisLatency.h_payload_last
+TOP.AxisLatency.h_ready
+TOP.AxisLatency.h_valid
+@200
+-
+-Delayed Valid
+@28
+TOP.AxisLatency.z_valid
+@200
+-
+-Data FIFO
+@24
+TOP.AxisLatency.h_fifo.io_availability[2:0]
+TOP.AxisLatency.h_fifo.io_occupancy[2:0]
+@200
+-
+@28
+TOP.AxisLatency.h_fifo.io_push_payload_last
+TOP.AxisLatency.h_fifo.io_push_ready
+TOP.AxisLatency.h_fifo.io_push_valid
+@c00024
+#{TOP.AxisLatency.h_fifo.io_push_payload_fragment[7:0]} (12)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (13)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (14)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (15)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (16)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (17)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (18)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (19)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+@28
+(12)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(13)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(14)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(15)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(16)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(17)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(18)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(19)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+@1401200
+-group_end
+@200
+-
+@c00022
+#{TOP.AxisLatency.h_fifo.io_pop_payload_fragment[7:0]} (12)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0] (13)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0] (14)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0] (15)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0] (16)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0] (17)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0] (18)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0] (19)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+@28
+(12)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+(13)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+(14)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+(15)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+(16)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+(17)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+(18)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+(19)TOP.AxisLatency.h_fifo.io_pop_payload_fragment[19:0]
+@1401200
+-group_end
+@28
+TOP.AxisLatency.h_fifo.io_pop_payload_last
+TOP.AxisLatency.h_fifo.io_pop_ready
+TOP.AxisLatency.h_fifo.io_pop_valid
+TOP.AxisLatency.h_fifo.io_push_payload_last
+TOP.AxisLatency.h_fifo.io_push_ready
+TOP.AxisLatency.h_fifo.io_push_valid
+@c00024
+#{TOP.AxisLatency.h_fifo.io_push_payload_fragment[7:0]} (12)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (13)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (14)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (15)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (16)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (17)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (18)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0] (19)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+@28
+(12)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(13)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(14)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(15)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(16)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(17)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(18)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+(19)TOP.AxisLatency.h_fifo.io_push_payload_fragment[19:0]
+@1401200
+-group_end
+@200
+-
+@c00024
+#{TOP.AxisLatency.y_payload_fragment[7:0]} (12)TOP.AxisLatency.y_payload_fragment[19:0] (13)TOP.AxisLatency.y_payload_fragment[19:0] (14)TOP.AxisLatency.y_payload_fragment[19:0] (15)TOP.AxisLatency.y_payload_fragment[19:0] (16)TOP.AxisLatency.y_payload_fragment[19:0] (17)TOP.AxisLatency.y_payload_fragment[19:0] (18)TOP.AxisLatency.y_payload_fragment[19:0] (19)TOP.AxisLatency.y_payload_fragment[19:0]
+@28
+(12)TOP.AxisLatency.y_payload_fragment[19:0]
+(13)TOP.AxisLatency.y_payload_fragment[19:0]
+(14)TOP.AxisLatency.y_payload_fragment[19:0]
+(15)TOP.AxisLatency.y_payload_fragment[19:0]
+(16)TOP.AxisLatency.y_payload_fragment[19:0]
+(17)TOP.AxisLatency.y_payload_fragment[19:0]
+(18)TOP.AxisLatency.y_payload_fragment[19:0]
+(19)TOP.AxisLatency.y_payload_fragment[19:0]
+@1401200
+-group_end
+@28
+TOP.AxisLatency.y_payload_last
+TOP.AxisLatency.y_ready
+TOP.AxisLatency.y_valid
+@200
+-
+@c00024
+#{TOP.AxisLatency.z_payload_fragment[7:0]} (12)TOP.AxisLatency.z_payload_fragment[19:0] (13)TOP.AxisLatency.z_payload_fragment[19:0] (14)TOP.AxisLatency.z_payload_fragment[19:0] (15)TOP.AxisLatency.z_payload_fragment[19:0] (16)TOP.AxisLatency.z_payload_fragment[19:0] (17)TOP.AxisLatency.z_payload_fragment[19:0] (18)TOP.AxisLatency.z_payload_fragment[19:0] (19)TOP.AxisLatency.z_payload_fragment[19:0]
+@28
+(12)TOP.AxisLatency.z_payload_fragment[19:0]
+(13)TOP.AxisLatency.z_payload_fragment[19:0]
+(14)TOP.AxisLatency.z_payload_fragment[19:0]
+(15)TOP.AxisLatency.z_payload_fragment[19:0]
+(16)TOP.AxisLatency.z_payload_fragment[19:0]
+(17)TOP.AxisLatency.z_payload_fragment[19:0]
+(18)TOP.AxisLatency.z_payload_fragment[19:0]
+(19)TOP.AxisLatency.z_payload_fragment[19:0]
+@1401200
+-group_end
+@28
+TOP.AxisLatency.z_payload_last
+TOP.AxisLatency.z_ready
+TOP.AxisLatency.z_valid
+@200
+-
+@24
+TOP.AxisLatency.source_length[11:0]
+@29
+TOP.AxisLatency.source_tready
+@24
+TOP.AxisLatency.source_tdata[7:0]
+@28
+TOP.AxisLatency.source_tvalid
+TOP.AxisLatency.source_tlast
+[pattern_trace] 1
+[pattern_trace] 0

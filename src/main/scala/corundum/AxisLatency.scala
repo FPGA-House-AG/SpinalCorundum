@@ -6,20 +6,20 @@ import spinal.lib._
 import scala.math._
 
 // companion object for case class
-object AxisDelay {
+object AxisLatency {
   // generate VHDL and Verilog
   def main(args: Array[String]) : Unit = {
-    val vhdlReport = Config.spinal.generateVhdl(new AxisDelay(Config.corundumDataWidth, 65))
-    val verilogReport = Config.spinal.generateVerilog(new AxisDelay(Config.corundumDataWidth, 65))
+    val vhdlReport = Config.spinal.generateVhdl(new AxisLatency(Config.corundumDataWidth, 65))
+    val verilogReport = Config.spinal.generateVerilog(new AxisLatency(Config.corundumDataWidth, 65))
   }
 }
 
-/* Add delay to a Stream. Can be used to match the delay of a parallel pipelined process
+/* Add latency to a Stream. Can be used to match the latency of a parallel pipelined process
  * (of the Stream data) which has the same downstream backpressure (ready == 0) applied.
  *
- * Delay is added to the (internal) delay caused by downstream backpressure (ready==0).
+ * Latency is added to the (internal) latency caused by downstream backpressure (ready==0).
  */
-case class AxisDelay(dataWidth : Int, cycleCount : Int) extends Component {
+case class AxisLatency(dataWidth : Int, cycleCount : Int) extends Component {
 
   val streamFifoLatency = 2
 

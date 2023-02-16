@@ -7,17 +7,17 @@ import spinal.lib.sim.{ScoreboardInOrder, SimData}
 
 import scala.util.Random
 
-object AxisDelaySim {
+object AxisLatencySim {
   def main(args: Array[String]) : Unit = {
     // component parameters
     val dataWidth = 8
-    val delayCycleCount = 20
+    val cycleCount = 20
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val dataWidthBytes = dataWidth/8
 
     SimConfig
     .withFstWave
-    .doSim(new AxisDelay(dataWidth/*bits*/, delayCycleCount)){dut =>
+    .doSim(new AxisLatency(dataWidth/*bits*/, cycleCount)){dut =>
 
       SimTimeout(1000000 * 10)
 
