@@ -131,7 +131,9 @@ object AxisExtractHeaderFormal extends App {
     def lock_up_threshold = 5
 
     // Component is locked-up when count is incremented beyond threshold
-    assert(leftover_beats_count < lock_up_threshold)
+    when (pastValidAfterReset()) {
+      assert(leftover_beats_count < lock_up_threshold)
+    }
     cover(leftover_beats_count =/= 0)
 
   })
