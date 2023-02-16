@@ -118,5 +118,21 @@ object AxisExtractHeaderFormal extends App {
     cover(sink_beats === 1)
     cover(sink_beats === 2)
     cover(sink_beats === 3)
+
+    // Count number of ingoing beats, substract number of outgoing beats
+    val leftover_beats_count = Reg(UInt(widthOf(dut.io.sink_length) + 1 bits)) init(0)
+    when (dut.io.sink.fire && !dut.io.source.fire) {
+      leftover_beats_count := leftover_beats_count + 1
+    }
+    .elsewhen (!dut.io.sink.fire && dut.io.source.fire) {
+      leftover_beats_count := leftover_beats_count - 1
+    }
+
+    def lock_up_threshold = 5
+
+    // Component is locked-up when count is incremented beyond threshold
+    assert(leftover_beats_count < lock_up_threshold)
+    cover(leftover_beats_count =/= 0)
+
   })
 }
