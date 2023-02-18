@@ -50,9 +50,6 @@ case class CorundumFrameMatchWireguard() extends Component {
 
   x << io.sink
 
-  val is_frame_continuation = RegNextWhen(!x.last, x.valid) init(False)
-  // purely for manual debug
-  val is_first_beat = x.ready & x.valid & !is_frame_continuation
   // byte 0 is Ethernet, byte 14 is IP, byte 34 is UDP header, byte 42 is UDP payload
 
   // ARP: TYPE=0806, HTYPE=0001, PTYPE=0800, HLEN=6, PLEN=4
@@ -83,10 +80,10 @@ case class CorundumFrameMatchWireguard() extends Component {
   val is_match_icmp =    is_ethip & is_ipv4l5 & is_icmp
 
   // the final keep and drop criteria for the frame
-  val is_type123_on_first_beat = RegNextWhen(is_match_type123, !is_frame_continuation) init(False)
-  val is_type4_on_first_beat = RegNextWhen(is_match_type4, !is_frame_continuation) init(False)
-  val is_arp_on_first_beat = RegNextWhen(is_match_arp, !is_frame_continuation) init(False)
-  val is_icmp_on_first_beat = RegNextWhen(is_match_icmp, !is_frame_continuation) init(False)
+  val is_type123_on_first_beat = RegNextWhen(is_match_type123, x.isFirst) init(False)
+  val is_type4_on_first_beat = RegNextWhen(is_match_type4, x.isFirst) init(False)
+  val is_arp_on_first_beat = RegNextWhen(is_match_arp, x.isFirst) init(False)
+  val is_icmp_on_first_beat = RegNextWhen(is_match_icmp, x.isFirst) init(False)
 
   io.is_type123 := is_type123_on_first_beat
   io.is_type4 := is_type4_on_first_beat
