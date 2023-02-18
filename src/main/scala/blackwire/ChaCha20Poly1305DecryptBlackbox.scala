@@ -26,6 +26,7 @@ class AEAD_decryption_wrapper() extends BlackBox {
     val source_tready  = in Bool()
 
     val tag_valid       = out Bool()
+    val tag_pulse       = out Bool()
   }
 
   // Map the current clock domain to the io.clk and io.rst pins
@@ -51,6 +52,7 @@ case class ChaCha20Poly1305DecryptSpinal() extends Component {
     val source = master Stream(Fragment(Bits(128 bits)))
     val key    = in Bits (256 bit)
     val tag_valid = out Bool()
+    val tag_pulse = out Bool()
   }
   val vhdl = new AEAD_decryption_wrapper()
 
@@ -77,6 +79,7 @@ case class ChaCha20Poly1305DecryptSpinal() extends Component {
   io.source <-< d
   
   io.tag_valid           := vhdl.io.tag_valid
+  io.tag_pulse           := vhdl.io.tag_pulse
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
