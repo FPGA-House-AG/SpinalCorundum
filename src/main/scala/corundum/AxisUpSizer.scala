@@ -72,10 +72,10 @@ case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
   StreamFragmentWidthAdapter(y, z, earlyLast = true)
 
   io.source <-< z
-  io.source_length := RegNext(y_length)
+  io.source_length := RegNextWhen(y_length, z.ready)
   // @NOTE we could take drop directly from y, to make it line up with last from chacha
   // this is currently taken care of in chacha wrapper already - so leave as is!
-  io.source_drop := RegNext(y_drop)
+  io.source_drop := RegNextWhen(y_drop, z.ready)
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
