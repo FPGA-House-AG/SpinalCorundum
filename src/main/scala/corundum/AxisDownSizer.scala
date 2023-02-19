@@ -100,7 +100,7 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
 
   // register outputs
   io.source <-< z
-  io.source_length := RegNext(y_length)
+  io.source_length := RegNextWhen(y_length, z.ready)
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
