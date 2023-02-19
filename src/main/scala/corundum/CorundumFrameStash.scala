@@ -343,11 +343,6 @@ case class CorundumFrameFlowStash(dataWidth : Int, fifoSize : Int, maxPacketFifo
     // update only now
     fifo_too_full := stash.io.availability <= maxPacketFifoWords
   }
-  //x.allowOverride() // or when (True) {}
-  // pause stream
-  //x.ready := !fifo_too_full
-  //when (fifo_too_full) { x.valid := False }
-
   // .haltWhen deasserts READY on condition
   stash.io.sink << x.haltWhen(fifo_too_full)
 
