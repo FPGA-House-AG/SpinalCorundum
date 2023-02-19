@@ -70,6 +70,11 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
   w << io.sink.m2sPipe().s2mPipe()
   x <-< w
 
+  //GenerationFlags.formal {
+    assume(!(io.sink.isLast) | (io.sink.fragment.tkeep(0) === True))
+    when (w.isLast) { assert(assertion = (w.fragment.tkeep(0) === True), message = "LAST cannot be empty") }
+    when (x.isLast) { assert(assertion = (x.fragment.tkeep(0) === True), message = "LAST cannot be empty") }
+  //}
 
   val x2 = Stream Fragment(CorundumFrame(dataWidth))
   val x3 = Stream Fragment(CorundumFrame(dataWidth))
