@@ -19,7 +19,11 @@
 build: rtl
 
 # CI/CD runs "make test"
-test: build formal sim_extract
+test: build formal sim_extract code_analysis
+
+code_analysis:
+	grep -rne '.m2sPipe().s2mPipe()' src/main/scala && \
+	echo "Check reverse use of .m2sPipe().s2mPipe()." && false
 
 # continuous build (using sbt "~" REPL feature) on save in editor
 repl:
@@ -109,7 +113,7 @@ sim_reader:
 # AxisExtractHeader simulation verification test
 sim_extract:
 	set -e
-	sbt "runMain corundumAxisExtractHeaderSim"
+	sbt "runMain corundum.AxisExtractHeaderSim"
 
 stash:
 	set -e
