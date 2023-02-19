@@ -154,5 +154,9 @@ object AxisExtractHeaderFormal extends App {
     // check no beats are lost or generated unexpectedly
     assert(beats_in_flight < max_beats_in_flight)
     cover(beats_in_flight =/= 0)
+
+    when (pastValidAfterReset() && beats_in_flight > 2 && dut.io.source.ready) {
+      assert(dut.io.source.valid)
+    }
   })
 }
