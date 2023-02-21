@@ -28,25 +28,27 @@ import scala.math._
 //Generate the CorundumFrameMatchWireguard's Verilog
 object CorundumFrameMatchWireguard {
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameMatchWireguard())
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameMatchWireguard())
+    val vhdlReport = Config.spinal.generateVhdl(CorundumFrameMatchWireguard())
+    val verilogReport = Config.spinal.generateVerilog(CorundumFrameMatchWireguard())
   }
+  def apply(dataWidth : Int) : CorundumFrameMatchWireguard = new CorundumFrameMatchWireguard(dataWidth = dataWidth, userWidth = 1)
+  def apply() : CorundumFrameMatchWireguard = CorundumFrameMatchWireguard(dataWidth = 512, userWidth = 1)
 }
 
-case class CorundumFrameMatchWireguard() extends Component {
-  val dataWidth : Int = 512
+// @TODO rename as we also match other types
+case class CorundumFrameMatchWireguard(dataWidth : Int, userWidth: Int) extends Component {
   val io = new Bundle {
-    val sink = slave Stream Fragment(CorundumFrame(dataWidth))
-    //val sink_length = in UInt(12 bits)
-    val source = master Stream Fragment(CorundumFrame(dataWidth))
+    val sink = slave Stream Fragment(CorundumFrame(dataWidth, userWidth))
+    val source = master Stream Fragment(CorundumFrame(dataWidth, userWidth))
     val is_type123 = out Bool()
     val is_type4 = out Bool()
     val is_arp = out Bool()
     val is_icmp = out Bool()
+    val is_ipv4l5 = out Bool()
   }
 
   // component sink/slave port to fifo push/sink/slave port
-  val x = Stream Fragment(CorundumFrame(dataWidth))
+  val x = Stream Fragment(CorundumFrame(dataWidth, userWidth))
 
   x << io.sink
 
@@ -78,17 +80,20 @@ case class CorundumFrameMatchWireguard() extends Component {
   val is_match_type4 =   is_ethip & is_ipv4l5 & is_udp & is_type4
   val is_match_arp =     is_etharp
   val is_match_icmp =    is_ethip & is_ipv4l5 & is_icmp
+  val is_match_ipv4l5 =  is_ethip & is_ipv4l5
 
   // the final keep and drop criteria for the frame
   val is_type123_on_first_beat = RegNextWhen(is_match_type123, x.isFirst) init(False)
   val is_type4_on_first_beat = RegNextWhen(is_match_type4, x.isFirst) init(False)
   val is_arp_on_first_beat = RegNextWhen(is_match_arp, x.isFirst) init(False)
   val is_icmp_on_first_beat = RegNextWhen(is_match_icmp, x.isFirst) init(False)
+  val is_ipv4l5_on_first_beat = RegNextWhen(is_match_ipv4l5, x.isFirst) init(False)
 
   io.is_type123 := is_type123_on_first_beat
   io.is_type4 := is_type4_on_first_beat
   io.is_arp := is_arp_on_first_beat
   io.is_icmp := is_icmp_on_first_beat
+  io.is_ipv4l5 := is_ipv4l5_on_first_beat
   io.source << x.stage()
 
   // Rename SpinalHDL library defaults to AXI naming convention
