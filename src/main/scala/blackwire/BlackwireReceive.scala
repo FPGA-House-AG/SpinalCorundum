@@ -107,11 +107,17 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
   val s_length = Reg(UInt(12 bits))
   val s_drop = Reg(Bool()) init(False)
 
-  val with_chacha = (include_chacha) generate new Area { 
+  val with_chacha = (include_chacha) generate new Area {
+    // halt only after packet boundaries, start anywhere
+    val halt_input_to_chacha = RegInit(False).setWhen(k.lastFire && output_stash_too_full).clearWhen(!output_stash_too_full)
+    halt_input_to_chacha.addAttribute("mark_debug")
+    k.last.addAttribute("mark_debug")
+    output_stash_too_full.addAttribute("mark_debug")
+
     // p is the decrypted Type 4 payload
     val p = Stream(Fragment(Bits(cryptoDataWidth bits)))
     val decrypt = ChaCha20Poly1305DecryptSpinal()
-    decrypt.io.sink << k.haltWhen(output_stash_too_full)
+    decrypt.io.sink << k.haltWhen(halt_input_to_chacha)
     decrypt.io.key := key
     p << decrypt.io.source
     //decrypt.io.addAttribute("mark_debug")
@@ -160,7 +166,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
 
   // should be room for 1534 + latency of ChaCha20 to FlowStash
   // Flow goes ready after packet last, and room for 26*64=1664 bytes
-  val outstash = CorundumFrameFlowStash(corundumDataWidth, fifoSize = 32, 26)
+  val outstash = CorundumFrameFlowStash(corundumDataWidth, fifoSize = 32, 24)
   outstash.io.sink << c
   r << outstash.io.source
 
@@ -230,7 +236,8 @@ object BlackwireReceiveSim {
 
     SimConfig
     // GHDL can simulate VHDL, required for ChaCha20Poly1305
-    .withGhdl.withFstWave
+    .withGhdl.withWave
+    //.withFstWave
     //.addRunFlag support is now in SpinalHDL dev branch
     .addRunFlag("--unbuffered") //.addRunFlag("--disp-tree=inst")
     .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
@@ -276,15 +283,22 @@ object BlackwireReceiveSim {
 
     .compile {
       val dut = new BlackwireReceive(BlackwireReceive.busconfig, include_chacha = include_chacha)
+      dut.with_chacha.decrypt.io.sink.ready.simPublic()
+      dut.with_chacha.decrypt.io.sink.valid.simPublic()
+      dut.with_chacha.decrypt.io.sink.last.simPublic()
       dut.with_chacha.decrypt.io.source.ready.simPublic()
       dut.with_chacha.decrypt.io.source.valid.simPublic()
       dut.with_chacha.decrypt.io.source.last.simPublic()
       dut.with_chacha.decrypt.io.tag_valid.simPublic()
+      dut.with_chacha.decrypt.io.tag_pulse.simPublic()
       dut
     }
     //.addSimulatorFlag("-Wno-TIMESCALEMOD")
     // include_chacha = true requires GHDL or XSim
     .doSim { dut =>
+
+      SimTimeout(10000)
+
       dut.io.sink.valid #= false
 
       //Fork a process to generate the reset and the clock on the dut
@@ -303,7 +317,37 @@ object BlackwireReceiveSim {
       dut.io.sink.payload.tkeep #= tkeep0
       dut.io.sink.payload.tuser #= 0
 
+      dut.io.source.ready #= false
+
       dut.clockDomain.waitSampling()
+
+      // monitor output (source) of DUT
+      var good_packets = 0
+      var packets_rcvd = 0
+      val monitorThread = fork {
+        while (true) {
+          if (dut.with_chacha.decrypt.io.sink.valid.toBoolean & dut.with_chacha.decrypt.io.sink.last.toBoolean & dut.with_chacha.decrypt.io.sink.ready.toBoolean) {
+            packets_rcvd += 1
+          }
+          if (include_chacha) {
+            if (dut.with_chacha.decrypt.io.tag_pulse.toBoolean)
+            {
+              printf("dut.with_chacha.decrypt.io.tag_valid = %b\n", dut.with_chacha.decrypt.io.tag_valid.toBoolean)
+              if (dut.with_chacha.decrypt.io.tag_valid.toBoolean == true) {
+                good_packets += 1
+              }
+            }
+          }
+          dut.clockDomain.waitSampling()
+        }
+      }
+
+      val backpressureThread = fork {
+        while (true) {
+          dut.io.source.ready #= false //(Random.nextInt(100) > 95)
+          dut.clockDomain.waitSampling()
+        }
+      }
 
 // "0102030405060102030405060102" Ethernet
 // "xxxx11887766554433221145" IPv4, IHL=5, protocol=0x11 (UDP)
@@ -314,48 +358,50 @@ object BlackwireReceiveSim {
       var packet_number = 0
       val inter_packet_gap = 0
 
-      val plaintext = Vector(
+      val packet_contents = Vector(
         // RFC7539 2.8.2. Example and Test Vector for AEAD_CHACHA20_POLY1305
         // but with zero-length AAD, and Wireguard 64-bit nonce
         
-//        Vector(
-//          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
-//          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
-//          BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4 93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97".split(" ").reverse.mkString(""), 16),
-//          BigInt("1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0 46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee".split(" ").reverse.mkString(""), 16),
-//          BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-//        ),
+        Vector(
+          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4 93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97".split(" ").reverse.mkString(""), 16),
+          BigInt("1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0 46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee".split(" ").reverse.mkString(""), 16),
+          BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+        ),
+        // 0 byte WG payload, tag match
         Vector( // @TODO UDP length does not match - is ignored 
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <- Poly 1305 Tag
           BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 5a 70 0f 88 e7 87".split(" ").reverse.mkString(""), 16),
           BigInt("fe 1c 1e f6 64 e6 01 ba 93 5f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         ),
+        // 16 byte WG payload, tag mismatch
         Vector( // @TODO UDP length does not match - is ignored 
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <- Single Beat,,
           BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
           BigInt("00 d6 f4 04 2a 8e 38 4e f4 bd f0 ed 2d 13 df 84 8e f7 0a c5 30 0b a0 45 59 ba 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         ),
+        // 16 byte WG payload, tag match
         Vector( // @TODO UDP length does not match - is ignored 
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <- Single Beat,,
           BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
           BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd f0 ed 2d 13 df 84 8e f7 0a c5 30 0b a0 45 59 ba 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
+        ),
+        Vector(
+          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4 93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97".split(" ").reverse.mkString(""), 16),
+          BigInt("1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0 46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee".split(" ").reverse.mkString(""), 16),
+          BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         )
-//        Vector(
-//          //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
-//          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
-//          BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4 93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97".split(" ").reverse.mkString(""), 16),
-//          BigInt("1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0 46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee".split(" ").reverse.mkString(""), 16),
-//          BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
-//        )
       )
 
-      while (packet_number < 3) {
-        // MUST MATCH "plaintext"
-        var packet_length = Vector(64 + 10, 64 + 16 + 10, 64 + 16 + 10)
-        //var packet_length = Vector(3 * 64 + 10, 64 + 10, 3 * 64 + 10)
-        //var packet_length = Vector(64 + 10, 3 * 64 + 10)
+      var packet_content_idx = 0
+      var packet_content_lengths = Vector(3 * 64 + 10, 64 + 10, 64 + 16 + 10, 64 + 16 + 10, 3 * 64 + 10)
+      var packet_content_good    = Vector(true, true, false, true, true)
 
-        var remaining = packet_length(packet_number)
+      while (packet_number < 100) {
+        var remaining = packet_content_lengths(packet_content_idx)
 
         var word_index = 0
         // iterate over frame content
@@ -379,13 +425,11 @@ object BlackwireReceiveSim {
           }
 
           dut.io.sink.valid #= valid0
-          dut.io.sink.payload.tdata #= plaintext(packet_number)(word_index)
+          dut.io.sink.payload.tdata #= packet_contents(packet_content_idx)(word_index)
           dut.io.sink.last #= last0
           dut.io.sink.last #= last0
           dut.io.sink.payload.tkeep #= tkeep0
           dut.io.sink.payload.tuser #= 0
-
-          dut.io.source.ready #= (Random.nextInt(8) > 1)
 
           // Wait a rising edge on the clock
           dut.clockDomain.waitRisingEdge()
@@ -394,43 +438,19 @@ object BlackwireReceiveSim {
             remaining -= tkeep_len
             word_index += 1
           }
-
-          //if (dut.decrypt.io.sink.ready.toBoolean & dut.decrypt.io.sink.valid.toBoolean) {
-          //}
         }
-        dut.io.sink.valid #= false
-
-        printf("remaining = %d after while (remaining > 0))\n", remaining)
+        // assert full packet is sent
         assert(remaining == 0)
-
+        dut.io.sink.valid #= false
         dut.clockDomain.waitRisingEdge(inter_packet_gap)
-
         packet_number += 1
+        printf("packet #%d\n", packet_number)
       } // while remaining_packets
 
-      dut.io.source.ready #= true
-
-      if (include_chacha) {
-      var limit = 500
-      var good_packets = 0
-      while ((limit > 0)/* && (good_packets == 0)*/) {
-          if (dut.with_chacha.decrypt.io.source.ready.toBoolean &
-              dut.with_chacha.decrypt.io.source.valid.toBoolean &
-              dut.with_chacha.decrypt.io.source.last.toBoolean
-              ) {
-                printf("dut.with_chacha.decrypt.io.tag_valid = %b\n", dut.with_chacha.decrypt.io.tag_valid.toBoolean)
-                if (dut.with_chacha.decrypt.io.tag_valid.toBoolean == true) {
-                  good_packets += 1
-                }
-          }
-          dut.clockDomain.waitRisingEdge()
-          limit -= 1//          limit -= 1
+      while (packets_rcvd < 100) {
+          dut.clockDomain.waitRisingEdge(8)
       }
-      assert(good_packets == 3)
-      }
-
-      dut.clockDomain.waitRisingEdge(8)
-
+      assert(good_packets == 3/*@TODO calculate expected good packets*/)
     }
   }
 }

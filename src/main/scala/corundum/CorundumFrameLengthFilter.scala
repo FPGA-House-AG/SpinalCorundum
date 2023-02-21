@@ -37,7 +37,7 @@ case class CorundumFrameLengthFilter(dataWidth : Int, maxBytes : Int) extends Co
   when (True) {
     x.payload.tkeep := io.length.asBits.resize(dataWidth / 8)
   }
-  y << x.m2sPipe().s2mPipe().throwWhen(x.payload.tkeep.asUInt > 10)
+  y << x.s2mPipe().m2sPipe().throwWhen(x.payload.tkeep.asUInt > 10)
   //stash.io.slave0 << io.slave0/*.throwWhen(io.slave0.payload.tuser(0))*/
   io.master0 << y
 

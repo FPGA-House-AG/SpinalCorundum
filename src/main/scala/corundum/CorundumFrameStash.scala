@@ -67,7 +67,8 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
   // skid buffer between input and x
   // at least 1 clock cycle latency
   // but full throughput
-  w << io.sink.m2sPipe().s2mPipe()
+  w << io.sink.s2mPipe().m2sPipe()
+  // one cycle to count leading zeroes
   x <-< w
 
   //GenerationFlags.formal {
@@ -87,7 +88,7 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
   // gather at least minPackets packet(s) in the FIFO before continuing the pop/output stream
   // however if the FIFO becomes full, also continue, to prevent corruption
   val fifo_holds_complete_packet = (packetsInFifoCounter.value >= 1)
-  val z = y.continueWhen(fifo_holds_complete_packet).m2sPipe().s2mPipe()
+  val z = y.continueWhen(fifo_holds_complete_packet).s2mPipe().m2sPipe()
 
   when (fifo.io.push.ready & fifo.io.push.valid & fifo.io.push.last) {
     packetsInFifoCounter.increment()
@@ -194,7 +195,7 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
   x.ready := x2.ready
   /* one cycle latency to match length calculation, to ensure the frame
    * length is available together with the frame data on the FIFO outputs */
-  x3 << x2.m2sPipe().s2mPipe()
+  x3 << x2.s2mPipe().m2sPipe()
   fifo.io.push << x3
   y << fifo.io.pop
   // highest bit indicates truncated packet or dropped packet
