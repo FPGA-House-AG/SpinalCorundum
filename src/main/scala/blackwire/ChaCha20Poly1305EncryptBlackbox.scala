@@ -42,7 +42,6 @@ object BlackwireChaCha20Poly1305EncryptSpinal {
   //}
 }
 
-
 // Define ChaCha20Poly1305Encrypt
 case class ChaCha20Poly1305EncryptSpinal() extends Component {
   // Define IO of the VHDL entity / Verilog module
@@ -61,22 +60,17 @@ case class ChaCha20Poly1305EncryptSpinal() extends Component {
   // required by VHDL ChaCha20Poly1305
   val after_last = RegNext(io.sink.lastFire)
 
-  vhdl.io.sink_tvalid := io.sink.valid & !after_last
+  vhdl.io.sink_tvalid := io.sink.valid// & !after_last
   vhdl.io.sink_tdata  := U(io.sink.payload.fragment)
   vhdl.io.sink_tlast  := io.sink.payload.last
   // pass-through READY outside of the VHDL block, not READY after LAST
-  io.sink.ready       := d.ready & !after_last
+  io.sink.ready       := d.ready// & !after_last
   vhdl.io.in_key      := U(io.key)
 
   d.valid                := vhdl.io.source_tvalid
   d.payload.fragment     := B(vhdl.io.source_tdata)
   d.payload.last         := vhdl.io.source_tlast
   vhdl.io.source_tready  := d.ready
-
-  // one stage delay, such that tag_valid coincides with io.last
-  io.source <-< d
-  
-  io.tag_valid           := vhdl.io.tag_valid
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
