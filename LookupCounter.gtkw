@@ -1,0 +1,88 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Mon Feb 13 23:53:22 2023
+[*]
+[dumpfile] "./simWorkspace/LookupCounter/test.fst"
+[dumpfile_mtime] "Mon Feb 13 23:53:22 2023"
+[dumpfile_size] 16801985
+[savefile] "./LookupCounter.gtkw"
+[timestart] 20971644
+[size] 1608 944
+[pos] -1 -1
+*-5.000000 182380 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.LookupCounter.
+[sst_width] 366
+[signals_width] 392
+[sst_expanded] 1
+[sst_vpaned_height] 272
+@28
+TOP.LookupCounter.clk
+TOP.LookupCounter.reset
+@200
+-Lookup Request
+@24
+TOP.LookupCounter.io_address[9:0]
+@28
+TOP.LookupCounter.io_lookup
+TOP.LookupCounter.io_clear
+@24
+TOP.LookupCounter.lut.io_portA_addr[9:0]
+@200
+-Lookup Result (2 cycles latency)
+@24
+TOP.LookupCounter.io_counter[31:0]
+TOP.LookupCounter.d2_address[9:0]
+@28
+TOP.LookupCounter.d2_valid
+@29
+TOP.LookupCounter.d2_clear
+@200
+-
+-
+-
+@22
+TOP.LookupCounter.lut.io_portB_addr[9:0]
+@28
+TOP.LookupCounter.lut.io_portB_wr
+@200
+-
+@22
+TOP.LookupCounter.d1_address[9:0]
+@28
+TOP.LookupCounter.d1_lookup
+TOP.LookupCounter.d1_clear
+@200
+-
+@24
+TOP.LookupCounter.d2_counter[31:0]
+TOP.LookupCounter.d2_address[9:0]
+@28
+TOP.LookupCounter.d2_clear
+TOP.LookupCounter.d2_lookup
+TOP.LookupCounter.d2_valid
+@200
+-
+@24
+TOP.LookupCounter.d3_counter[31:0]
+TOP.LookupCounter.d3_address[9:0]
+@28
+TOP.LookupCounter.d3_valid
+@24
+TOP.LookupCounter.d4_counter[31:0]
+@22
+TOP.LookupCounter.d4_address[9:0]
+@28
+TOP.LookupCounter.d4_valid
+@24
+TOP.LookupCounter.d5_counter[31:0]
+@22
+TOP.LookupCounter.d5_address[9:0]
+@28
+TOP.LookupCounter.d5_valid
+TOP.LookupCounter.take_from_memory
+TOP.LookupCounter.take_from_d3
+TOP.LookupCounter.take_from_d4
+TOP.LookupCounter.take_from_d5
+[pattern_trace] 1
+[pattern_trace] 0
