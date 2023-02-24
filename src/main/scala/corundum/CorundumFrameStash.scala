@@ -1,6 +1,6 @@
 // CorundumFrameStash
 //
-// Passes frames through a FIFO to determine frame length.
+// Passes frames through a Store-and-Forward FIFO to determine frame length.
 //
 // Frames are output together with their frame length on io.length and io.length_valid, these
 // remain valid and stable throughout all packet cycles (active or not).
@@ -16,6 +16,9 @@ import spinal.core._
 import spinal.lib._
 
 import scala.util.Random
+
+import spinal.core.GenerationFlags._
+import spinal.core.formal._
 
 // companion object
 object CorundumFrameStash {
@@ -216,8 +219,6 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
 
   // formal verification
   GenerationFlags.formal {
-    import spinal.core.GenerationFlags._
-    import spinal.core.formal._
 
     assumeInitial(clockDomain.isResetActive)
 
