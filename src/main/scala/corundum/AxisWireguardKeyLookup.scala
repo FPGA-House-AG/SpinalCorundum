@@ -36,8 +36,9 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
     // sink_length is given in bytes
     val sink_length = in UInt(12 bits)
     val source_length = out UInt(12 bits)
-    // outgoing lookup index for the key
+    // outgoing local lookup index for the key LUT, from WG Type 4 header
     val receiver = out UInt(32 bits)
+    // outgoing nonce counter from WG Type 4 header
     val counter = out UInt(64 bits)
     // key will have 2 cycles latency relative to receiver
     val key_in = (!has_internal_test_lut) generate (in Bits(256 bits))
