@@ -330,6 +330,12 @@ case class CorundumFrameFlowStash(dataWidth : Int, fifoSize : Int, maxPacketFifo
   val io = new Bundle {
     val sink = slave Stream new Fragment(CorundumFrame(dataWidth))
     val source = master Stream new Fragment(CorundumFrame(dataWidth))
+
+    // worst case each packet is one beat
+    val packets = out UInt(log2Up(fifoSize * 2) bits)
+    val length = out UInt(12 bits)
+    val length_valid = out Bool()
+    val availability = out UInt()
   }
   val stash = CorundumFrameStash(dataWidth, fifoSize)
 
@@ -352,6 +358,11 @@ case class CorundumFrameFlowStash(dataWidth : Int, fifoSize : Int, maxPacketFifo
   stash.io.sink << x.haltWhen(fifo_too_full)
 
   io.source << stash.io.source
+
+  io.packets := stash.io.packets
+  io.length := stash.io.length
+  io.length_valid := stash.io.length_valid
+  io.availability := stash.io.availability
 
   // Rename SpinalHDL library defaults to AXI naming convention
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
