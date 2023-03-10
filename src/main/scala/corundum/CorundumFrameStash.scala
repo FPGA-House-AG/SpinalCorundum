@@ -29,23 +29,26 @@ object CorundumFrameStash {
   }
   def apply(dataWidth : Int) : CorundumFrameStash = {
     val fifoSize = nextPowerofTwo2((1532 + (dataWidth/8) - 1) / (dataWidth/8))
-    new CorundumFrameStash(dataWidth, fifoSize)
+    CorundumFrameStash(dataWidth, userWidth = 1, fifoSize)
+  }
+  def apply(dataWidth : Int, fifoSize : Int) : CorundumFrameStash = {
+    new CorundumFrameStash(dataWidth, userWidth = 1, fifoSize)
   }
   // generate VHDL and Verilog, and SystemVerilog with Formal
   def main(args: Array[String]) {
     val vhdlReport = Config.spinal.generateVhdl(CorundumFrameStash(Config.corundumDataWidth))
     val verilogReport = Config.spinal.generateVerilog(CorundumFrameStash(Config.corundumDataWidth))
-    val formalReport = Config.spinal.includeFormal.generateSystemVerilog(CorundumFrameStash(Config.corundumDataWidth, 32))
+    val formalReport = Config.spinal.includeFormal.generateSystemVerilog(CorundumFrameStash(Config.corundumDataWidth, fifoSize = 32))
   }
 }
 
-case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component {
+case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) extends Component {
   val keepWidth = dataWidth/8
   val maxFrameBytes = fifoSize * keepWidth
   printf("maxFrameBytes = %d\n", maxFrameBytes)
   val io = new Bundle {
-    val sink = slave Stream new Fragment(CorundumFrame(dataWidth))
-    val source = master Stream new Fragment(CorundumFrame(dataWidth))
+    val sink = slave Stream new Fragment(CorundumFrame(dataWidth, userWidth))
+    val source = master Stream new Fragment(CorundumFrame(dataWidth, userWidth))
     // worst case each packet is one beat
     val packets = out UInt(log2Up(fifoSize * 2) bits)
     val length = out UInt(12 bits)
@@ -59,13 +62,13 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
     val truncated = Bool()
   }
 
-  val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth)), fifoSize)
+  val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth, userWidth)), fifoSize)
 
   io.availability := fifo.io.availability
 
   // component sink/slave port to fifo push/sink/slave port
-  val x = Stream Fragment(CorundumFrame(dataWidth))
-  val w = Stream Fragment(CorundumFrame(dataWidth))
+  val x = Stream Fragment(CorundumFrame(dataWidth, userWidth))
+  val w = Stream Fragment(CorundumFrame(dataWidth, userWidth))
 
   // skid buffer between input and x
   // at least 1 clock cycle latency
@@ -80,10 +83,10 @@ case class CorundumFrameStash(dataWidth : Int, fifoSize : Int) extends Component
     when (x.isLast) { assert(assertion = (x.fragment.tkeep(0) === True), message = "LAST cannot be empty") }
   //}
 
-  val x2 = Stream Fragment(CorundumFrame(dataWidth))
-  val x3 = Stream Fragment(CorundumFrame(dataWidth))
+  val x2 = Stream Fragment(CorundumFrame(dataWidth, userWidth))
+  val x3 = Stream Fragment(CorundumFrame(dataWidth, userWidth))
   // fifo source/master/pop port to component source/master port
-  val y = Stream Fragment(CorundumFrame(dataWidth))
+  val y = Stream Fragment(CorundumFrame(dataWidth, userWidth))
 
   // track number of packets in the FIFO
   val packetsInFifoCounter = CounterUpDown(fifoSize * 2)
