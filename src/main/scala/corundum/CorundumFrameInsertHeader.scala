@@ -12,18 +12,18 @@ import scala.math._
 object CorundumFrameInsertHeader {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameInsertHeader(Config.corundumDataWidth, 14))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameInsertHeader(Config.corundumDataWidth, 14))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameInsertHeader(Config.corundumDataWidth, 1, 14))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameInsertHeader(Config.corundumDataWidth, 1, 14))
   }
 }
 
-case class CorundumFrameInsertHeader(dataWidth : Int, headerWidthBytes : Int) extends Component {
+case class CorundumFrameInsertHeader(dataWidth : Int, userWidth : Int, headerWidthBytes : Int) extends Component {
 
   val headerWidth = headerWidthBytes * 8
 
   val io = new Bundle {
-    val sink = slave Stream Fragment(CorundumFrame(dataWidth))
-    val source = master Stream Fragment(CorundumFrame(dataWidth))
+    val sink = slave Stream Fragment(CorundumFrame(dataWidth, userWidth))
+    val source = master Stream Fragment(CorundumFrame(dataWidth, userWidth))
     val header = in Bits(headerWidth bits)
   }
 
@@ -31,14 +31,14 @@ case class CorundumFrameInsertHeader(dataWidth : Int, headerWidthBytes : Int) ex
   require(headerWidth <= dataWidth, s"headerWidth <= dataWidth, needed because CorundumFrameInsertHeader does not support multibeat headers yet.")
 
   // 2 skid buffer
-  val x = Stream Fragment(CorundumFrame(dataWidth))
+  val x = Stream Fragment(CorundumFrame(dataWidth, userWidth))
   x << io.sink.s2mPipe().m2sPipe()
 
   // remember the part that overflows on shift left by header width
   val tdata_buffer = RegNextWhen(x.payload.tdata.resizeLeft(headerWidth), x.fire)
   val tkeep_buffer = RegNextWhen(x.payload.tkeep.resizeLeft(headerWidth/8), x.fire)
 
-  val y = Stream Fragment(CorundumFrame(dataWidth))
+  val y = Stream Fragment(CorundumFrame(dataWidth, userWidth))
 
   val have_extra_beat = x.payload.tkeep(dataWidth/8 - headerWidth/8) && x.lastFire
   val in_extra_beat = RegInit(False) setWhen(have_extra_beat) clearWhen(y.lastFire)
