@@ -16,7 +16,7 @@ class CorundumFrameDropThenStash(dataWidth : Int) extends Component {
     val drop = in Bool()
   }
   val drop = CorundumFrameDrop(dataWidth)
-  val stash = CorundumFrameStash(dataWidth, 2)
+  val stash = CorundumFrameStash(dataWidth, fifoSize = 2)
   drop.io.sink << io.sink
 
   val can_store_type123 = stash.io.availability >= 2
