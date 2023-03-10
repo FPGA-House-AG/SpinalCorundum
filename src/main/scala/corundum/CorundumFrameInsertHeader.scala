@@ -65,7 +65,7 @@ case class CorundumFrameInsertHeader(dataWidth : Int, userWidth : Int, headerWid
   }
 
   // @TODO dual pipeline skid buffer for Fmax
-  io.source << y
+  io.source <-< y
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
