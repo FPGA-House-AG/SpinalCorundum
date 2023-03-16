@@ -51,10 +51,13 @@ case class CorundumFrameInsertHeader(dataWidth : Int, userWidth : Int, headerWid
   val y_tkeep = Mux(in_extra_beat, tkeep_buffer.resize(dataWidth/8), all_tkeep)
 
   val y_is_last = Mux(have_extra_beat | in_extra_beat, in_extra_beat, x.lastFire)
+  // @TODO clone last tuser for extra beat
+  val tuser_last = RegNextWhen(x.payload.tuser, x.lastFire)
 
   y.payload.fragment.tdata := y_payload
   y.payload.fragment.tkeep := y_tkeep
-  y.payload.fragment.tuser := x.payload.tuser
+  //y.payload.fragment.tuser := x.payload.tuser
+  y.payload.fragment.tuser := Mux(in_extra_beat, tuser_last, x.payload.tuser)
   y.payload.last :=     y_is_last
   // y is also valid during the (possibly) newly added last beat
   y.valid := x.valid |  y_is_last

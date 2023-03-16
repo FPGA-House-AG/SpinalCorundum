@@ -16,7 +16,7 @@ object CorundumFrameInsertHeaderSim {
     val headerWidth = headerWidthBytes * 8
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
 
-    SimConfig.withFstWave.doSim(new CorundumFrameInsertHeader(dataWidth, headerWidthBytes)){dut =>
+    SimConfig.withFstWave.doSim(new CorundumFrameInsertHeader(dataWidth, 1, headerWidthBytes)){dut =>
       //Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
@@ -86,7 +86,7 @@ object CorundumFrameInsertHeaderFormal extends App {
   import spinal.core.formal._
 
   FormalConfig.withCover(15).withBMC(15).withProve(15).doVerify(new Component {
-    val dut = FormalDut(CorundumFrameInsertHeader(24, 1))
+    val dut = FormalDut(CorundumFrameInsertHeader(24, 1, 1))
     assumeInitial(ClockDomain.current.isResetActive)
 
     // randomize DUT inputs
