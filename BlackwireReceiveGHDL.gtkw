@@ -1,243 +1,160 @@
 [*]
-[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Wed Nov 30 00:50:12 2022
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sat Feb 18 16:00:43 2023
 [*]
-[dumpfile] "/project-on-host/simWorkspace/BlackwireReceive/test.vcd"
-[dumpfile_mtime] "Wed Nov 30 00:42:42 2022"
-[dumpfile_size] 17261040
-[savefile] "/project-on-host/BlackwireReceiveGHDL.gtkw"
-[timestart] 3095200000
-[size] 3417 1764
+[dumpfile] "./simWorkspace/BlackwireReceive/test.fst"
+[dumpfile_mtime] "Sat Feb 18 14:16:28 2023"
+[dumpfile_size] 2669742
+[savefile] "./BlackwireReceiveGHDL.gtkw"
+[timestart] 1766
+[size] 1920 1016
 [pos] -1 -1
-*-26.240412 3236700000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] blackwirereceive.
-[treeopen] blackwirereceive.stash.
-[sst_width] 672
-[signals_width] 1247
+*-6.000000 1754 1310 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] outstash.stash.
+[treeopen] stash.
+[treeopen] type4_demux.
+[treeopen] with_chacha_decrypt.
+[sst_width] 520
+[signals_width] 562
 [sst_expanded] 1
-[sst_vpaned_height] 539
+[sst_vpaned_height] 287
+@200
+-
+-Matcher Demux
+@22
+type4_demux.sink_tdata[511:0]
+type4_demux.sink_tkeep[63:0]
 @28
-blackwirereceive.reset
-blackwirereceive.clk
+type4_demux.sink_tlast
+type4_demux.sink_tready
+type4_demux.sink_tuser[0]
+type4_demux.sink_tvalid
 @200
 -
 -DUT Sink/Input
 @22
-blackwirereceive.sink_tdata[511:0]
-blackwirereceive.sink_tkeep[63:0]
+type4_demux.sink_tdata[511:0]
+type4_demux.sink_tkeep[63:0]
 @28
-blackwirereceive.sink_tlast
-blackwirereceive.sink_tready
-blackwirereceive.sink_tuser[0]
-blackwirereceive.sink_tvalid
+type4_demux.sink_tlast
+type4_demux.sink_tready
+type4_demux.sink_tuser[0]
+type4_demux.sink_tvalid
 @200
--
 -DUT Source/Output
-@22
-blackwirereceive.source_tdata[511:0]
-blackwirereceive.source_tkeep[63:0]
-@28
-blackwirereceive.source_tlast
-blackwirereceive.source_tready
-blackwirereceive.source_tuser[0]
-blackwirereceive.source_tvalid
-@200
 -
 -Stash
-@22
-blackwirereceive.stash.sink_tdata[511:0]
-blackwirereceive.stash.sink_tkeep[63:0]
+-
 @28
-blackwirereceive.stash.sink_tlast
-blackwirereceive.stash.sink_tready
-blackwirereceive.stash.sink_tready_read_buffer
-blackwirereceive.stash.sink_tuser[0]
-blackwirereceive.stash.sink_tvalid
+stash.reset
+@22
+stash.packets[5:0]
+stash.sink_tdata[511:0]
+stash.sink_tkeep[63:0]
+@28
+stash.sink_tvalid
+stash.sink_tlast
+stash.sink_tready
+stash.sink_tuser[0]
 @200
 -
 @22
-blackwirereceive.stash.source_tdata[511:0]
-blackwirereceive.stash.source_tkeep[63:0]
+stash.w_payload_fragment_tdata[511:0]
+stash.w_payload_fragment_tkeep[63:0]
 @28
-blackwirereceive.stash.source_tlast
-blackwirereceive.stash.source_tready
-blackwirereceive.stash.source_tuser[0]
-blackwirereceive.stash.source_tvalid
+stash.w_payload_last
+stash.w_ready
+stash.w_valid
 @24
-blackwirereceive.stash.length[11:0]
+stash.w_tkeep_count[6:0]
+@200
+-
+-
+@22
+stash.x_payload_fragment_tdata[511:0]
+stash.x_payload_fragment_tkeep[63:0]
+@28
+stash.x_payload_last
+stash.x_ready
+stash.x_valid
+@24
+stash.x_tkeep_count[6:0]
+@200
+-
+@24
+stash.length_fifo.io_push_payload[11:0]
+@28
+stash.length_fifo.io_push_ready
+@29
+stash.length_fifo.io_push_valid
+@28
+stash.length_fifo.io_pop_ready
+stash.length_fifo.io_pop_valid
+@24
+stash.length_fifo.io_pop_payload[11:0]
+@22
+stash.length_fifo.io_availability[5:0]
+@200
+-
+@22
+stash.source_tdata[511:0]
+stash.source_tkeep[63:0]
+@28
+stash.source_tlast
+stash.source_tready
+stash.source_tuser[0]
+stash.source_tvalid
+@24
+stash.length[11:0]
+@22
+stash.length[11:0]
+@28
+stash.length_tvalid
 @200
 -
 -Header Extract
-@24
-blackwirereceive.headers.sink_length[11:0]
-@22
-blackwirereceive.headers.sink_tdata[511:0]
-@28
-blackwirereceive.headers.sink_tlast
-blackwirereceive.headers.sink_tready
-blackwirereceive.headers.sink_tvalid
-@24
-blackwirereceive.headers.source_length[11:0]
-blackwirereceive.headers.source_payload_length[12:0]
-@22
-blackwirereceive.headers.source_remaining[11:0]
-blackwirereceive.headers.source_tdata[511:0]
-@28
-blackwirereceive.headers.source_tlast
-blackwirereceive.headers.source_tready
-blackwirereceive.headers.source_tvalid
-@200
 -
 -Downsizer
-@24
-blackwirereceive.downsizer.sink_length[11:0]
-@22
-blackwirereceive.downsizer.sink_tdata[511:0]
-@28
-blackwirereceive.downsizer.sink_tlast
-blackwirereceive.downsizer.sink_tready
-blackwirereceive.downsizer.sink_tvalid
-blackwirereceive.clk
-@200
 -
-@24
-blackwirereceive.downsizer.y_length[11:0]
-blackwirereceive.downsizer.y_length_regnext[11:0]
-@22
-blackwirereceive.downsizer.y_payload_fragment[511:0]
-@28
-blackwirereceive.downsizer.y_payload_last
-blackwirereceive.downsizer.y_ready
-blackwirereceive.downsizer.y_valid
-@24
-blackwirereceive.downsizer.out_beat_last[11:0]
-blackwirereceive.downsizer.out_beat_num[11:0]
-@28
-blackwirereceive.downsizer.next_input
-@24
-blackwirereceive.downsizer.counter[1:0]
-@200
 -
-@28
-blackwirereceive.downsizer.z_fire
-@22
-blackwirereceive.downsizer.z_payload_fragment[127:0]
-@28
-blackwirereceive.downsizer.z_payload_last
-blackwirereceive.downsizer.z_ready
-blackwirereceive.downsizer.z_valid
-@200
 -
-@24
-blackwirereceive.downsizer.source_length[11:0]
-@22
-blackwirereceive.downsizer.source_tdata[127:0]
-@28
-blackwirereceive.downsizer.source_tlast
-blackwirereceive.downsizer.source_tready
-blackwirereceive.downsizer.source_tvalid
-@200
 -
 -Key Lookup
-@28
-blackwirereceive.rxkey.sink_is_first
-@24
-blackwirereceive.rxkey.sink_length[11:0]
-@22
-blackwirereceive.rxkey.sink_tdata[127:0]
-@28
-blackwirereceive.rxkey.sink_tlast
-blackwirereceive.rxkey.sink_tready
-blackwirereceive.rxkey.sink_tready_read_buffer
-blackwirereceive.rxkey.sink_tvalid
-@200
 -
-@28
-blackwirereceive.output_stash_too_full
-blackwirereceive.k_ready
-@200
 -
 -ChaCha
-@22
-blackwirereceive.chacha20poly1305decryptspinal_1.sink_tdata[127:0]
 @28
-blackwirereceive.chacha20poly1305decryptspinal_1.sink_tlast
-blackwirereceive.chacha20poly1305decryptspinal_1.sink_tready
-blackwirereceive.chacha20poly1305decryptspinal_1.sink_tvalid
+with_chacha_decrypt.vhdl.clk
+@22
+with_chacha_decrypt.vhdl.in_key[255:0]
+@28
+with_chacha_decrypt.vhdl.rst
+@22
+with_chacha_decrypt.vhdl.sink_tdata[127:0]
+@28
+with_chacha_decrypt.vhdl.sink_tlast
+with_chacha_decrypt.vhdl.sink_tready
+with_chacha_decrypt.vhdl.sink_tvalid
+@22
+with_chacha_decrypt.vhdl.source_tdata[127:0]
+@28
+with_chacha_decrypt.vhdl.source_tlast
+with_chacha_decrypt.vhdl.source_tready
+with_chacha_decrypt.vhdl.source_tvalid
+with_chacha_decrypt.vhdl.tag_pulse
+with_chacha_decrypt.vhdl.tag_valid
 @200
 -
-@22
-blackwirereceive.chacha20poly1305decryptspinal_1.source_tdata[127:0]
-@28
-blackwirereceive.chacha20poly1305decryptspinal_1.source_tready
-blackwirereceive.chacha20poly1305decryptspinal_1.source_tlast
-blackwirereceive.chacha20poly1305decryptspinal_1.source_tvalid
-blackwirereceive.chacha20poly1305decryptspinal_1.tag_tvalid
-@200
 -
 -UpSizer
-@28
-blackwirereceive.upsizer.sink_drop
-@24
-blackwirereceive.upsizer.sink_length[11:0]
-@22
-blackwirereceive.upsizer.sink_tdata[127:0]
-@28
-blackwirereceive.upsizer.sink_tlast
-blackwirereceive.upsizer.sink_tready
-blackwirereceive.upsizer.sink_tvalid
-blackwirereceive.upsizer.source_drop
-@24
-blackwirereceive.upsizer.source_length[11:0]
-@22
-blackwirereceive.upsizer.source_tdata[511:0]
-@28
-blackwirereceive.upsizer.source_tlast
-blackwirereceive.upsizer.source_tready
-blackwirereceive.upsizer.source_tvalid
-@200
 -
 -Corundum
-@28
-blackwirereceive.corundum.sink_drop
-@22
-blackwirereceive.corundum.sink_length[11:0]
-blackwirereceive.corundum.sink_tdata[511:0]
-@28
-blackwirereceive.corundum.sink_tlast
-blackwirereceive.corundum.sink_tready
-blackwirereceive.corundum.sink_tvalid
-@201
 -
-@22
-blackwirereceive.corundum.source_tdata[511:0]
-blackwirereceive.corundum.source_tkeep[63:0]
-@28
-blackwirereceive.corundum.source_tlast
-blackwirereceive.corundum.source_tready
-blackwirereceive.corundum.source_tuser[0]
-blackwirereceive.corundum.source_tvalid
-@200
 -
 -Output Stash
 @28
-blackwirereceive.output_stash_too_full
-blackwirereceive.outstash.fifo_too_full
+outstash.fifo_too_full
 @22
-blackwirereceive.outstash.sink_tdata[511:0]
-blackwirereceive.outstash.sink_tkeep[63:0]
-@28
-blackwirereceive.outstash.sink_tlast
-blackwirereceive.outstash.sink_tready
-blackwirereceive.outstash.sink_tuser[0]
-blackwirereceive.outstash.sink_tvalid
-@22
-blackwirereceive.outstash.source_tdata[511:0]
-blackwirereceive.outstash.source_tkeep[63:0]
-@28
-blackwirereceive.outstash.source_tlast
-blackwirereceive.outstash.source_tready
-blackwirereceive.outstash.source_tuser[0]
-blackwirereceive.outstash.source_tvalid
+outstash.stash_availability[5:0]
 [pattern_trace] 1
 [pattern_trace] 0

@@ -54,14 +54,14 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
 
   // non-Type4 packet are routed here
   val dropOnFull = CorundumFrameDrop(corundumDataWidth)
-  val readerStash = CorundumFrameStash(corundumDataWidth, 32)
+  val readerStash = CorundumFrameStash(corundumDataWidth, fifoSize = 32)
   dropOnFull.io.sink << type4_demux.io.source_other
   readerStash.io.sink << dropOnFull.io.source 
   dropOnFull.io.drop := (readerStash.io.availability < 2)
   io.source_handshake << readerStash.io.source
 
   // Type4 goes into stash
-  val stash = CorundumFrameStash(corundumDataWidth, 32)
+  val stash = CorundumFrameStash(corundumDataWidth, fifoSize = 32)
   stash.io.sink << type4_demux.io.source_type4
 
   // y is stash output but in TDATA+length format
@@ -80,6 +80,9 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
   headers.io.sink_length := y_length
   w << headers.io.source
   val w_length = headers.io.source_length
+
+  // headers.io.header(239 downto 208) contains endpoint IPv4 source adddress
+  // headers.io.header(287 downto 272) contains endpoint UDP source port
 
   // z is the Type 4 packet in 128 bits
   val z = Stream(Fragment(Bits(cryptoDataWidth bits)))
@@ -120,9 +123,13 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
     decrypt.io.sink << k.haltWhen(halt_input_to_chacha)
     decrypt.io.key := key
     p << decrypt.io.source
+    //when (True) {
+    //  decrypt.io.source.ready := True
+    //}
     //decrypt.io.addAttribute("mark_debug")
 
     // from the first word, extract the IPv4 Total Length field to determine packet length
+    // @TODO might be 0-sized packet, then we only have the tag?
     when (p.isFirst) {
       s_length.assignFromBits(p.payload.fragment(16, 16 bits).resize(12))
     }
@@ -172,7 +179,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
 
   output_stash_too_full := !outstash.io.sink.ready
 
-  val ethhdr = CorundumFrameInsertHeader(corundumDataWidth, 14)
+  val ethhdr = CorundumFrameInsertHeader(corundumDataWidth, 1, 14)
   ethhdr.io.sink << r
   ethhdr.io.header := B("112'x000a3506a3beaabbcc2222220800").subdivideIn(14 slices).reverse.asBits()
   val h = Stream Fragment(CorundumFrame(corundumDataWidth))
@@ -196,7 +203,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
   lut.io.portA.en := True
   lut.io.portA.wr := False
   lut.io.portA.wrData := 0
-  lut.io.portA.addr := rxkey.io.receiver.resize(log2Up(keys_num))
+  lut.io.portA.addr := U(rxkey.io.receiver.asBits.subdivideIn(4 slices).reverse.asBits.resize(log2Up(keys_num)))
   rxkey.io.key_in := lut.io.portA.rdData
 
   lut.io.portB.en := True
@@ -250,36 +257,55 @@ object BlackwireReceiveSim {
     //.addSimulatorFlag("-P/project-on-host/SpinalCorundum/xilinx-vivado/unimacro/v93") 
     // these define bus_pkg and bus_pkg1
 
-    .addRtl(s"../ChaCha20Poly1305/src/ChaCha20.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/AEAD_ChaCha_Poly.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/ChaCha20.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/AEAD_ChaCha_Poly.vhd")
+//
+//    .addRtl(s"../ChaCha20Poly1305/src/q_round.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/diag_round.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/col_round.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/half_round.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/test_top_ChaCha.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/Poly1305.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/ChaCha20_128.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/mul136_mod_red.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/mul_red_pipeline.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/test_top_mod_red.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/ChaCha_int.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/r_power_n.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/mul_gen_0.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/mul_36.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/mul_72.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/mul_144.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/mod_red_1305.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/Poly_1305_pipe_top.vhd")
+//    //.addRtl(s"../ChaCha20Poly1305/src/test_top_Poly.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/Poly_1305_pipe.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption_top.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/AEAD_top.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/Poly_pipe_top_test.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption.vhd")
+//    .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption_wrapper.vhd")
+//    //.addRtl(s"../ChaCha20Poly1305/src/convert/aead_decryption_wrapper.v")
 
-    .addRtl(s"../ChaCha20Poly1305/src/q_round.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/diag_round.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/col_round.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/half_round.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/test_top_ChaCha.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/Poly1305.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/ChaCha20_128.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/mul136_mod_red.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/mul_red_pipeline.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/test_top_mod_red.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/ChaCha_int.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/r_power_n.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/mul_gen_0.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/mul_36.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/mul_72.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/mul_144.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/mod_red_1305.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/Poly_1305_pipe_top.vhd")
-    //.addRtl(s"../ChaCha20Poly1305/src/test_top_Poly.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/Poly_1305_pipe.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption_top.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/AEAD_top.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/Poly_pipe_top_test.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption.vhd")
-    .addRtl(s"../ChaCha20Poly1305/src/AEAD_decryption_wrapper.vhd")
-
-    //.addRtl(s"../ChaCha20Poly1305/src/convert/aead_decryption_wrapper.v")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/bus_pkg1.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/AEAD_decryption_wrapper_kar.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/AEAD_decryption_kar.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/ChaCha20_128.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/ChaCha_int.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/col_round.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/diag_round.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/half_round.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/mod_red_1305.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/mul_136_kar.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/mul136_mod_red.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/mul_36.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/mul_68_kar.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/mul_red_pipeline.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/Poly_1305_pipe_kar.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/Poly_1305_pipe_top_kar.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/q_round.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/r_pow_n_kar.vhd")
+    .addRtl(s"../ChaCha20Poly1305/src_dsp_opt/mul_gen_0.vhd")
 
     .compile {
       val dut = new BlackwireReceive(BlackwireReceive.busconfig, include_chacha = include_chacha)
@@ -326,8 +352,10 @@ object BlackwireReceiveSim {
       var packets_rcvd = 0
       val monitorThread = fork {
         while (true) {
-          if (dut.with_chacha.decrypt.io.sink.valid.toBoolean & dut.with_chacha.decrypt.io.sink.last.toBoolean & dut.with_chacha.decrypt.io.sink.ready.toBoolean) {
+          if (dut.with_chacha.decrypt.io.source.valid.toBoolean & dut.with_chacha.decrypt.io.source.last.toBoolean & dut.with_chacha.decrypt.io.source.ready.toBoolean) {
             packets_rcvd += 1
+                    printf("packets received #%d\n", packets_rcvd)
+
           }
           if (include_chacha) {
             if (dut.with_chacha.decrypt.io.tag_pulse.toBoolean)
@@ -335,6 +363,8 @@ object BlackwireReceiveSim {
               printf("dut.with_chacha.decrypt.io.tag_valid = %b\n", dut.with_chacha.decrypt.io.tag_valid.toBoolean)
               if (dut.with_chacha.decrypt.io.tag_valid.toBoolean == true) {
                 good_packets += 1
+                                    printf("good_packets #%d\n", good_packets)
+
               }
             }
           }
@@ -361,10 +391,9 @@ object BlackwireReceiveSim {
       val packet_contents = Vector(
         // RFC7539 2.8.2. Example and Test Vector for AEAD_CHACHA20_POLY1305
         // but with zero-length AAD, and Wireguard 64-bit nonce
-        
         Vector(
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
-          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 A1 A2 A3 A4 B1 B2 B3 B4 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
           BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4 93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97".split(" ").reverse.mkString(""), 16),
           BigInt("1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0 46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee".split(" ").reverse.mkString(""), 16),
           BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
@@ -372,24 +401,24 @@ object BlackwireReceiveSim {
         // 0 byte WG payload, tag match
         Vector( // @TODO UDP length does not match - is ignored 
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <- Poly 1305 Tag
-          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 5a 70 0f 88 e7 87".split(" ").reverse.mkString(""), 16),
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 A1 A2 A3 A4 B1 B2 B3 B4 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 5a 70 0f 88 e7 87".split(" ").reverse.mkString(""), 16),
           BigInt("fe 1c 1e f6 64 e6 01 ba 93 5f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         ),
         // 16 byte WG payload, tag mismatch
         Vector( // @TODO UDP length does not match - is ignored 
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <- Single Beat,,
-          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 A1 A2 A3 A4 B1 B2 B3 B4 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
           BigInt("00 d6 f4 04 2a 8e 38 4e f4 bd f0 ed 2d 13 df 84 8e f7 0a c5 30 0b a0 45 59 ba 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         ),
         // 16 byte WG payload, tag match
         Vector( // @TODO UDP length does not match - is ignored 
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <- Single Beat,,
-          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 A1 A2 A3 A4 B1 B2 B3 B4 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
           BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd f0 ed 2d 13 df 84 8e f7 0a c5 30 0b a0 45 59 ba 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
         ),
         Vector(
           //      <-------- Ethernet header --------------> <-IPv4 header IHL=5 protocol=0x11->                         <--5555,5555,len0x172-> <-Wireguard Type 4, I-> <-- Wireguard NONCE --> <L  a  d  i  e  s
-          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 00 00 00 00 00 00 00 00 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
+          BigInt("01 02 03 04 05 06 01 02 03 04 05 06 08 00 45 11 22 33 44 55 66 77 88 11 00 00 A1 A2 A3 A4 B1 B2 B3 B4 15 b3 15 b3 01 72 00 00 04 00 00 00 00 00 00 01 40 41 42 43 44 45 46 47 a4 79 cb 54 62 89".split(" ").reverse.mkString(""), 16),
           BigInt("46 d6 f4 04 2a 8e 38 4e f4 bd 2f bc 73 30 b8 be 55 eb 2d 8d c1 8a aa 51 d6 6a 8e c1 f8 d3 61 9a 25 8d b0 ac 56 95 60 15 b7 b4 93 7e 9b 8e 6a a9 57 b3 dc 02 14 d8 03 d7 76 60 aa bc 91 30 92 97".split(" ").reverse.mkString(""), 16),
           BigInt("1d a8 f2 07 17 1c e7 84 36 08 16 2e 2e 75 9d 8e fc 25 d8 d0 93 69 90 af 63 c8 20 ba 87 e8 a9 55 b5 c8 27 4e f7 d1 0f 6f af d0 46 47 1b 14 57 76 ac a2 f7 cf 6a 61 d2 16 64 25 2f b1 f5 ba d2 ee".split(" ").reverse.mkString(""), 16),
           BigInt("98 e9 64 8b b1 7f 43 2d cc e4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".split(" ").reverse.mkString(""), 16)
@@ -400,7 +429,8 @@ object BlackwireReceiveSim {
       var packet_content_lengths = Vector(3 * 64 + 10, 64 + 10, 64 + 16 + 10, 64 + 16 + 10, 3 * 64 + 10)
       var packet_content_good    = Vector(true, true, false, true, true)
 
-      while (packet_number < 100) {
+      while (packet_number < 5) {
+        packet_content_idx = packet_number % 5
         var remaining = packet_content_lengths(packet_content_idx)
 
         var word_index = 0
@@ -447,10 +477,14 @@ object BlackwireReceiveSim {
         printf("packet #%d\n", packet_number)
       } // while remaining_packets
 
-      while (packets_rcvd < 100) {
+      while (packets_rcvd < 5) {
           dut.clockDomain.waitRisingEdge(8)
       }
-      assert(good_packets == 3/*@TODO calculate expected good packets*/)
+          dut.clockDomain.waitRisingEdge(8)
+          dut.clockDomain.waitRisingEdge(800)
+      assert(good_packets == 4/*@TODO calculate expected good packets*/)
+
+      simSuccess()
     }
   }
 }
