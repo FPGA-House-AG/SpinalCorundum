@@ -24,8 +24,8 @@ object LookupCounter {
 // A lookup table with counters, each counter increments after lookup.
 // - By setting 'clear' a counter is reset to valueOnClear, which will
 // be returned on the next lookup.
-// - If both 'lookup' and 'clear' are set, the current lookup results in
-// an incremented counter, the next lookup will result in valueOnClear.
+// - If both 'increment' and 'clear' are set, the current lookup results in
+// the current counter value, the next lookup will result in valueOnClear.
 // - Overflowing is not yet supported. Overflow will cycle through zero.
 // 
 // This data structure is similar to a histogram.
@@ -39,25 +39,20 @@ case class LookupCounter(memDataWidth : Int,
                        /*,lookupCD: ClockDomain*/) extends Component {
   val memAddressWidth = log2Up(wordCount)
   val io = new Bundle {
-    val lookup = in Bool()
+    val increment = in Bool()
     val clear = in Bool()
     val address = in UInt(memAddressWidth bits)
     val counter = out UInt(memDataWidth bits)
   }
 
-  val lut = LookupTable(memDataWidth, wordCount)
+  val mem = Mem(Bits(memDataWidth bits), wordCount)
   if (initRAM == true) {
     // initialize memory to zero
-    lut.mem.initBigInt(Seq.fill(wordCount)(valueOnClear))
+    mem.initBigInt(Seq.fill(wordCount)(valueOnClear))
   }
-  /* portA is used as read-only port */
-  lut.io.portA.en := True
-  lut.io.portA.wr := False
-  lut.io.portA.addr := io.address
-  lut.io.portA.wrData := 0
 
   /* memory read latency 2 cycles */
-  val d1_lookup  = RegNext(io.lookup).init(False)
+  val d1_lookup  = RegNext(io.increment).init(False)
   val d1_clear   = RegNext(io.clear).init(False)
   val d1_address = RegNext(io.address)
 
@@ -83,7 +78,7 @@ case class LookupCounter(memDataWidth : Int,
 
   val take_from_memory = True
   // return counter from memory
-  io.counter := U(lut.io.portA.rdData)
+  io.counter := U(RegNext(mem.readSync(io.address, enable = True/*io.increment*/)))
 
   val take_from_d3 = False
   val take_from_d4 = False
@@ -102,22 +97,31 @@ case class LookupCounter(memDataWidth : Int,
     take_from_memory := False
     take_from_d5 := d2_valid
   }
-  when (!d2_valid) {
-    take_from_memory := False
-  }
-  /* increment counter to write back */
-  d2_counter := io.counter + 1
+  d2_counter := io.counter
   /* or clear counter to write back */
   when (d2_clear) {
     d2_counter := valueOnClear
+  /* increment counter to write back */
+  } elsewhen (d2_lookup) {
+    d2_counter := io.counter + 1
   }
-
-  // d3 has the registered incremented counter written back
-  lut.io.portB.en := True
-  lut.io.portB.wr := d3_valid
-  lut.io.portB.addr := d3_address
-  lut.io.portB.wrData := d3_counter.asBits
+  val do_writeback = d3_valid// & !take_from_d3
+  mem.readWriteSync(d3_address, data = d3_counter.asBits, enable = do_writeback, write = do_writeback)
 }
+
+//case class LookupCounterAxi4(memDataWidth : Int,
+//                         wordCount : Int,
+//                         valueOnClear : BigInt = 0,
+//                         initRAM : Boolean = false
+//                       /*,lookupCD: ClockDomain*/) extends Component {
+//  val memAddressWidth = log2Up(wordCount)
+//  val io = new Bundle {
+//    val increment = in Bool()
+//    val clear = in Bool()
+//    val address = in UInt(memAddressWidth bits)
+//    val counter = out UInt(memDataWidth bits)
+//  }
+//}
 
 import spinal.sim._
 import spinal.core.sim._
@@ -127,17 +131,17 @@ import scala.collection.mutable.ArrayBuffer
 object LookupCounterSim {
   def main(args: Array[String]) : Unit = {
     val memDataWidth = 64
-    val wordCount = 1024
+    val wordCount = 32//1024
     val startValue = 1
-    val initRAM = true //false
+    val initRAM = false
     SimConfig
     .withFstWave
     // GHDL can simulate VHDL
-    //.withGhdl.withFstWave
+    .withGhdl.withFstWave
     //.addRunFlag support is now in SpinalHDL dev branch
-    //.addRunFlag("--unbuffered") //.addRunFlag("--disp-tree=inst")
-    //.addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
-    //.addRunFlag("--backtrace-severity=warning")
+    .addRunFlag("--unbuffered") //.addRunFlag("--disp-tree=inst")
+    .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    .addRunFlag("--backtrace-severity=warning")
     
     //.withXSim.withXilinxDevice("xcu50-fsvh2104-2-e")
     //.addSimulatorFlag("--ieee=standard")
@@ -153,10 +157,9 @@ object LookupCounterSim {
     //.addSimulatorFlag("-Wno-TIMESCALEMOD")
     .doSim { dut =>
 
-      val initValue = if (initRAM) startValue else 0
-      var model = collection.mutable.ArrayBuffer.fill(wordCount)(BigInt(initValue))
+      var model = collection.mutable.ArrayBuffer.fill(wordCount)(BigInt(startValue))
 
-      dut.io.lookup #= false
+      dut.io.increment #= false
       dut.io.clear #= false
       dut.io.address #= 1
 
@@ -166,8 +169,8 @@ object LookupCounterSim {
 
       // in case RAM is not initialized with the startValue, all addresses
       // must be cleared explicitly by the user
-      if ((!initRAM) & (startValue > 0)) {
-        printf("Initializing full table with start value %d.\n", startValue)
+      if (!initRAM) {
+        printf("Initializing each RAM entry with start value %d.\n", startValue)
         // initialize counters
         dut.io.clear #= true
         for (address <- 0 until wordCount.toInt) {
@@ -176,7 +179,7 @@ object LookupCounterSim {
             dut.clockDomain.waitRisingEdge()
         }
         dut.io.clear #= false
-        dut.clockDomain.waitRisingEdge()
+        dut.clockDomain.waitRisingEdge(10)
       } else {
         printf("Assuming full table RAM is pre-initialized with start value %d.\n", startValue)
       }
@@ -192,14 +195,14 @@ object LookupCounterSim {
         if (Random.nextInt(8) > 6) {
           address = Random.nextInt(wordCount)
         }
-        val lookup = (Random.nextInt(8) > 1)
+        val increment = (Random.nextInt(8) > 1)
         val clear = (Random.nextInt(iterations) >= (iterations - 1))
         dut.io.address #= address
-        dut.io.lookup #= lookup
+        dut.io.increment #= increment
         dut.io.clear #= clear
-        if (lookup) {
+        if (increment) {
             model(address) += 1
-            //model(address) %= (BigInt(1) << memDataWidth)
+            model(address) %= (BigInt(1) << memDataWidth)
             //printf("value = %d\n", model(address))
         }
         if (clear) {
@@ -210,20 +213,20 @@ object LookupCounterSim {
         remaining -= 1
       }
       dut.io.clear #= false
-      dut.io.lookup #= false
+      dut.io.increment #= false
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
 
       for (address <- 0 until wordCount.toInt) {
         dut.clockDomain.waitRisingEdge()
-        dut.io.lookup #= true
+        //dut.io.increment #= true
         dut.io.address #= address
         dut.clockDomain.waitRisingEdge()
-        dut.io.lookup #= false
+        dut.io.increment #= false
         dut.clockDomain.waitRisingEdge()
         dut.clockDomain.waitRisingEdge()
-        model(address) %= (BigInt(1) << memDataWidth)
+        //model(address) %= (BigInt(1) << memDataWidth)
         if (dut.io.counter.toBigInt != model(address)) {
             printf("address = %d, counter = %d, expected = %d (FAIL)\n",
                 address, dut.io.counter.toBigInt, model(address))
