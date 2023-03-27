@@ -1,0 +1,89 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Mon Mar 27 14:32:37 2023
+[*]
+[dumpfile] "./simWorkspace/BlackwireTransmit/test.vcd"
+[dumpfile_mtime] "Mon Mar 27 14:31:19 2023"
+[dumpfile_size] 51549902
+[savefile] "./BlackwireTransmitGHDL.gtkw"
+[timestart] 0
+[size] 1920 1016
+[pos] -1 -1
+*-11.000000 586 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] blackwiretransmit.
+[treeopen] blackwiretransmit.with_chacha_encrypt.
+[sst_width] 401
+[signals_width] 485
+[sst_expanded] 1
+[sst_vpaned_height] 281
+@22
+blackwiretransmit.with_chacha_encrypt.vhdl_in_key[255:0]
+blackwiretransmit.with_chacha_encrypt.vhdl_sink_tdata[127:0]
+@28
+blackwiretransmit.with_chacha_encrypt.vhdl_sink_tready
+@29
+blackwiretransmit.with_chacha_encrypt.vhdl_sink_tvalid
+@22
+blackwiretransmit.with_chacha_encrypt.key[255:0]
+@28
+blackwiretransmit.with_chacha_encrypt.reset
+@22
+blackwiretransmit.with_chacha_encrypt.sink_tdata[127:0]
+@28
+blackwiretransmit.with_chacha_encrypt.sink_tlast
+blackwiretransmit.with_chacha_encrypt.sink_tready
+blackwiretransmit.with_chacha_encrypt.sink_tready_read_buffer
+blackwiretransmit.with_chacha_encrypt.sink_tvalid
+@200
+-
+@22
+blackwiretransmit.with_chacha_encrypt.source_tdata[127:0]
+@28
+blackwiretransmit.with_chacha_encrypt.source_tlast
+blackwiretransmit.with_chacha_encrypt.source_tready
+blackwiretransmit.with_chacha_encrypt.source_tvalid
+@22
+blackwiretransmit.with_chacha_encrypt.header_out[127:0]
+@200
+-
+@22
+blackwiretransmit.with_chacha_encrypt.vhdl_source_tdata[127:0]
+@28
+blackwiretransmit.with_chacha_encrypt.vhdl_source_tlast
+blackwiretransmit.with_chacha_encrypt.vhdl_source_tvalid
+@22
+blackwiretransmit.with_chacha_encrypt.vhdl_header_out[127:0]
+@200
+-
+@28
+blackwiretransmit.with_chacha_eh_fire
+blackwiretransmit.with_chacha_eh_payload_first
+@22
+blackwiretransmit.with_chacha_eh_payload_fragment[127:0]
+@28
+blackwiretransmit.with_chacha_eh_payload_last
+blackwiretransmit.with_chacha_eh_ready
+blackwiretransmit.with_chacha_eh_valid
+@200
+-
+@24
+blackwiretransmit.ehl_length[11:0]
+@22
+blackwiretransmit.ehl_length[11:0]
+blackwiretransmit.ehl_payload_fragment[127:0]
+@28
+blackwiretransmit.ehl_payload_last
+blackwiretransmit.ehl_ready
+blackwiretransmit.ehl_valid
+@200
+-
+@22
+blackwiretransmit.f_payload_fragment_tdata[511:0]
+blackwiretransmit.f_payload_fragment_tkeep[63:0]
+@28
+blackwiretransmit.f_payload_fragment_tuser[0]
+blackwiretransmit.f_payload_last
+blackwiretransmit.f_ready
+blackwiretransmit.f_valid
+[pattern_trace] 1
+[pattern_trace] 0
