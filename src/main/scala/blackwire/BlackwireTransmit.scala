@@ -243,7 +243,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
   // ehl is the encrypted Type 4 payload but with the length determined from the IP header
   val ehl = Stream(Fragment(Bits(cryptoDataWidth bits)))
-  val ehl_length = Reg(UInt(12 bits))
+  val ehl_length = UInt(12 bits)//Reg(UInt(12 bits))
 
   // feedback signal
   val flow0_stash_too_full = Bool()
@@ -265,31 +265,27 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
     // eh is the encrypted Type 4 payload with the WireGuard Type 4 header
     val eh = Stream(Fragment(Bits(cryptoDataWidth bits)))
+    val eh_length = UInt(12 bits)//Reg(UInt(12 bits))
     eh <-< en
+    // write WireGuard Type 4 header in front of encrypted plaintext
     when (en.isFirst & en.fire) {
-      eh.payload.fragment := encrypt.io.header_out
+      eh.payload.fragment := encrypt.io.header_out(127 downto 32) ## B("32'x00000004")
       eh.valid := True
     }
+    // add length for WireGuard Type 4 header itself and the Poly1305 tag
+    val wgt4_tagged_len = (1 + encrypt.io.header_out(8, 24 bits).subdivideIn(3 slices).reverse.asBits.resize(8).asUInt + 1) << 4
+    eh_length := wgt4_tagged_len
 
-    // from the first word, extract the IPv4 Total Length field to determine packet length
-    // @TODO might be 0-sized packet, then we only have the tag?
-    when (eh.isFirst) {
-      ehl_length.assignFromBits(eh.payload.fragment(8, 24 bits).subdivideIn(3 slices).reverse.asBits.resize(8) << 4)
-    }
-    // eh is the encrypted Type 4 payload with the WireGuard Type 4 header
-    val ehs = Stream(Fragment(Bits(cryptoDataWidth bits)))
-    ehs << eh
-    when (eh.isFirst & eh.fire) {
-      ehs.payload.fragment(31 downto 8) := B("24'xCAFE00")
-    }
-
-    ehl <-< ehs
+    ehl <-< eh
+    ehl_length := RegNextWhen(eh_length, ehl.ready)
   }
   val without_chacha = (!include_chacha) generate new Area { 
     ehl << d.haltWhen(halt_input_to_chacha0)
-    ehl.payload.fragment(31 downto 8) := B("24'xCAFE00")
+    ehl.payload.fragment(31 downto 0) := B("32'x00000004")
     ehl_length := d_length
   }
+
+  // ehl << eh << en << d
 
   // us is the decrypted Type 4 payload but in 512 bits
   val us = Stream(Fragment(Bits(corundumDataWidth bits)))
@@ -331,8 +327,8 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   // 0x45
   val eth_ip_udp_hdr = Bits((14 + 20 + 8) * 8 bits)
   val ip_hdr = Bits(20 * 8 bits)
-  // 0x45 IPv4 20-byte IP header, 0x11 UDP protocol, 0x0a100005 to 0x0a10001e (10.16.0.5 to 10.16.0.30)
-  ip_hdr := B("16'x4500") ## B(20/*IP hdr*/ + 8/*UDP hdr*/ + c2_length, 16 bits) ## B("32'x0") ## B("32'x08110000") ## B("32'x0a100005") ## B("32'x08110000")
+  // 0x45 IPv4 20-byte IP header, 0x11 UDP protocol, c0a80132 to c0a8011e (192.168.1 .50 to .30)
+  ip_hdr := B("16'x4500") ## B(20/*IP hdr*/ + 8/*UDP hdr*/ + c2_length, 16 bits) ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## B("32'xc0a8011e")
   
   val ip_chk = UInt(20 bits)
   ip_chk := U(ip_hdr(  7 downto   0) ## ip_hdr( 15 downto   8)).resize(20) +
