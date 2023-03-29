@@ -1,0 +1,144 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Wed Mar 29 15:00:03 2023
+[*]
+[dumpfile] "/project-on-hos./simWorkspace/LookupEndpointAxi4/test.vcd"
+[dumpfile_mtime] "Wed Mar 29 14:52:26 2023"
+[dumpfile_size] 1261038
+[savefile] "/project-on-hos./LookupEndpointGHDL.gtkw"
+[timestart] 4120
+[size] 3201 1594
+[pos] -1 -1
+*-7.000000 4830 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] lookupendpointaxi4.
+[sst_width] 717
+[signals_width] 747
+[sst_expanded] 1
+[sst_vpaned_height] 144
+@28
+lookupendpointaxi4.clk
+lookupendpointaxi4.ctrlbus_aw_burst[1:0]
+@22
+lookupendpointaxi4.ctrlbus_aw_cache[3:0]
+@28
+lookupendpointaxi4.ctrlbus_aw_id[1:0]
+@22
+lookupendpointaxi4.ctrlbus_aw_len[7:0]
+@28
+lookupendpointaxi4.ctrlbus_aw_lock[0]
+lookupendpointaxi4.ctrlbus_aw_prot[2:0]
+lookupendpointaxi4.ctrlbus_aw_size[2:0]
+lookupendpointaxi4.ctrlbus_aw_tready
+lookupendpointaxi4.ctrlbus_aw_tvalid
+@22
+lookupendpointaxi4.ctrlbus_w_data[31:0]
+lookupendpointaxi4.ctrlbus_w_strb[3:0]
+@28
+lookupendpointaxi4.ctrlbus_w_tlast
+lookupendpointaxi4.ctrlbus_w_tready
+lookupendpointaxi4.ctrlbus_w_tvalid
+lookupendpointaxi4.reset
+lookupendpointaxi4.update
+lookupendpointaxi4.lookup_ep.clk
+@24
+lookupendpointaxi4.lookup_ep.ep_mem_io_read_addr[1:0]
+@28
+lookupendpointaxi4.lookup_ep.ep_mem_io_read_addr[1:0]
+@22
+lookupendpointaxi4.lookup_ep.ep_mem_io_read_data[47:0]
+@28
+lookupendpointaxi4.lookup_ep.ep_mem_io_read_enable
+@200
+-
+@24
+lookupendpointaxi4.lookup_ep.ep_mem_io_write_addr[1:0]
+@28
+lookupendpointaxi4.lookup_ep.ep_mem_io_write_addr[1:0]
+lookupendpointaxi4.lookup_ep.ep_mem_io_write_enable
+@22
+lookupendpointaxi4.lookup_ep.ep_mem_io_write_data[47:0]
+@200
+-
+@28
+lookupendpointaxi4.lookup_ep.io_high_prio_read_enable
+lookupendpointaxi4.lookup_ep.io_high_prio_read_addr[1:0]
+lookupendpointaxi4.lookup_ep.io_high_prio_read_addr[1:0]
+@200
+-
+@28
+lookupendpointaxi4.lookup_ep.io_high_prio_write_enable
+@24
+lookupendpointaxi4.lookup_ep.io_high_prio_write_addr[1:0]
+@28
+lookupendpointaxi4.lookup_ep.io_high_prio_write_addr[1:0]
+@22
+lookupendpointaxi4.lookup_ep.io_high_prio_write_data[47:0]
+@200
+-
+@28
+lookupendpointaxi4.lookup_ep.io_low_prio_read_enable
+@22
+lookupendpointaxi4.lookup_ep.io_low_prio_write_data[47:0]
+@28
+lookupendpointaxi4.lookup_ep.io_low_prio_write_enable
+lookupendpointaxi4.lookup_ep.reset
+@200
+-
+@28
+lookupendpointaxi4.ctrlbus_w_tready
+lookupendpointaxi4.ctrlbus_w_tvalid
+lookupendpointaxi4.ctrlbus_w_tready
+lookupendpointaxi4.ctrlbus_w_tvalid
+lookupendpointaxi4.bridge_is_written_first
+@22
+lookupendpointaxi4.ctrlbus_aw_addr[4:0]
+@28
+lookupendpointaxi4.ctrlbus_aw_tready
+lookupendpointaxi4.ctrlbus_aw_tvalid
+@200
+-
+-RX Path Doing Lookups
+@28
+lookupendpointaxi4.lookup
+@24
+lookupendpointaxi4.lookup_addr[1:0]
+@28
+lookupendpointaxi4.lookup_addr[1:0]
+@22
+lookupendpointaxi4.lookup_data[47:0]
+@200
+-
+-
+-RISC-V Reading From LUT
+@28
+lookupendpointaxi4.ctrlbus_ar_tready
+lookupendpointaxi4.ctrlbus_ar_tvalid
+@24
+lookupendpointaxi4.ctrlbus_ar_addr[4:0]
+@22
+lookupendpointaxi4.ctrlbus_ar_addr[4:0]
+@200
+-
+@28
+lookupendpointaxi4.clk
+lookupendpointaxi4.bridge_is_read_first
+@29
+lookupendpointaxi4.lookup_ep.io_low_prio_read_enable
+@8024
+lookupendpointaxi4.bridge_readstate[1:0]
+@22
+lookupendpointaxi4.ctrlbus_r_data[31:0]
+@28
+lookupendpointaxi4.ctrlbus_r_tlast
+lookupendpointaxi4.ctrlbus_r_tready
+lookupendpointaxi4.ctrlbus_r_tvalid
+lookupendpointaxi4.clk
+@24
+lookupendpointaxi4.lookup_ep.ep_mem_io_read_addr[1:0]
+lookupendpointaxi4.lookup_ep.io_low_prio_read_addr[1:0]
+@28
+lookupendpointaxi4.bridge_mem_read_data_valid
+@22
+lookupendpointaxi4.bridge_bus_read_data[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

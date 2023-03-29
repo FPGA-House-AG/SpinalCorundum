@@ -69,6 +69,10 @@ case class LookupEndpointMem(memDataWidth : Int,
 
   val mem = Mem(Bits(memDataWidth bits), wordCount)
 
+  val first = BigInt("C0A8FF00", 16) << (memDataWidth - 32)
+  val last  = first + BigInt(wordCount)
+  mem.initBigInt(Seq.range(first, last))
+
   io.read_data := RegNext(mem.readSync(
       enable  = io.read.enable,
       address = io.read.addr
@@ -104,11 +108,11 @@ case class LookupEndpoint(memDataWidth : Int,
   val ep_mem = LookupEndpointMem(memDataWidth, wordCount)
 
   ep_mem.io.read.enable := io.high_prio.read.enable | io.low_prio.read.enable
-  ep_mem.io.read.addr   := Mux(io.high_prio.read.enable, io.high_prio.read.addr, io.low_prio.read.addr)
+  ep_mem.io.read.addr   := Mux(!io.high_prio.read.enable, io.low_prio.read.addr, io.high_prio.read.addr)
 
   ep_mem.io.write.enable := io.high_prio.write.enable | io.low_prio.write.enable
-  ep_mem.io.write.addr   := Mux(io.high_prio.write.enable, io.high_prio.write.addr, io.low_prio.write.addr)
-  ep_mem.io.write.data   := Mux(io.high_prio.write.enable, io.high_prio.write.data, io.low_prio.write.data)
+  ep_mem.io.write.addr   := Mux(!io.high_prio.write.enable, io.low_prio.write.addr, io.high_prio.write.addr)
+  ep_mem.io.write.data   := Mux(!io.high_prio.write.enable, io.low_prio.write.data, io.high_prio.write.data)
 
   io.read_data := ep_mem.io.read_data
 
@@ -153,6 +157,7 @@ case class LookupEndpoint(memDataWidth : Int,
 
     printf("isFirstWritten = MaskMapping(0x%08x, 0x%08x)\n", 0, bytes_to_memory_word_mask)
 
+    // flag indicating the lookup memory is written
     def isWritten(): Bool = {
       val size_mapping = SizeMapping(0, memory_size)
       val ret = False
@@ -160,15 +165,17 @@ case class LookupEndpoint(memDataWidth : Int,
       ret
     }
 
+    val mask_mapping_first = MaskMapping(0, bytes_to_memory_word_mask)
+    // flag indicating the first CPU word of a memory word is written
     def isFirstWritten(): Bool = {
-      val mask_mapping_first = MaskMapping(0, bytes_to_memory_word_mask)
       val ret = False
       busCtrl.onWritePrimitive(address = mask_mapping_first, false, ""){ ret := True }
       ret
     }
 
+    val mask_mapping_last = MaskMapping((bus_words_per_memory_word - 1) * bytes_per_cpu_word, bytes_to_memory_word_mask)
+    // flag indicating the last CPU word of a memory word is written
     def isLastWritten(): Bool = {
-      val mask_mapping_last = MaskMapping((bus_words_per_memory_word - 1) * bytes_per_cpu_word, bytes_to_memory_word_mask)
       val ret = False
       busCtrl.onWritePrimitive(address = mask_mapping_last, false, ""){ ret := True }
       ret
@@ -221,7 +228,7 @@ case class LookupEndpoint(memDataWidth : Int,
     }
 
     def isFirstRead(): Bool = {
-      val mask_mapping_first = MaskMapping(0, bytes_to_memory_word_mask)
+      //val mask_mapping_first = MaskMapping(0, bytes_to_memory_word_mask)
       val ret = False
       busCtrl.onReadPrimitive(address = mask_mapping_first, false, ""){ ret := True }
       ret
@@ -230,6 +237,8 @@ case class LookupEndpoint(memDataWidth : Int,
     val is_read = isRead()
     val is_read_first = isFirstRead()
 
+    // memory latency is 2 cycles
+    val mem_read_data_valid = Delay(io.low_prio.read.enable, 2, init = False)
     val mem_read_addr = UInt(memAddressWidth bits)
     mem_read_addr := (busCtrl.readAddress >> bytes_to_memory_word_shift).resize(memAddressWidth)
     val expected_bus_read_addr = Reg(UInt(widthOf(busCtrl.readAddress) bits))
@@ -239,10 +248,11 @@ case class LookupEndpoint(memDataWidth : Int,
     // calculate which CPU word is addressed, then reduce to only the CPU word index inside the memory word
     read_cpu_word_of_memory_word := (busCtrl.readAddress >> bytes_to_cpu_word_shift).resize(cpu_word_to_memory_word_shift) & U(cpu_word_to_memory_word_mask, cpu_word_to_memory_word_shift bits)
 
-    val bus_read_data = Bits(busCtrl.busDataWidth bits)
+    // full memory word read
+    val mem_read_data = RegNextWhen(io.read_data, mem_read_data_valid)
     // @TODO this might be expensive due to the MUX for variable number 'read_cpu_word_of_memory_word'
     // @TODO maybe also only allow sequential read access to all CPU words in memory, like with write?
-    bus_read_data := (io.read_data >> (read_cpu_word_of_memory_word * busCtrl.busDataWidth)).resize(busCtrl.busDataWidth)
+    val bus_read_data = (mem_read_data >> (read_cpu_word_of_memory_word * busCtrl.busDataWidth)).resize(busCtrl.busDataWidth)
     busCtrl.readPrimitive(bus_read_data, SizeMapping(0, memory_size), 0, documentation = null)
 
     // drive read address on memory
@@ -264,22 +274,33 @@ case class LookupEndpoint(memDataWidth : Int,
     // if haltSensitive is  true the callback is made last cycle of the access.
     // haltSensitive = false => all cycles
     all := False
+    // only on the first CPU word we read a full memory word, however we have to yield
+    // for the high-priority lookup.
     io.low_prio.read.enable := False
-    busCtrl.onReadPrimitive(SizeMapping(0, memory_size), haltSensitive = false, documentation = null) {
+    busCtrl.onReadPrimitive(address = mask_mapping_first, haltSensitive = false, documentation = null) {
       all := True
       switch(readState){
+        // AXI slave idle or waiting to read from LUT
         is (0) {
           busCtrl.readHalt()
           // Pause until high priority read is idle
-          // @TODO verify if this works
           when (io.high_prio.read.enable === False) {
             readState := 1
             io.low_prio.read.enable := True
           }
         }
+        // memory latency = 2 cycles
         is (1) {
           busCtrl.readHalt()
           readState := 2
+        }
+        is (2) {
+          busCtrl.readHalt()
+          readState := 3
+        }
+        // register the memory output
+        is (3) {
+          // no longer halting bus
         }
       }
     }
