@@ -258,9 +258,9 @@ case class LookupEndpoint(memDataWidth : Int,
     // drive read address on memory
     io.low_prio.read.addr := mem_read_addr
 
+    // drive write address and data on memory
     io.low_prio.write.addr := mem_wr_addr
     io.low_prio.write.data := write_data.resize(memDataWidth)
-    io.low_prio.write.enable := RegNext(is_written_last)
 
     // SpinalHDL/lib/src/main/scala/spinal/lib/com/usb/udc/UsbDeviceCtrl.scala
 
@@ -279,7 +279,7 @@ case class LookupEndpoint(memDataWidth : Int,
     io.low_prio.read.enable := False
     busCtrl.onReadPrimitive(address = mask_mapping_first, haltSensitive = false, documentation = null) {
       all := True
-      switch(readState){
+      switch (readState) {
         // AXI slave idle or waiting to read from LUT
         is (0) {
           busCtrl.readHalt()
@@ -310,6 +310,32 @@ case class LookupEndpoint(memDataWidth : Int,
       readState := 0
       cycle := True
       //busCtrl.readHalt()
+    }
+
+
+    io.low_prio.write.enable := False
+    val writeState = RegInit(U"0")
+
+    busCtrl.onWritePrimitive(address = mask_mapping_last, haltSensitive = false, documentation = null) {
+      switch(writeState){
+        // one cycle to register and combine the R data into 'write_data'
+        is (0) {
+          busCtrl.writeHalt()
+          writeState := 1
+        }
+        is (1) {
+          // Pause until high priority read is idle
+          when (io.high_prio.write.enable === False) {
+            io.low_prio.write.enable := True
+          } otherwise {
+            busCtrl.writeHalt()
+          }
+        }
+      }
+    }
+    // haltSensitive = true => only on last cycle
+    busCtrl.onWritePrimitive(SizeMapping(0, memory_size), haltSensitive = true, documentation = null) {
+      writeState := 0
     }
   }
 }
