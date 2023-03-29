@@ -23,11 +23,11 @@ case class WriteBundle(memAddressWidth: Int, memDataWidth: Int) extends Bundle {
 }
 
 // companion object for case class
-object LookupEndpoint {
+object LookupEndpointMem {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new LookupEndpoint(memDataWidth = 33, wordCount = 1024/*, ClockDomain.external("portb")*/)
+      val toplevel = new LookupEndpointMem(memDataWidth = 33, wordCount = 1024/*, ClockDomain.external("portb")*/)
       //toplevel.mem.initBigInt(Seq(BigInt("1AABBCC00", 16), BigInt("1AABBCC11", 16)))
 
       val bytes = BigInt("1AABBCC00", 16).toByteArray
@@ -51,12 +51,12 @@ object LookupEndpoint {
       toplevel
       //XilinxPatch(toplevel)
     })
-    val verilogReport = Config.spinal.generateVerilog(new LookupEndpoint(Config.corundumDataWidth, Config.cryptoDataWidth))
+    val verilogReport = Config.spinal.generateVerilog(new LookupEndpointMem(Config.corundumDataWidth, Config.cryptoDataWidth))
   }
 }
 
 // true dual port ram with independent clocks, symmetric data widths
-case class LookupEndpoint(memDataWidth : Int,
+case class LookupEndpointMem(memDataWidth : Int,
                        wordCount : Int
                        /*,lookupCD: ClockDomain*/) extends Component {
   val memAddressWidth = log2Up(wordCount)
@@ -82,7 +82,7 @@ case class LookupEndpoint(memDataWidth : Int,
 }
 
 // true dual port ram with independent clocks, symmetric data widths
-case class LookupEndpointPrio(memDataWidth : Int,
+case class LookupEndpoint(memDataWidth : Int,
                        wordCount : Int
                        /*,lookupCD: ClockDomain*/) extends Component {
   val memAddressWidth = log2Up(wordCount)
@@ -101,15 +101,16 @@ case class LookupEndpointPrio(memDataWidth : Int,
     val read_data = out Bits(memDataWidth bits)
   }
 
-  val ep = LookupEndpoint(memDataWidth, wordCount)
+  val ep_mem = LookupEndpointMem(memDataWidth, wordCount)
 
-  ep.io.read.enable := io.high_prio.read.enable | io.low_prio.read.enable
-  ep.io.read.addr   := Mux(io.high_prio.read.enable, io.high_prio.read.addr, io.low_prio.read.addr)
+  ep_mem.io.read.enable := io.high_prio.read.enable | io.low_prio.read.enable
+  ep_mem.io.read.addr   := Mux(io.high_prio.read.enable, io.high_prio.read.addr, io.low_prio.read.addr)
 
-  ep.io.write.enable := io.high_prio.write.enable | io.low_prio.write.enable
-  ep.io.write.addr   := Mux(io.high_prio.write.enable, io.high_prio.write.addr, io.low_prio.write.addr)
+  ep_mem.io.write.enable := io.high_prio.write.enable | io.low_prio.write.enable
+  ep_mem.io.write.addr   := Mux(io.high_prio.write.enable, io.high_prio.write.addr, io.low_prio.write.addr)
+  ep_mem.io.write.data   := Mux(io.high_prio.write.enable, io.high_prio.write.data, io.low_prio.write.data)
 
-  io.read_data := ep.io.read_data
+  io.read_data := ep_mem.io.read_data
 
   def nextPowerofTwo(x: Int): Int = {
     1 << log2Up(x)
@@ -247,6 +248,7 @@ case class LookupEndpointPrio(memDataWidth : Int,
     // drive read address on memory
     io.low_prio.read.addr := mem_read_addr
 
+    io.low_prio.write.addr := mem_wr_addr
     io.low_prio.write.data := write_data.resize(memDataWidth)
     io.low_prio.write.enable := RegNext(is_written_last)
 
@@ -262,6 +264,7 @@ case class LookupEndpointPrio(memDataWidth : Int,
     // if haltSensitive is  true the callback is made last cycle of the access.
     // haltSensitive = false => all cycles
     all := False
+    io.low_prio.read.enable := False
     busCtrl.onReadPrimitive(SizeMapping(0, memory_size), haltSensitive = false, documentation = null) {
       all := True
       switch(readState){
@@ -271,6 +274,7 @@ case class LookupEndpointPrio(memDataWidth : Int,
           // @TODO verify if this works
           when (io.high_prio.read.enable === False) {
             readState := 1
+            io.low_prio.read.enable := True
           }
         }
         is (1) {
@@ -347,15 +351,15 @@ case class LookupEndpointAxi4(wordWidth : Int, wordCount : Int, busCfg : Axi4Con
     // update interface, deterministic timing
     val lookup = in Bool()
     val lookup_addr = in UInt(memAddressWidth bits)
-    val lookup_data = out Bits(memAddressWidth bits)
+    val lookup_data = out Bits(wordWidth bits)
 
     // update interface, deterministic timing
     val update = in Bool()
     val update_addr = in UInt(memAddressWidth bits)
-    val update_data = in Bits(memAddressWidth bits)
+    val update_data = in Bits(wordWidth bits)
   }
 
-  val lookup_ep = LookupEndpointPrio(wordWidth, wordCount)
+  val lookup_ep = LookupEndpoint(wordWidth, wordCount)
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)
   // drive low priority r/w ports from bus slave
   val bridge = lookup_ep.driveFrom(ctrl)
