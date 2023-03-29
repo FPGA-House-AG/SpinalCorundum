@@ -1,27 +1,26 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Mon Mar 27 14:32:37 2023
+[*] Wed Mar 29 20:02:43 2023
 [*]
-[dumpfile] "./simWorkspace/BlackwireTransmit/test.vcd"
-[dumpfile_mtime] "Mon Mar 27 14:31:19 2023"
-[dumpfile_size] 51549902
-[savefile] "./BlackwireTransmitGHDL.gtkw"
+[dumpfile] "/project-on-hos./simWorkspace/BlackwireTransmit/test.vcd"
+[dumpfile_mtime] "Wed Mar 29 20:02:43 2023"
+[dumpfile_size] 88768512
+[savefile] "/project-on-hos./BlackwireTransmitGHDL.gtkw"
 [timestart] 0
-[size] 1920 1016
+[size] 3539 1860
 [pos] -1 -1
 *-11.000000 586 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] blackwiretransmit.
 [treeopen] blackwiretransmit.with_chacha_encrypt.
-[sst_width] 401
-[signals_width] 485
+[sst_width] 801
+[signals_width] 638
 [sst_expanded] 1
-[sst_vpaned_height] 281
+[sst_vpaned_height] 582
 @22
 blackwiretransmit.with_chacha_encrypt.vhdl_in_key[255:0]
 blackwiretransmit.with_chacha_encrypt.vhdl_sink_tdata[127:0]
 @28
 blackwiretransmit.with_chacha_encrypt.vhdl_sink_tready
-@29
 blackwiretransmit.with_chacha_encrypt.vhdl_sink_tvalid
 @22
 blackwiretransmit.with_chacha_encrypt.key[255:0]
@@ -55,9 +54,6 @@ blackwiretransmit.with_chacha_encrypt.vhdl_source_tvalid
 blackwiretransmit.with_chacha_encrypt.vhdl_header_out[127:0]
 @200
 -
-@28
-blackwiretransmit.with_chacha_eh_fire
-blackwiretransmit.with_chacha_eh_payload_first
 @22
 blackwiretransmit.with_chacha_eh_payload_fragment[127:0]
 @28
@@ -85,5 +81,15 @@ blackwiretransmit.f_payload_fragment_tuser[0]
 blackwiretransmit.f_payload_last
 blackwiretransmit.f_ready
 blackwiretransmit.f_valid
+@200
+-
+@22
+blackwiretransmit.fp_payload_fragment_tdata[511:0]
+blackwiretransmit.fp_payload_fragment_tkeep[63:0]
+@28
+blackwiretransmit.fp_payload_fragment_tuser[0]
+blackwiretransmit.fp_payload_last
+blackwiretransmit.fp_ready
+blackwiretransmit.fp_valid
 [pattern_trace] 1
 [pattern_trace] 0

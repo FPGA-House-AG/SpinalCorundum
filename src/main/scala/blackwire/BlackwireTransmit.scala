@@ -50,6 +50,8 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
     val ctrl_txkey = (has_busctrl) generate slave(Axi4(txkeySlaveCfg))
     // from RISC-V
     val ctrl_p2s = (has_busctrl) generate slave(Axi4(p2sSlaveCfg))
+    // from RISC-V
+    val ctrl_p2ep = (has_busctrl) generate slave(Axi4(p2sSlaveCfg))
     // to PCIe
     val cpl_source = master(Stream(Bits(16 bits)))
     // from CMAC
@@ -317,7 +319,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
   // full Ethernet packet (c2 with Ethernet, IP and UDP)
   val f = Stream(Fragment(CorundumFrame(corundumDataWidth)))
-  
+
   // add Ethernet, IPv4 and UDP header
   val outhdr = CorundumFrameInsertHeader(corundumDataWidth, userWidth = 1, headerWidthBytes = 14 + 20 + 8)
   outhdr.io.sink << c2
@@ -351,20 +353,50 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
   eth_ip_udp_hdr := B("112'xaabbcc222222000a3506a3be0800") ## ip_hdr2 ## udp_hdr
 
-
   outhdr.io.header := eth_ip_udp_hdr.subdivideIn((14 + 20 + 8) slices).reverse.asBits()
   f << outhdr.io.source
 
-  // t is f, but with TX tags re-addedin tuser[16:1], those were split-off early in TX path
+  // fp is f
+  val fp = Stream(Fragment(CorundumFrame(corundumDataWidth)))
+  fp << f.stage().stage()
+
+  // peer index to endpoint IPv4 destination address and UDP destination port for f to fp
+  // peer index sits after Ethernet, IP and UDP header, and after Wireguard first 32-bits
+  val peer = f.fragment.tdata((14 + 20 + + 8 + 4) * 8, 8 bits)
+  val ip_dst_addr = Bits(32 bits)
+  val udp_dst_port = Bits(16 bits)
+  (!has_busctrl) generate new Area {
+    val p2ep_lut = LookupEndpoint(32 + 16, peer_num)
+    //p2ep_lut.mem.initBigInt(Seq.tabulate(peer_num)(n => BigInt(n % 3)))
+    p2ep_lut.io.high_prio.read.enable := f.firstFire
+    p2ep_lut.io.high_prio.read.addr := U(peer)
+    p2ep_lut.io.low_prio.read.enable := False
+    p2ep_lut.io.low_prio.read.addr := 0
+    udp_dst_port := p2ep_lut.io.read_data(0, 16 bits)
+    ip_dst_addr := p2ep_lut.io.read_data(16, 32 bits)
+  }
+  // Peer to Session lookup and update via bus controller
+  (has_busctrl) generate new Area {
+    val p2ep_lut = LookupEndpointAxi4(32 + 16, peer_num, busCfg)
+    //p2ep_lut.mem.mem.initBigInt(Seq.tabulate(peer_num)(n => BigInt(n % 3)))
+    p2ep_lut.io.update := False
+    p2ep_lut.io.lookup := f.firstFire
+    p2ep_lut.io.lookup_addr := U(peer)
+    io.ctrl_p2ep >> p2ep_lut.io.ctrlbus
+    udp_dst_port := p2ep_lut.io.lookup_data(0, 16 bits)
+    ip_dst_addr := p2ep_lut.io.lookup_data(16, 32 bits)
+  }
+
+  // t is fp, but with TX tags re-addedin tuser[16:1], those were split-off early in TX path
   val t = Stream(Fragment(CorundumFrame(corundumDataWidth, userWidth = 17)))
-  t.valid := f.valid
-  t.last := f.last
-  t.fragment.tdata := f.fragment.tdata
-  t.fragment.tkeep := f.fragment.tkeep
+  t.valid := fp.valid
+  t.last := fp.last
+  t.fragment.tdata := fp.fragment.tdata
+  t.fragment.tkeep := fp.fragment.tkeep
   t.fragment.tuser(0) := False
   // put tag back
   t.fragment.tuser(16 downto 1) := out_tags.payload
-  f.ready := t.ready
+  fp.ready := t.ready
 
   // pop tag from queue
   out_tags.ready := t.lastFire
