@@ -7,9 +7,7 @@ ThisBuild / organization := "online.blackwire"
 // https://github.com/SpinalHDL/SpinalHDL.git
 // ad62c4ea3fc0acf70885441a88fe8f2336e4cb20
 val spinalVersion = "dev"
-val spinalDir = "../SpinalHDL.upstream"
-//val spinalVersion = "dev"
-//val spinalDir = "../SpinalHDL.dev"
+val spinalDir = "../SpinalHDL.dev"
 
 val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
 val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
