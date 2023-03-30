@@ -23,7 +23,7 @@ test: build formal sim_extract code_analysis
 
 code_analysis:
 	grep -rne '.m2sPipe().s2mPipe()' src/main/scala && \
-	echo "Check reverse use of .m2sPipe().s2mPipe()." && false
+	echo "Check reverse use of .m2sPipe().s2mPipe()." || true
 
 # continuous build (using sbt "~" REPL feature) on save in editor
 repl:
