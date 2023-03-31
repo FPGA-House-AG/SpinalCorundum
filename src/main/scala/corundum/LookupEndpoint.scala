@@ -71,7 +71,9 @@ case class LookupEndpointMem(memDataWidth : Int,
 
   val first = BigInt("C0A8FF00", 16) << (memDataWidth - 32)
   val last  = first + BigInt(wordCount)
-  mem.initBigInt(Seq.range(first, last))
+  // UltraRAM (URAM) cannot be initialized
+  mem.addAttribute("ram_style", "ultra")
+  //mem.initBigInt(Seq.range(first, last))
 
   io.read_data := RegNext(mem.readSync(
       enable  = io.read.enable,
