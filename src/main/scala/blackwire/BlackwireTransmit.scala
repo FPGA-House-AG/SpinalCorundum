@@ -27,31 +27,50 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   final val cryptoDataWidth = 128
   final val maxPacketLength = 1534
   /* maximum number of peers */
-  final val peer_num = 256
-  final val keys_num = 4/*sessions per peers*/ * peer_num
+  final val peer_num = 256 // P
+  final val keys_num = 4/*sessions per peer*/ * peer_num
 
   // 1534 rounded up 2048/(512/8) == 32
 
+  //    P * 256 bits TX key 
+  //    P * 128  bits remote session index
+  //    P * 32  bits IPv4 address
+  //    P * 16  bits UDP port number
+  //    P * 2   bits current session index (curr, next, prev)
+  //    P * 32 * 16 for AllowedIP list (16 IPv4 addresses average) per peer
+  //    P * 256 bits RX key 
+  //    P * (256 + 128 + 32 + 16 + 2 + 32 * 16 + 256)
+  //    P * 1202
+  //    32768 * 1024 ~= 32 Mbit
+
+
+
+
   final val txkey_addr_width = LookupTableAxi4.slave_width(256, keys_num, busCfg)
   final val p2s_addr_width = LookupTableAxi4.slave_width(32, peer_num, busCfg)
-  println("txkey_addr_width = " + txkey_addr_width)
+  final val p2ep_addr_width = LookupEndpointAxi4.slave_width(32 + 16, peer_num, busCfg)
+  final val l2r_addr_width = LookupTableAxi4.slave_width(32, peer_num * 4, busCfg)
 
   val txkeySlaveCfg = busCfg.copy(addressWidth = txkey_addr_width)
   val p2sSlaveCfg = busCfg.copy(addressWidth = p2s_addr_width)
+  val p2epSlaveCfg = busCfg.copy(addressWidth = p2ep_addr_width)
+  val l2rSlaveCfg = busCfg.copy(addressWidth = l2r_addr_width)
+
+  val cycle = Reg(UInt(32 bits)).init(0)
+  cycle := cycle + 1
 
   val io = new Bundle {
     // from PCIe
     val sink = slave Stream Fragment(CorundumFrame(corundumDataWidth, userWidth = 17))
     // to CMAC
     val source = master Stream Fragment(CorundumFrame(corundumDataWidth, userWidth = 17))
-    // from RISC-V
+    // from RISC-V PacketWriter
     val sink_handshake = slave Stream Fragment(CorundumFrame(corundumDataWidth))
-    // from RISC-V
+    // from RISC-V AXI Crossbar
     val ctrl_txkey = (has_busctrl) generate slave(Axi4(txkeySlaveCfg))
-    // from RISC-V
     val ctrl_p2s = (has_busctrl) generate slave(Axi4(p2sSlaveCfg))
-    // from RISC-V
-    val ctrl_p2ep = (has_busctrl) generate slave(Axi4(p2sSlaveCfg))
+    val ctrl_p2ep = (has_busctrl) generate slave(Axi4(p2epSlaveCfg))
+    val ctrl_l2r = (has_busctrl) generate slave(Axi4(l2rSlaveCfg))
     // to PCIe
     val cpl_source = master(Stream(Bits(16 bits)))
     // from CMAC
@@ -317,20 +336,74 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   val c2_length = flow0.io.length
   flow0_stash_too_full := !flow0.io.sink.ready
 
+  val out_stash_too_full = Bool()
+  val halt_input_to_outhdr = RegInit(False).setWhen(c2.lastFire && out_stash_too_full).clearWhen(!out_stash_too_full)
+
   // full Ethernet packet (c2 with Ethernet, IP and UDP)
   val f = Stream(Fragment(CorundumFrame(corundumDataWidth)))
 
   // add Ethernet, IPv4 and UDP header
   val outhdr = CorundumFrameInsertHeader(corundumDataWidth, userWidth = 1, headerWidthBytes = 14 + 20 + 8)
-  outhdr.io.sink << c2
+  outhdr.io.sink << c2.haltWhen(halt_input_to_outhdr)
+  val eth_ip_udp_hdr1 = Bits((14 + 20 + 8) * 8 bits)
+  // 0x45 IPv4 20-byte IP header, 0x11 UDP protocol
+  eth_ip_udp_hdr1 :=
+  B("112'xaabbcc222222000a3506a3be0800") ##
+  B("16'x4500") ## B(20/*IP hdr*/ + 8/*UDP hdr*/ + c2_length, 16 bits) ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## B("32'xDDDDDDDD") ## 
+  B("16'x15b3") ## B("16'xDDDD") ## B(8/*UDP hdr*/ + c2_length, 16 bits) ## B("16'x0"/*checksum==unused*/)
+  outhdr.io.header := RegNextWhen(eth_ip_udp_hdr1.subdivideIn((14 + 20 + 8) slices).reverse.asBits(), c2.isFirst)
+  f << outhdr.io.source
+
+  // fp is f
+  val fp = Stream(Fragment(CorundumFrame(corundumDataWidth)))
+  fp << f.stage().stage()
+
+  // peer index to endpoint IPv4 destination address and UDP destination port for f to fp
+  // peer index sits after Ethernet, IP and UDP header, and after Wireguard first 32-bits
+  val peer = f.fragment.tdata((14 + 20 + 8 + 4) * 8, 8 bits)
+  val ip_dst_addr = Bits(32 bits)
+  val udp_dst_port = Bits(16 bits)
+  (!has_busctrl) generate new Area {
+    val p2ep_lut = LookupEndpoint(32 + 16, peer_num)
+    //p2ep_lut.mem.initBigInt(Seq.tabulate(peer_num)(n => BigInt(n % 3)))
+    p2ep_lut.io.high_prio.read.enable := f.firstFire
+    p2ep_lut.io.high_prio.read.addr := U(peer)
+    // tie-off other ports
+    p2ep_lut.io.low_prio.read.enable := False
+    p2ep_lut.io.low_prio.read.addr := 0
+    p2ep_lut.io.low_prio.write.enable := False
+    p2ep_lut.io.low_prio.write.addr := 0
+    p2ep_lut.io.low_prio.write.data := 0
+    p2ep_lut.io.high_prio.write.enable := False
+    p2ep_lut.io.high_prio.write.addr := 0
+    p2ep_lut.io.high_prio.write.data := 0
+
+    udp_dst_port := p2ep_lut.io.read_data(0, 16 bits)
+    ip_dst_addr := p2ep_lut.io.read_data(16, 32 bits)
+  }
+  // Peer to Session lookup and update via bus controller
+  (has_busctrl) generate new Area {
+    val p2ep_lut = LookupEndpointAxi4(32 + 16, peer_num, busCfg)
+    //p2ep_lut.mem.mem.initBigInt(Seq.tabulate(peer_num)(n => BigInt(n % 3)))
+    p2ep_lut.io.update := False
+    p2ep_lut.io.update_addr := 0
+    p2ep_lut.io.update_data := 0
+    p2ep_lut.io.lookup := f.firstFire
+    p2ep_lut.io.lookup_addr := U(peer)
+    io.ctrl_p2ep >> p2ep_lut.io.ctrlbus
+    udp_dst_port := p2ep_lut.io.lookup_data(0, 16 bits)
+    ip_dst_addr := p2ep_lut.io.lookup_data(16, 32 bits)
+  }
+
   // (14 + 20 + 8) * 8 = 336 bits
   //outhdr.io.header := B("336'x0")
   // aa:bb:cc:22:22:22 to 00:0a:35:06:a3:be protocol 0x0800
   // 0x45
   val eth_ip_udp_hdr = Bits((14 + 20 + 8) * 8 bits)
   val ip_hdr = Bits(20 * 8 bits)
+  
   // 0x45 IPv4 20-byte IP header, 0x11 UDP protocol, c0a80132 to c0a8011e (192.168.1 .50 to .30)
-  ip_hdr := B("16'x4500") ## B(20/*IP hdr*/ + 8/*UDP hdr*/ + c2_length, 16 bits) ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## B("32'xc0a8011e")
+  ip_hdr := B("16'x4500") ## fp.fragment.tdata((14 + 2) * 8, 16 bits) ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## ip_dst_addr
   
   val ip_chk = UInt(20 bits)
   ip_chk := U(ip_hdr(  7 downto   0) ## ip_hdr( 15 downto   8)).resize(20) +
@@ -348,55 +421,79 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   
   val ip_hdr2 = ip_hdr(159 downto 80) ## ~ip_chk2.asBits.resize(16) ## ip_hdr(63 downto 0)
   val udp_hdr = Bits(8 * 8 bits)
-  // 0x15b3 == 5555 to port 0x159a == 5530
-  udp_hdr := B("16'x15b3") ## B("16'x159a") ## B(8/*UDP hdr*/ + c2_length, 16 bits) ## B("16'x0"/*checksum==unused*/)
+  // 0x15b3 == 5555 to UDP destination port, keep UDP length, use 0 checksum
+  udp_hdr := B("16'x15b3") ## udp_dst_port ## fp.fragment.tdata((14 + 20 + 4) * 8, 16 bits) ## B("16'x0"/*checksum==unused*/)
 
   eth_ip_udp_hdr := B("112'xaabbcc222222000a3506a3be0800") ## ip_hdr2 ## udp_hdr
 
-  outhdr.io.header := eth_ip_udp_hdr.subdivideIn((14 + 20 + 8) slices).reverse.asBits()
-  f << outhdr.io.source
+  // endpoint filled in
+  val fc = Stream(Fragment(CorundumFrame(corundumDataWidth)))
+  //fc << fp
+  //when (fc.isFirst)
+  //{
+  //  fc.fragment.tdata(0, (14 + 20 + 8) * 8 bits) := eth_ip_udp_hdr.subdivideIn((14 + 20 + 8) slices).reverse.asBits()
+  //} 
 
-  // fp is f
-  val fp = Stream(Fragment(CorundumFrame(corundumDataWidth)))
-  fp << f.stage().stage()
+  fc <-< fp
+  fc.fragment.tdata(0, (14 + 20 + 8) * 8 bits) :=
+    RegNextWhen(eth_ip_udp_hdr.subdivideIn((14 + 20 + 8) slices).reverse.asBits(),
+      fp.isFirst & fp.ready)
 
-  // peer index to endpoint IPv4 destination address and UDP destination port for f to fp
-  // peer index sits after Ethernet, IP and UDP header, and after Wireguard first 32-bits
-  val peer = f.fragment.tdata((14 + 20 + + 8 + 4) * 8, 8 bits)
-  val ip_dst_addr = Bits(32 bits)
-  val udp_dst_port = Bits(16 bits)
+  // frs is fc but with remote session instead of local session
+  val frs = Stream(Fragment(CorundumFrame(corundumDataWidth)))
+  frs << fc.stage().stage()
+
+  // local session index to remote session index (adds prev, current, next) for x to w
+  val remote = Bits(32 bits)
+  val local = U(fc.payload.tdata((14 + 20 + 8 + 4) * 8, 10 bits))
   (!has_busctrl) generate new Area {
-    val p2ep_lut = LookupEndpoint(32 + 16, peer_num)
-    //p2ep_lut.mem.initBigInt(Seq.tabulate(peer_num)(n => BigInt(n % 3)))
-    p2ep_lut.io.high_prio.read.enable := f.firstFire
-    p2ep_lut.io.high_prio.read.addr := U(peer)
-    p2ep_lut.io.low_prio.read.enable := False
-    p2ep_lut.io.low_prio.read.addr := 0
-    udp_dst_port := p2ep_lut.io.read_data(0, 16 bits)
-    ip_dst_addr := p2ep_lut.io.read_data(16, 32 bits)
+    val l2r_lut = LookupTable(32/*bits*/, peer_num * 4)
+    l2r_lut.mem.initBigInt(Seq.tabulate(peer_num * 4)(n => BigInt("AA000000", 16) + BigInt(n)))
+    l2r_lut.io.portA.en := True
+    l2r_lut.io.portA.wr := False
+    l2r_lut.io.portA.wrData := 0
+    l2r_lut.io.portA.addr := local
+    l2r_lut.io.portB.en := True
+    l2r_lut.io.portB.wr := False
+    l2r_lut.io.portB.wrData := 0
+    l2r_lut.io.portB.addr := 0
+    remote := l2r_lut.io.portA.rdData
   }
   // Peer to Session lookup and update via bus controller
   (has_busctrl) generate new Area {
-    val p2ep_lut = LookupEndpointAxi4(32 + 16, peer_num, busCfg)
-    //p2ep_lut.mem.mem.initBigInt(Seq.tabulate(peer_num)(n => BigInt(n % 3)))
-    p2ep_lut.io.update := False
-    p2ep_lut.io.lookup := f.firstFire
-    p2ep_lut.io.lookup_addr := U(peer)
-    io.ctrl_p2ep >> p2ep_lut.io.ctrlbus
-    udp_dst_port := p2ep_lut.io.lookup_data(0, 16 bits)
-    ip_dst_addr := p2ep_lut.io.lookup_data(16, 32 bits)
+    val l2r_lut = LookupTableAxi4(32/*bits*/, peer_num * 4, busCfg)
+    l2r_lut.mem.mem.initBigInt(Seq.tabulate(peer_num * 4)(n => BigInt("AA000000", 16) + BigInt(n % 3)))
+    l2r_lut.io.en := True
+    l2r_lut.io.wr := False
+    l2r_lut.io.wrData := 0
+    val l2r_lut_address = local
+    l2r_lut.io.addr := l2r_lut_address
+    io.ctrl_l2r >> l2r_lut.io.ctrlbus
+    remote := l2r_lut.io.rdData
+  }
+  when (frs.isFirst)
+  {
+    frs.payload.tdata((14 + 20 + 8 + 4) * 8, 32 bits) := remote
   }
 
-  // t is fp, but with TX tags re-addedin tuser[16:1], those were split-off early in TX path
+  // ftx is frs but after FlowStash
+  val ftx = Stream(Fragment(CorundumFrame(corundumDataWidth)))
+
+  val out_stash = CorundumFrameFlowStash(corundumDataWidth, fifoSize = 32, 24)
+  out_stash.io.sink << frs
+  out_stash_too_full := !out_stash.io.sink.ready
+  ftx << out_stash.io.source
+  
+  // t is ftx, but with TX tags re-addedin tuser[16:1], those were split-off early in TX path
   val t = Stream(Fragment(CorundumFrame(corundumDataWidth, userWidth = 17)))
-  t.valid := fp.valid
-  t.last := fp.last
-  t.fragment.tdata := fp.fragment.tdata
-  t.fragment.tkeep := fp.fragment.tkeep
+  t.valid := ftx.valid
+  t.last := ftx.last
+  t.fragment.tdata := ftx.fragment.tdata
+  t.fragment.tkeep := ftx.fragment.tkeep
   t.fragment.tuser(0) := False
   // put tag back
   t.fragment.tuser(16 downto 1) := out_tags.payload
-  fp.ready := t.ready
+  ftx.ready := t.ready
 
   // pop tag from queue
   out_tags.ready := t.lastFire
@@ -421,177 +518,6 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   t.addAttribute("mark_debug").addAttribute("keep")
   u.addAttribute("mark_debug").addAttribute("keep")
   mux.io.source.addAttribute("mark_debug").addAttribute("keep")
-
-
-/*
-
-  // go through stash
-  val stash = CorundumFrameStash(corundumDataWidth, 32)
-  stash.io.sink << x
-
-  // y is stash output but in TDATA+length format
-  val y = Stream(Fragment(Bits(corundumDataWidth bits)))
-  val fff = Fragment(Bits(corundumDataWidth bits))
-  fff.last := stash.io.source.payload.last
-  fff.fragment := stash.io.source.payload.fragment.tdata
-  y << stash.io.source.translateWith(fff)
-  val y_length = stash.io.length
-
-
-  val w = Stream(Fragment(Bits(corundumDataWidth bits)))
-
-  // w is with Ethernet header removed, thus the Type 4 payload
-  val headers = AxisExtractHeader(corundumDataWidth, 14)
-  headers.io.sink << y
-  headers.io.sink_length := y_length
-  w << headers.io.source
-  val w_length = headers.io.source_length
-
-  // allowed ip lookup
-  // drop packet if not found
-
-  // lookup session
-  val p2s_lut = LookupTableAxi4(4/*bits*/, peer_num, busCfg)
-  p2s_lut.mem.mem.initBigInt(Seq.fill(peer_num)(BigInt("0", 16)))
-  p2s_lut.io.en := True
-  p2s_lut.io.wr := False
-  p2s_lut.io.wrData := 0
-  p2s_lut.io.addr := 0 /*peer index hardcoded for now*/
-  val session_index = B("8'x00") ## lut.io.rdData
-
-  // z is the Type 4 packet in 128 bits
-  val z = Stream(Fragment(Bits(cryptoDataWidth bits)))
-  val downsizer = AxisDownSizer(corundumDataWidth, cryptoDataWidth)
-  downsizer.io.sink << w
-  downsizer.io.sink_length := w_length
-  z << downsizer.io.source
-  val z_length = downsizer.io.source_length
-
-  // upstream back pressure feedback across ChaCha20-Poly1305
-  val output_stash_too_full = Bool()
-
-  // k is the Type 4 packet in 128 bits together with key during first beat (Type 4 header)
-  val txkey = AxisWireguardKeyLookup(cryptoDataWidth, has_internal_test_lut = false)
-  txkey.io.sink << z
-  txkey.io.sink_length := z_length
-
-  val k = Stream(Fragment(Bits(cryptoDataWidth bits)))
-  k << txkey.io.source
-  val key = txkey.io.key_out
-  val k_length = txkey.io.source_length
- 
-  // s is the decrypted Type 4 payload but with the length determined from the IP header
-  val s = Stream(Fragment(Bits(cryptoDataWidth bits)))
-  val s_length = Reg(UInt(12 bits))
-  val s_drop = Reg(Bool()) init(False)
-
-  val with_chacha = (include_chacha) generate new Area { 
-    // p is the decrypted Type 4 payload
-    val p = Stream(Fragment(Bits(cryptoDataWidth bits)))
-    val decrypt = ChaCha20Poly1305DecryptSpinal()
-    decrypt.io.sink << k.haltWhen(output_stash_too_full)
-    decrypt.io.key := key
-    p << decrypt.io.source
-    //decrypt.io.addAttribute("mark_debug")
-
-    // from the first word, extract the IPv4 Total Length field to determine packet length
-    when (p.isFirst) {
-      s_length.assignFromBits(p.payload.fragment(16, 16 bits).resize(12))
-    }
-    s <-< p
-    // @NOTE tag_valid is unknown before TLAST beats, so AND it with TLAST
-    // so that we do forward an unknown drop signal on non-last beats to the output
-    s_drop := (p.last & !decrypt.io.tag_valid)
-  }
-  val without_chacha = (!include_chacha) generate new Area { 
-    s << k.haltWhen(output_stash_too_full)
-    s_length := k_length
-    s_drop := False
-  }
-
-  // u is the decrypted Type 4 payload but in 512 bits
-  val u = Stream(Fragment(Bits(corundumDataWidth bits)))
-  val upsizer = AxisUpSizer(cryptoDataWidth, corundumDataWidth)
-  // @NOTE consider pipeline stage
-  upsizer.io.sink << s
-  upsizer.io.sink_length := s_length
-  upsizer.io.sink_drop := s_drop
-  u << upsizer.io.source
-  val u_length = upsizer.io.source_length
-  val u_drop = upsizer.io.source_drop
-
-  printf("Upsizer Latency = %d clock cycles.\n", LatencyAnalysis(s.valid, u.valid))
-
-  // c is the decrypted Type 4 payload but in 512 bits in Corundum format
-  // c does not experience back pressure during a packet out
-  val c = Stream Fragment(CorundumFrame(corundumDataWidth))
-  val corundum = AxisToCorundumFrame(corundumDataWidth)
-  // @NOTE consider pipeline stage
-  corundum.io.sink << u
-  corundum.io.sink_length := u_length
-  corundum.io.sink_drop := u_drop
-  c << corundum.io.source
-  
-  // r is the decrypted Type 4 payload but in 512 bits in Corundum format
-  // r can receive back pressure from Corundum
-  val r = Stream Fragment(CorundumFrame(corundumDataWidth))
-
-  // should be room for 1534 + latency of ChaCha20 to FlowStash
-  // Flow goes ready after packet last, and room for 26*64=1664 bytes
-  val outstash = CorundumFrameFlowStash(corundumDataWidth, fifoSize = 32, 26)
-  outstash.io.sink << c
-  r << outstash.io.source
-
-  output_stash_too_full := !outstash.io.sink.ready
-
-  val ethhdr = CorundumFrameInsertHeader(corundumDataWidth, 14)
-  ethhdr.io.sink << r
-  ethhdr.io.header := B("112'x000a3506a3beaabbcc2222220800").subdivideIn(14 slices).reverse.asBits()
-  val h = Stream Fragment(CorundumFrame(corundumDataWidth))
-  h << ethhdr.io.source
-
-  val fcs = CorundumFrameAppendTailer(corundumDataWidth, 4)
-  fcs.io.sink << h
-  val f = Stream Fragment(CorundumFrame(corundumDataWidth))
-  f << fcs.io.source
-
-  io.source << f
-
-  //printf("x to r = %d clock cycles.\n", LatencyAnalysis(x.valid, r.valid))
-
-  val has_busctrl = true
-  (!has_busctrl) generate new Area {
-  val lut = LookupTable(256/*bits*/, keys_num/*, ClockDomain.current*/)
-
-  lut.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
-
-  lut.io.portA.en := True
-  lut.io.portA.wr := False
-  lut.io.portA.wrData := 0
-  lut.io.portA.addr := txkey.io.receiver.resize(log2Up(keys_num))
-  txkey.io.key_in := lut.io.portA.rdData
-
-  lut.io.portB.en := True
-  lut.io.portB.wr := False
-  lut.io.portB.wrData := 0
-  lut.io.portB.addr := 0
-  }
-  // RX key lookup and update via bus controller
-  (has_busctrl) generate new Area {
-  val lut = LookupTableAxi4(256/*bits*/, keys_num, busCfg)
-  lut.mem.mem.initBigInt(Seq.fill(keys_num)(BigInt("80 81 82 83 84 85 86 87 88 89 8a 8b 8c 8d 8e 8f 90 91 92 93 94 95 96 97 98 99 9a 9b 9c 9d 9e 9f".split(" ").reverse.mkString(""), 16)))
-  lut.io.en := True
-  lut.io.wr := False
-  lut.io.wrData := 0
-  txkey.io.receiver.addAttribute("mark_debug")
-  val lut_address = U(txkey.io.receiver.asBits.subdivideIn(4 slices).reverse.asBits.resize(log2Up(keys_num)))
-  lut_address.addAttribute("mark_debug")
-  lut.io.addr := lut_address //txkey.io.receiver.resize(log2Up(keys_num))
-  
-  txkey.io.key_in := lut.io.rdData
-  io.ctrl_txkey >> lut.io.ctrlbus
-  }
-*/
 
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
@@ -658,7 +584,7 @@ object BlackwireTransmitSim {
 
       dut.io.sink.valid #= false
 
-      //Fork a process to generate the reset and the clock on the dut
+      // Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
       var data0 = 0
@@ -684,6 +610,7 @@ object BlackwireTransmitSim {
 
       var packet_number = 0
       val inter_packet_gap = 1
+      
 
       val packet_contents = Vector(
         // RFC7539 2.8.2. Example and Test Vector for AEAD_CHACHA20_POLY1305
