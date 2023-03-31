@@ -96,4 +96,3 @@ class CorundumPacket(dataWidth : Int, lengthWidth : Int) extends Bundle {
 object CorundumPacket {
   def apply(dataWidth : Int, lengthWidth : Int): CorundumPacket = new CorundumPacket(dataWidth, lengthWidth)
 }
-
