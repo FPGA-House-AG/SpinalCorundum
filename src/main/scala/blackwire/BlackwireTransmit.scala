@@ -196,9 +196,9 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
       B("24'x000000") ## B("8'x04")
   }
 
-  // lookup TX key for non-dropped packets only
   val txkey = Bits(256 bits)
-  val txkey_lookup = v.isFirst & !v.payload.fragment.tuser(0)
+  // lookup TX key for non-dropped packets only
+  val txkey_lookup = v.firstFire & !v.payload.fragment.tuser(0)
   val txkey_lut_address = U(v.payload.fragment.tdata(63 downto 32).subdivideIn(4 slices).reverse.asBits.resize(log2Up(keys_num)))
 
   val key_fifo = StreamFifo(Bits(256 bits), 8)
