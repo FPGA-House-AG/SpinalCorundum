@@ -50,11 +50,12 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   final val p2s_addr_width = LookupTableAxi4.slave_width(32, peer_num, busCfg)
   final val p2ep_addr_width = LookupEndpointAxi4.slave_width(32 + 16, peer_num, busCfg)
   final val l2r_addr_width = LookupTableAxi4.slave_width(32, peer_num * 4, busCfg)
-
+  final val hdr_addr_width = PacketHeaderConfigureAxi4.slave_width(busCfg)
   val txkeySlaveCfg = busCfg.copy(addressWidth = txkey_addr_width)
   val p2sSlaveCfg = busCfg.copy(addressWidth = p2s_addr_width)
   val p2epSlaveCfg = busCfg.copy(addressWidth = p2ep_addr_width)
   val l2rSlaveCfg = busCfg.copy(addressWidth = l2r_addr_width)
+  val hdrSlaveCfg = busCfg.copy(addressWidth = hdr_addr_width)
 
   val cycle = Reg(UInt(32 bits)).init(0)
   cycle := cycle + 1
@@ -71,6 +72,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
     val ctrl_p2s = (has_busctrl) generate slave(Axi4(p2sSlaveCfg))
     val ctrl_p2ep = (has_busctrl) generate slave(Axi4(p2epSlaveCfg))
     val ctrl_l2r = (has_busctrl) generate slave(Axi4(l2rSlaveCfg))
+    val ctrl_hdr = (has_busctrl) generate slave(Axi4(hdrSlaveCfg))
     // to PCIe
     val cpl_source = master(Stream(Bits(16 bits)))
     // from CMAC
@@ -227,7 +229,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
     txkey := txkey_lut.io.rdData
     io.ctrl_txkey >> txkey_lut.io.ctrlbus
   }
-  // push looked-up TX keys into FIFO
+  // push looked-up (latency 2 cycles) TX keys into key_fifo
   key_fifo.io.push.valid := Delay(txkey_lookup, cycleCount = 2, init = False)
   key_fifo.io.push.payload := txkey
 
@@ -271,6 +273,9 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   // halt only after packet boundaries, start anywhere
   val halt_input_to_chacha0 = RegInit(False).setWhen(d.lastFire && flow0_stash_too_full).clearWhen(!flow0_stash_too_full)
 
+  //val test_leon = Array.tabulate(2)(i => AxisDownSizer(corundumDataWidth, cryptoDataWidth))
+  val test_leon = Array.fill(2)(AxisDownSizer(corundumDataWidth, cryptoDataWidth))
+
   val with_chacha = (include_chacha) generate new Area {
     //halt_input_to_chacha.addAttribute("mark_debug")
     //d.last.addAttribute("mark_debug")
@@ -283,6 +288,8 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
     encrypt.io.key := key_fifo.io.pop.payload
     key_fifo.io.pop.ready := en.lastFire
     en << encrypt.io.source
+
+    // The following code must be put into ChaCha20Poly1305EncryptSpinal class
 
     // eh is the encrypted Type 4 payload with the WireGuard Type 4 header
     val eh = Stream(Fragment(Bits(cryptoDataWidth bits)))
@@ -399,13 +406,27 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   //outhdr.io.header := B("336'x0")
   // aa:bb:cc:22:22:22 to 00:0a:35:06:a3:be protocol 0x0800
   // 0x45
-  val eth_ip_udp_hdr = Bits((14 + 20 + 8) * 8 bits)
   val ip_hdr = Bits(20 * 8 bits)
+  val udp_hdr = Bits(8 * 8 bits)
+
+  (has_busctrl) generate new Area {
+    val hdr_cfg = PacketHeaderConfigureAxi4(busCfg)
+    hdr_cfg.io.ctrlbus << io.ctrl_hdr
+    val hdr = hdr_cfg.io.header.subdivideIn((14 + 20 + 8) slices).reverse.asBits
+    // create a 20 byte (five 32-bit words) IPv4 header
+    // fp.fragment.tdata((14+2)*8, 16 bits) contains the length
+    ip_hdr := hdr(14*8 + 0, 16 bits) ## fp.fragment.tdata((14+2)*8, 16 bits) ## hdr((14+4)*8, 3*32 bits) ## ip_dst_addr
+    udp_hdr := hdr((14+20)*8 + 0, 16 bits) ## udp_dst_port ## fp.fragment.tdata((14 + 20 + 4) * 8, 16 bits) ## hdr((14+20+6)*8 + 0, 16 bits)
+  }
+  (!has_busctrl) generate new Area {
+    // 0x45 IPv4 20-byte IP header, 0x11 UDP protocol, c0a80132 to c0a8011e (192.168.1 .50 to .30)
+    ip_hdr := B("16'x4500") ## fp.fragment.tdata((14 + 2) * 8, 16 bits) ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## ip_dst_addr
+    // 0x15b3 == 5555 to UDP destination port, keep UDP length, use 0 checksum
+    udp_hdr := B("16'x15b3") ## udp_dst_port ## fp.fragment.tdata((14 + 20 + 4) * 8, 16 bits) ## B("16'x0"/*checksum==unused*/)
+  }
   
-  // 0x45 IPv4 20-byte IP header, 0x11 UDP protocol, c0a80132 to c0a8011e (192.168.1 .50 to .30)
-  ip_hdr := B("16'x4500") ## fp.fragment.tdata((14 + 2) * 8, 16 bits) ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## ip_dst_addr
-  
-  val ip_chk = UInt(20 bits)
+  // calculate IPv4 header checksum
+  val ip_chk = UInt(20 bits) // too small, @TODO fix
   ip_chk := U(ip_hdr(  7 downto   0) ## ip_hdr( 15 downto   8)).resize(20) +
             U(ip_hdr( 23 downto  16) ## ip_hdr( 31 downto  24)).resize(20) +
             U(ip_hdr( 39 downto  32) ## ip_hdr( 47 downto  40)).resize(20) +
@@ -419,12 +440,10 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   /* add carries */
   ip_chk2 := (ip_chk >> 16).resize(16) + (ip_chk & 0x0ffff).resize(16)
   
-  val ip_hdr2 = ip_hdr(159 downto 80) ## ~ip_chk2.asBits.resize(16) ## ip_hdr(63 downto 0)
-  val udp_hdr = Bits(8 * 8 bits)
-  // 0x15b3 == 5555 to UDP destination port, keep UDP length, use 0 checksum
-  udp_hdr := B("16'x15b3") ## udp_dst_port ## fp.fragment.tdata((14 + 20 + 4) * 8, 16 bits) ## B("16'x0"/*checksum==unused*/)
+  val ip_hdr_with_checksum = ip_hdr(159 downto 80) ## ~ip_chk2.asBits.resize(16) ## ip_hdr(63 downto 0)
 
-  eth_ip_udp_hdr := B("112'xaabbcc222222000a3506a3be0800") ## ip_hdr2 ## udp_hdr
+  val eth_ip_udp_hdr = Bits((14 + 20 + 8) * 8 bits)
+  eth_ip_udp_hdr := B("112'xaabbcc222222000a3506a3be0800") ## ip_hdr_with_checksum ## udp_hdr
 
   // endpoint filled in
   val fc = Stream(Fragment(CorundumFrame(corundumDataWidth)))
