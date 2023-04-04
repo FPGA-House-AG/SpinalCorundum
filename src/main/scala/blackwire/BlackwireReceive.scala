@@ -354,8 +354,7 @@ object BlackwireReceiveSim {
         while (true) {
           if (dut.with_chacha.decrypt.io.source.valid.toBoolean & dut.with_chacha.decrypt.io.source.last.toBoolean & dut.with_chacha.decrypt.io.source.ready.toBoolean) {
             packets_rcvd += 1
-                    printf("packets received #%d\n", packets_rcvd)
-
+            printf("packets received #%d\n", packets_rcvd)
           }
           if (include_chacha) {
             if (dut.with_chacha.decrypt.io.tag_pulse.toBoolean)
@@ -363,8 +362,7 @@ object BlackwireReceiveSim {
               printf("dut.with_chacha.decrypt.io.tag_valid = %b\n", dut.with_chacha.decrypt.io.tag_valid.toBoolean)
               if (dut.with_chacha.decrypt.io.tag_valid.toBoolean == true) {
                 good_packets += 1
-                                    printf("good_packets #%d\n", good_packets)
-
+                printf("good_packets #%d\n", good_packets)
               }
             }
           }
