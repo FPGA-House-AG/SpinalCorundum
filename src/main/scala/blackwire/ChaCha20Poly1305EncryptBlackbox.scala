@@ -62,18 +62,18 @@ case class ChaCha20Poly1305EncryptSpinal() extends Component {
   val after_last2 = RegNext(after_last)
 
   vhdl.io.sink_tvalid := io.sink.valid & !after_last
-  vhdl.io.sink_tdata  := U(io.sink.payload.fragment.subdivideIn((128 / 8) slices).reverse.asBits())
+  vhdl.io.sink_tdata  := U(io.sink.payload.fragment.subdivideIn(8 bits).reverse.asBits)
   vhdl.io.sink_tlast  := io.sink.payload.last
   // pass-through READY outside of the VHDL block, not READY after LAST
   io.sink.ready       := e.ready & !after_last // & !after_last2
   vhdl.io.in_key      := U(io.key)
 
   e.valid                := vhdl.io.source_tvalid
-  e.payload.fragment     := B(vhdl.io.source_tdata).subdivideIn((128 / 8) slices).reverse.asBits()
+  e.payload.fragment     := B(vhdl.io.source_tdata).subdivideIn(8 bits).reverse.asBits
   e.payload.last         := vhdl.io.source_tlast
   vhdl.io.source_tready  := e.ready
 
-  io.header_out := RegNext(B(vhdl.io.header_out).subdivideIn((128 / 8) slices).reverse.asBits())
+  io.header_out := RegNext(B(vhdl.io.header_out).subdivideIn(8 bits).reverse.asBits)
 
   io.source <-< e
 

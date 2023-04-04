@@ -181,7 +181,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
 
   val ethhdr = CorundumFrameInsertHeader(corundumDataWidth, 1, 14)
   ethhdr.io.sink << r
-  ethhdr.io.header := B("112'x000a3506a3beaabbcc2222220800").subdivideIn(14 slices).reverse.asBits()
+  ethhdr.io.header := B("112'x000a3506a3beaabbcc2222220800").subdivideIn(8 bits).reverse.asBits
   val h = Stream Fragment(CorundumFrame(corundumDataWidth))
   h << ethhdr.io.source
 
@@ -203,7 +203,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
   lut.io.portA.en := True
   lut.io.portA.wr := False
   lut.io.portA.wrData := 0
-  lut.io.portA.addr := U(rxkey.io.receiver.asBits.subdivideIn(4 slices).reverse.asBits.resize(log2Up(keys_num)))
+  lut.io.portA.addr := U(rxkey.io.receiver.asBits.subdivideIn(8 bits).reverse.asBits.resize(log2Up(keys_num)))
   rxkey.io.key_in := lut.io.portA.rdData
 
   lut.io.portB.en := True
@@ -219,7 +219,7 @@ case class BlackwireReceive(busCfg : Axi4Config, include_chacha : Boolean = true
   lut.io.wr := False
   lut.io.wrData := 0
   rxkey.io.receiver.addAttribute("mark_debug")
-  val lut_address = U(rxkey.io.receiver.asBits.subdivideIn(4 slices).reverse.asBits.resize(log2Up(keys_num)))
+  val lut_address = U(rxkey.io.receiver.asBits.subdivideIn(8 bits).reverse.asBits.resize(log2Up(keys_num)))
   lut_address.addAttribute("mark_debug")
   lut.io.addr := lut_address //rxkey.io.receiver.resize(log2Up(keys_num))
   

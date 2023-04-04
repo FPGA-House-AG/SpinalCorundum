@@ -250,7 +250,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   val y_hdr_length = (((mid_stash.io.length + 15) >> 4) - 1) << 4
   // insert plaintext length into header
   when (y.isFirst) {
-    y.payload.fragment(31 downto 8) := y_hdr_length.resize(24).asBits.subdivideIn(3 slices).reverse.asBits
+    y.payload.fragment(31 downto 8) := y_hdr_length.resize(24).asBits.subdivideIn(8 bits).reverse.asBits
   }
   // x w v y
 
@@ -356,9 +356,9 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   // 0x45 IPv4 20-byte IP header, 0x11 UDP protocol
   eth_ip_udp_hdr1 :=
   B("112'xaabbcc222222000a3506a3be0800") ##
-  B("16'x4500") ## B(20/*IP hdr*/ + 8/*UDP hdr*/ + c2_length, 16 bits).subdivideIn((2) slices).reverse.asBits ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## B("32'xDDDDDDDD") ## 
-  B("16'x15b3") ## B("16'xDDDD") ## B(8/*UDP hdr*/ + c2_length, 16 bits).subdivideIn((2) slices).reverse.asBits ## B("16'x0"/*checksum==unused*/)
-  outhdr.io.header := RegNextWhen(eth_ip_udp_hdr1.subdivideIn((14 + 20 + 8) slices).reverse.asBits, c2.isFirst)
+  B("16'x4500") ## B(20/*IP hdr*/ + 8/*UDP hdr*/ + c2_length, 16 bits).subdivideIn(8 bits).reverse.asBits ## B("32'x0") ## B("32'x08110000") ## B("32'xc0a80132") ## B("32'xDDDDDDDD") ## 
+  B("16'x15b3") ## B("16'xDDDD") ## B(8/*UDP hdr*/ + c2_length, 16 bits).subdivideIn(8 bits).reverse.asBits ## B("16'x0"/*checksum==unused*/)
+  outhdr.io.header := RegNextWhen(eth_ip_udp_hdr1.subdivideIn(8 bits).reverse.asBits, c2.isFirst)
   f << outhdr.io.source
 
   // fp is f
@@ -455,7 +455,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
   fc <-< fp
   fc.fragment.tdata(0, (14 + 20 + 8) * 8 bits) :=
-    RegNextWhen(eth_ip_udp_hdr.subdivideIn((14 + 20 + 8) slices).reverse.asBits(),
+    RegNextWhen(eth_ip_udp_hdr.subdivideIn(8 bits).reverse.asBits,
       fp.isFirst & fp.ready)
 
   // frs is fc but with remote session instead of local session
