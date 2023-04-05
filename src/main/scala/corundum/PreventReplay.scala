@@ -37,7 +37,6 @@ case class PreventReplay(windowSize: Int,
       val sessionId = in  UInt(sessionIdWidth bits)
       val counter   = in  UInt(counterWidth   bits)
   }
-
   val memory = Mem(Bits(counterWidth * windowSize bits), 1024)
   // UltraRAM (URAM) cannot be initialized
   memory.addAttribute("ram_style", "ultra")
@@ -61,11 +60,10 @@ case class PreventReplay(windowSize: Int,
     memory.write(address = io.sessionId.resize(10 bits), 
                  data    = shiftedData,
                  enable  = True)
-
-    io.drop := False
-  }else {
-    io.drop := True
   }
+  
+  io.drop := result
+
 
 }
 
