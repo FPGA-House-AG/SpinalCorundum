@@ -31,39 +31,37 @@ case class PreventReplay(windowSize: Int,
 
   
   val io = new Bundle {
-      val read      = ReadBundle(log2Up(1024),  counterWidth * windowSize)
-      val write     = WriteBundle(log2Up(1024), counterWidth * windowSize)
       val drop      = out Bool()
       val sessionId = in  UInt(sessionIdWidth bits)
       val counter   = in  UInt(counterWidth   bits)
   }
-  val memory = Mem(Bits(counterWidth * windowSize bits), 1024)
-  // UltraRAM (URAM) cannot be initialized
-  memory.addAttribute("ram_style", "ultra")
+
+  var result = RegInit(False)
+  var memory = Mem(Bits(counterWidth * windowSize bits), 1024)
+  memory.addAttribute("ram_style", "block") 
 
 
-
-  val result = RegInit(False)
-
-  val data = memory.readSync(address = io.sessionId.resize(10 bits), 
+  var data = memory.readSync(address = io.sessionId.resize(10 bits), 
                              enable  = True)
   
   for (j <- 0 until windowSize) {
+
     when(data(j * counterWidth, counterWidth bits) === io.counter.asBits) {
+      
+      //var shiftedData = data(0, j * counterWidth bits) ## io.counter ## data.take((windowSize - j - 1) * counterWidth)//data(j * counterWidth, (counterWidth - j - 1) * windowSize bits) 
       result := True
+    }.elsewhen(Bool(j == windowSize - 1) && data(j * counterWidth, counterWidth bits) =/= io.counter.asBits) {
+
+      var shiftedData = io.counter ## data(0, counterWidth * windowSize - counterWidth bits)
+      memory.write(address = io.sessionId.resize(10 bits), 
+                   data    = shiftedData,
+                   enable  = True)
+
+      result := False
     }
   }
 
-  if(result == False) {
- 
-    val shiftedData = io.counter ## data.resize(data.getWidth - counterWidth)
-    memory.write(address = io.sessionId.resize(10 bits), 
-                 data    = shiftedData,
-                 enable  = True)
-  }
-  
   io.drop := result
-
 
 }
 
@@ -82,25 +80,21 @@ object PreventReplaySim {
       // Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
-      for (i <- 0 until 1024) {
-        dut.io.write.enable  #= true
-        dut.io.write.addr.assignBigInt(i)
-        dut.io.write.data.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge()
-        dut.io.write.enable  #= false
-      }
-
-      //Wait for some cycles
+      dut.clockDomain.waitRisingEdge()
+      dut.io.sessionId      #= 0
+      dut.io.counter        #= 0
+      dut.clockDomain.waitRisingEdge()
+      
       dut.clockDomain.waitRisingEdge(10)
-
-
-      // Read back the memory and check if it matches
-      //for (i <- 0 until 1024) {
-      //  val data = dut.memory.readSync(address = IntToUInt(i).resize(10 bits), 
-      //                                 enable  = True)
-        //assert(data == initData(i))
-      //}
-
+      //Wait for some cycles
+      for(i <-0 until 20){
+        dut.io.sessionId    #= 1
+        dut.io.counter      #= i
+        //Wait for some cycles
+        dut.clockDomain.waitRisingEdge(5)
+      }
+      
+      
 
     }
   }
