@@ -37,7 +37,7 @@ case class PacketHeaderConfigure() extends Component {
         B("112'xaabbcc222222000a3506a3be0800") ##
         B("16'x4500") ## B("16'x0000") ## B("32'x00000000") ## B("32'x08110000") ## B("32'xac100032") ## B("32'xac100001") ##
         B("16'x15b3") ## B("16'x159a") ## B("16'x0000") ## B("16'x0000"/*checksum==unused*/))
-        .subdivideIn((14 + 20 + 8) slices).reverse.asBits
+        .subdivideIn(8 bits).reverse.asBits
     )
 
     busCtrl.readMultiWord(word, 0x080, documentation = null)
