@@ -59,13 +59,12 @@ case class ChaCha20Poly1305EncryptSpinal() extends Component {
   // enforce one idle cycle after last beat, this is
   // required by VHDL ChaCha20Poly1305
   val after_last = RegNext(io.sink.lastFire)
-  val after_last2 = RegNext(after_last)
 
   vhdl.io.sink_tvalid := io.sink.valid & !after_last
   vhdl.io.sink_tdata  := U(io.sink.payload.fragment.subdivideIn(8 bits).reverse.asBits)
   vhdl.io.sink_tlast  := io.sink.payload.last
   // pass-through READY outside of the VHDL block, not READY after LAST
-  io.sink.ready       := e.ready & !after_last // & !after_last2
+  io.sink.ready       := e.ready & !after_last
   vhdl.io.in_key      := U(io.key)
 
   e.valid                := vhdl.io.source_tvalid
