@@ -145,7 +145,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
   // put x TX tags only for undropped packets in separate stream
   val x_tags = Stream(Bits(16 bits))
   x_tags.payload := a.fragment.tuser(16 downto 1)
-  x_tags.valid := x.lastFire & !x.tuser(0)
+  x_tags.valid := a.lastFire & !a.tuser(0)
   // queue the forward completions towards our source
   val out_tags = x_tags.queue(1024)
 
