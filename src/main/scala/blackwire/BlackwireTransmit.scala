@@ -337,11 +337,13 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
   val c2 = Stream(Fragment(CorundumFrame(corundumDataWidth)))
 
-  val flow0 = CorundumFrameFlowStash(corundumDataWidth, fifoSize = 32, 26)
+  val flow0 = CorundumFrameFlowStash(corundumDataWidth, fifoSize = 128, 28)
   flow0.io.sink << c
   c2 << flow0.io.source
   val c2_length = flow0.io.length
-  flow0_stash_too_full := !flow0.io.sink.ready
+  //flow0_stash_too_full := !flow0.io.sink.ready
+  // the flow stash must have enough to store the data inside the flow pipeline
+  flow0_stash_too_full := flow0.io.availability < 120
 
   val out_stash_too_full = Bool()
   val halt_input_to_outhdr = RegInit(False).setWhen(c2.lastFire && out_stash_too_full).clearWhen(!out_stash_too_full)
