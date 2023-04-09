@@ -127,8 +127,8 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
   // merge tags for dropped and transmitted packets
   val cpl_arbiter = StreamArbiterFactory().roundRobin.build(Bits(16 bits), 2)
-  cpl_arbiter.io.inputs(0) << io.cpl_sink
-  cpl_arbiter.io.inputs(1) << cpl_drop
+  cpl_arbiter.io.inputs(0) << io.cpl_sink.queue(4)
+  cpl_arbiter.io.inputs(1) << cpl_drop.queue(4)
   // output merged completions tags towards PCIe
   io.cpl_source << cpl_arbiter.io.output
   io.cpl_source.addAttribute("mark_debug")
