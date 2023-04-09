@@ -44,7 +44,7 @@ object CorundumFrameStash {
 
 case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) extends Component {
   val keepWidth = dataWidth/8
-  val maxFrameBytes = fifoSize * keepWidth
+  val maxFrameBytes = 2048 //fifoSize * keepWidth
   printf("maxFrameBytes = %d\n", maxFrameBytes)
   val io = new Bundle {
     val sink = slave Stream new Fragment(CorundumFrame(dataWidth, userWidth))
