@@ -718,7 +718,7 @@ object BlackwireTransmitSim {
           dut.io.sink.last #= last0
           dut.io.sink.last #= last0
           dut.io.sink.payload.tkeep #= tkeep0
-          dut.io.sink.payload.tuser #= (packet_number << 1)
+          dut.io.sink.payload.tuser #= (1 << 16) | (packet_number << 1)
 
           dut.io.source.ready #= (Random.nextInt(8) > 1)
 
@@ -833,7 +833,7 @@ object BlackwireTransmitMuxSim {
             dut.io.sink.payload.tdata #= BigInt(word_index) << (512 - 16)
             dut.io.sink.last #= last0
             dut.io.sink.payload.tkeep #= tkeep0
-            dut.io.sink.payload.tuser #= (tx_tag << 1)
+            dut.io.sink.payload.tuser #= (tx_tag << 1) | (1 << 16)
 
             // Wait a rising edge on the clock
             dut.clockDomain.waitRisingEdge()
