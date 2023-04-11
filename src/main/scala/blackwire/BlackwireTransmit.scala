@@ -630,6 +630,29 @@ object BlackwireTransmitSim {
 // "CCCCLLLLb315SSSS", DDDD=port 5555 (0x15b3)
 // "00000000FFFF0000"
 
+      // CMAC side reflection of TUSER to completion tag return path
+      val completionReflectorThread = fork {
+        dut.io.cpl_source.ready #= true
+        dut.io.cpl_sink.valid #= false
+        dut.io.cpl_sink.payload #= BigInt(0)
+        while (true) {
+          // on active last beat, reflect tuser
+          val valid_tag = dut.io.source.ready.toBoolean & dut.io.source.valid.toBoolean &
+            // valid tag? (bit #16 of tuser set)
+            dut.io.source.last.toBoolean & ((dut.io.source.tuser.toBigInt >> 16) != 0)
+            printf("valid_tag = %b\n", valid_tag)
+            dut.io.cpl_sink.valid #= valid_tag
+            if (valid_tag) {
+              dut.io.cpl_sink.payload #= (dut.io.source.payload.tuser.toBigInt >> 1)
+            } else {
+              dut.io.cpl_sink.payload #= BigInt(0)
+            }
+          if (dut.io.source.ready.toBoolean & dut.io.source.valid.toBoolean & dut.io.source.last.toBoolean) {
+          }
+          dut.clockDomain.waitRisingEdge()
+        }
+      }
+
       var packet_number = 0
       val inter_packet_gap = 1
       
