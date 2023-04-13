@@ -185,6 +185,7 @@ case class BlackwireTransmit(busCfg : Axi4Config, include_chacha : Boolean = tru
 
   // lookup nonce for w, ready on v
   val nonce_lookup = LookupCounter(64, peer_num * 4, 0, initRAM = true)
+  nonce_lookup.io.lookup := w.firstFire
   nonce_lookup.io.increment := w.firstFire
   nonce_lookup.io.clear := False
   nonce_lookup.io.address := U(session).resized
