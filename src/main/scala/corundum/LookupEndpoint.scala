@@ -68,8 +68,9 @@ case class LookupEndpointMem(memDataWidth : Int,
   }
 
   val mem = Mem(Bits(memDataWidth bits), wordCount)
-
-  val first = BigInt("C0A8FF00", 16) << (memDataWidth - 32)
+  // 172.16.0.1 = ac100001
+  // 192.168.255.00
+  val first = BigInt("ac100001", 16) << (memDataWidth - 32)
   val last  = first + BigInt(wordCount)
   // UltraRAM (URAM) cannot be initialized
   //mem.addAttribute("ram_style", "ultra")
