@@ -19,7 +19,7 @@
 build: rtl
 
 # CI/CD runs "make test"
-test: build formal sim_extract code_analysis
+test: build formal sim_extract sim_counter code_analysis
 
 code_analysis:
 	grep -rne '.m2sPipe().s2mPipe()' src/main/scala && \
@@ -114,6 +114,12 @@ sim_reader:
 sim_extract:
 	set -e
 	sbt "runMain corundum.AxisExtractHeaderSim"
+
+# LookupCounter{,Axi4} simulation verification test
+sim_counter:
+	set -e
+	sbt "runMain corundum.LookupCounterSim"
+	sbt "runMain corundum.LookupCounterAxi4Sim"
 
 stash:
 	set -e
