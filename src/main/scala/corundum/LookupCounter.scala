@@ -115,45 +115,25 @@ case class LookupCounter(memDataWidth : Int,
     assert(busCtrl.busDataWidth == 32)
 
     // bus write address, which addresses a memory word in the memory
-    val bus_wr_addr_memory_word = (busCtrl.writeAddress >> 2).resize(memAddressWidth)
+    val bus_wr_addr_memory_word = (busCtrl.writeAddress >> 2/*TODO neatly calculate*/).resize(memAddressWidth)
 
     val writeState = RegInit(U"0")
 
     val memory_size = wordCount * 4;
     val size_mapping = SizeMapping(0, memory_size)
 
-    val write_pulse = False
+    // clear pulse only when lookup interface is idle
+    val bus_slave_clear_pulse = False
     busCtrl.onWritePrimitive(address = size_mapping, haltSensitive = false, documentation = null) {
-          // pause until lookup is idle
-          when (io.lookup === False) {
-            write_pulse := True
-          } otherwise {
-            busCtrl.writeHalt()
-          }
+      // lookup is idle?
+      when (io.lookup === False) {
+        bus_slave_clear_pulse := True
+      // lookup is busy, pause the write
+      } otherwise {
+        busCtrl.writeHalt()
+      }
     }
-//    busCtrl.onWritePrimitive(address = size_mapping, haltSensitive = false, documentation = null) {
-//      switch(writeState){
-//        // one cycle to register and combine the R data into 'write_data'
-//        is (0) {
-//          busCtrl.writeHalt()
-//          writeState := 1
-//        }
-//        is (1) {
-//          // pause until lookup is idle
-//          when (io.lookup === False) {
-//            write_pulse := True
-//          } otherwise {
-//            busCtrl.writeHalt()
-//          }
-//        }
-//      }
-//    }
-//    // haltSensitive = true => only on last cycle
-//    busCtrl.onWritePrimitive(address = size_mapping, haltSensitive = true, documentation = null) {
-//      writeState := 0
-//    }
-
-    when(write_pulse) {
+    when(bus_slave_clear_pulse) {
       io.clear := True
       io.address := bus_wr_addr_memory_word
     }
