@@ -10,21 +10,27 @@ def rfc6479():
     Wb           = Wt - W + 1
     NUM_SESSIONS = 8
 
-    # A % B = A & (B-1) when B % 2 == 0 and M * N is a power of 2.
-    # Wb = Wt - W + 1
-
-    #
     random.seed(123)
-    memory = '01111111111111111111111111111111'#str('0' * (M * N))
-    for i in range(1000):
+    memory    = '01111111111111111111111111111111'
+    S_base    = 0
+    variation = 8
+    swapped   = list(range(100, 150))
+    for _ in range(40):
+        index1 = random.randint(0, len(swapped)-1)
+        index2 = random.randint(0, len(swapped)-1)
+        # Swap the elements at the randomly chosen indices
+        swapped[index1], swapped[index2] = swapped[index2], swapped[index1]
+
+    values = list(range(50)) + [x for i, x in enumerate(list(range(50, 100))) if i not in random.sample(range(len(list(range(50, 100)))), 20)]  + swapped   
+    for i in values:
         
-        S = ''.join(random.choice(['0', '1'])for _ in range(64))
-        
+        #S = ''.join(random.choice(['0', '1'])for _ in range(64))
+        S = bin(i)[2:].zfill(64) 
         Wt_ptr = (Wt) & (M * N - 1)
         Wb_ptr = (Wb) & (M * N - 1)
 
         if(int(S,2) == 0):       # Start of operations, or wrapped.
-            print("DROP = 0")
+            print("S=", int(S, 2), " DROP = 0")
             continue
 
         elif(int(S,2) > Wt):     # New packet. Slide the window, accept the packet
@@ -47,11 +53,11 @@ def rfc6479():
                 updated_list[block_number * N + value_index + i] = '0' 
 
             memory = ''.join(updated_list)
-            print("DROP = 0")
+            print("S=", int(S,2), "DROP = 0, WINDOW SLID FORWARD")
             continue
 
         elif(int(S,2) + W < Wt): # Too old.
-            print("DROP = 1 DUE TO TOO OLD PACKET")
+            print("S=", int(S, 2), "DROP = 1 DUE TO TOO OLD PACKET")
             continue
 
         else:
@@ -62,10 +68,10 @@ def rfc6479():
                 updated_list = list(memory)
                 updated_list[S_ptr] = '1'
                 memory = ''.join(updated_list)
-                print("DROP = 0")
+                print("S=", int(S, 2), "DROP = 0, INSIDE WINDOW")
             else:
             # We've seen this packet already, we drop it, and we don't update the window.
-                print("DROP = 1")
+                print("S=", int(S, 2), "DROP = 1, INSIDE WINDOW")
 
 
   
