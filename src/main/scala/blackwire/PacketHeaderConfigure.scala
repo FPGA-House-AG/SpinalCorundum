@@ -32,6 +32,9 @@ case class PacketHeaderConfigure() extends Component {
   def driveFrom(busCtrl : BusSlaveFactory) = new Area {
     assert(busCtrl.busDataWidth == 32)
 
+//0000   aa bb cc 22 22 22 b4 96 91 ad 87 88 08 00         ..."""........
+
+
     val word = Reg(Bits(wordWidth bits))
     word.init((
         B("112'xaabbcc222222000a3506a3be0800") ##
@@ -43,7 +46,7 @@ case class PacketHeaderConfigure() extends Component {
     busCtrl.readMultiWord(word, 0x080, documentation = null)
     busCtrl.writeMultiWord(word, 0x080, documentation = null)
 
-    io.drive_in := word
+    io.drive_in := word.subdivideIn(8 bits).reverse.asBits
   }
 }
 
@@ -143,6 +146,8 @@ object PacketHeaderConfigureAxi4Sim {
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
       dut.clockDomain.waitRisingEdge()
+
+    //val values = Vec(BigInt("aabbcc22", 16))
 
     for (i <- 0 until 11) {
         val address = 0x080 + i * 4
