@@ -108,6 +108,8 @@ case class LookupCounter(memDataWidth : Int,
     d2_counter := io.counter + 1
   }
   val do_writeback = d3_valid// & !take_from_d3
+
+  // @TODO why is this readWrite port?
   mem.readWriteSync(d3_address, data = d3_counter.asBits, enable = do_writeback, write = do_writeback)
 
   // address decoding assumes slave-local addresses
