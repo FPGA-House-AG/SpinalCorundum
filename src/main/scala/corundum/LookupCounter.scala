@@ -213,7 +213,8 @@ object LookupCounterAxi4 {
     1 << log2Up(x)
   }
 
-  def slave_width(counterWidth : Int, wordCount : Int, busCfg : Axi4Config) : Int = {
+  def slave_width(wordCount : Int, endValue : BigInt, busCfg : Axi4Config) : Int = {
+    val counterWidth = LookupCounter.word_width(endValue)
     /* calculate the bus slave address width needed to address the lookup table */
     val bytes_per_cpu_word = busCfg.dataWidth / 8
     val bus_words_per_memory_word = (counterWidth + busCfg.dataWidth - 1) / busCfg.dataWidth
@@ -232,7 +233,7 @@ object LookupCounterAxi4 {
 case class LookupCounterAxi4(
                          wordCount : Int,
                          startValue : BigInt = 0,
-                         endValue : BigInt =  (BigInt(1) << 64) - 1,
+                         endValue : BigInt = (BigInt(1) << 64) - 1,
                          initRAM : Boolean = false,
                          restart : Boolean = false,
                          busCfg : Axi4Config
@@ -240,7 +241,7 @@ case class LookupCounterAxi4(
   val memAddressWidth = log2Up(wordCount)
   val counterWidth = LookupCounter.word_width(endValue)
 
-  val memory_space_address_bits = LookupCounterAxi4.slave_width(counterWidth, wordCount, busCfg);
+  val memory_space_address_bits = LookupCounterAxi4.slave_width(wordCount, endValue, busCfg);
   printf("LookupCounterAxi4() requires %d address bits.\n", memory_space_address_bits)
   printf("LookupCounterAxi4() bus configuration has %d address bits.\n", busCfg.addressWidth)
 
