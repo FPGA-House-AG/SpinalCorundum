@@ -8,7 +8,7 @@ import spinal.lib._
 
 import scala.math.pow
 
-// 18446744073709551615
+// ((1 << 64) - 1) = 18446744073709551615
 
 // companion object for case class
 object LookupCounter {
@@ -21,15 +21,25 @@ object LookupCounter {
     })
     val verilogReport = Config.spinal.generateVerilog(new LookupCounter(1024, startValue = 1, endValue = (BigInt(1) << 64) - 1, restart = false, initRAM = true))
   }
+
+  def word_width(endValue : BigInt) : Int = {
+    val counterWidth = if (endValue==1) 1 else log2Up(endValue)
+    counterWidth
+  }
 }
 
-// A lookup table with counters, each counter increments after lookup.
+// A lookup table with counters.
+// A lookup will return the current counter value.
+//
+// - By setting 'increment' a counter will increment after lookup, except
+//   when the counter value was endValue. Then either it will reset to startValue
+//   if 'restart' is true, or it will remain at endValue otherwise.
+//
 // - By setting 'clear' a counter is reset to startValue, which will
 // be returned on the next lookup.
 // - If both 'increment' and 'clear' are set, the current lookup results in
 // the current counter value, the next lookup will result in startValue.
-// - Overflowing is not yet supported. Overflow will cycle through zero.
-// 
+//
 // This data structure is similar to a histogram.
 
 // Took 4 hours to design implementation and simulation, re-using
@@ -44,10 +54,10 @@ case class LookupCounter(wordCount : Int,
                          initRAM : Boolean = false
                        /*,lookupCD: ClockDomain*/) extends Component {
   val memAddressWidth = log2Up(wordCount)
-  val memDataWidth = if (endValue==1) 1 else log2Up(endValue)
+  val counterWidth = LookupCounter.word_width(endValue)
   printf("LookupCounter() startValue = %d\n", startValue)
   printf("LookupCounter() endValue = %s\n", endValue.toString)
-  printf("memDataWidth() = %d\n", memDataWidth)
+  printf("counterWidth() = %d\n", counterWidth)
   require(startValue < endValue)
   val io = new Bundle {
     // must be set together on high priority (non-bus) lookups, with or without increment and clear
@@ -55,10 +65,10 @@ case class LookupCounter(wordCount : Int,
     val increment = in Bool()
     val clear = in Bool()
     val address = in UInt(memAddressWidth bits)
-    val counter = out UInt(memDataWidth bits)
+    val counter = out UInt(counterWidth bits)
   }
 
-  val mem = Mem(Bits(memDataWidth bits), wordCount)
+  val mem = Mem(Bits(counterWidth bits), wordCount)
   if (initRAM == true) {
     // initialize memory to zero
     mem.initBigInt(Seq.fill(wordCount)(startValue))
@@ -77,7 +87,7 @@ case class LookupCounter(wordCount : Int,
   val d2_valid   = d2_lookup | d2_clear
   val d2_address = RegNext(d1_address)
   /* d2 is taken from either memory or the to-memory-pipeline */
-  val d2_counter = UInt(memDataWidth bits)
+  val d2_counter = UInt(counterWidth bits)
 
   val d3_valid  =  RegNext(d2_valid)
   val d3_address = RegNext(d2_address)
@@ -114,14 +124,14 @@ case class LookupCounter(wordCount : Int,
   }
   d2_counter := io.counter
 
-  val willOverflowIfInc = io.counter === U(endValue).resize(memDataWidth)
+  val atEndValue = io.counter === U(endValue).resize(counterWidth)
 
   /* or clear counter to write back */
   when (d2_clear) {
     d2_counter := startValue
   /* increment counter to write back */
   } elsewhen (d2_incr) {
-      when (!willOverflowIfInc) {
+      when (!atEndValue) {
         d2_counter := io.counter + 1
       // either stop or restart counter
       } otherwise {
@@ -135,16 +145,42 @@ case class LookupCounter(wordCount : Int,
   // @TODO why is this readWrite port?
   mem.readWriteSync(d3_address, data = d3_counter.asBits, enable = do_writeback, write = do_writeback)
 
+  def nextPowerofTwo(x: Int): Int = {
+    1 << log2Up(x)
+  }
+
   // address decoding assumes slave-local addresses
   def driveFrom(busCtrl : BusSlaveFactory) = new Area {
     assert(busCtrl.busDataWidth == 32)
+    val bytes_per_cpu_word = busCtrl.busDataWidth / 8
 
-    // bus write address, which addresses a memory word in the memory
-    val bus_wr_addr_memory_word = (busCtrl.writeAddress >> 2/*TODO neatly calculate*/).resize(memAddressWidth)
+    // for one memory word, calculate how many CPU words must be written
+    val bus_words_per_memory_word = (counterWidth + busCtrl.busDataWidth - 1) / busCtrl.busDataWidth
+    printf("bus_words_per_memory_word    = %d (CPU writes needed to write one word into lookup table)\n", bus_words_per_memory_word)
+    // for one memory word, calculate number of CPU words in the address space 
+    // it is rounded up to the next power of two, so it will be 1, 2, 4, 8, 16 etc.
+    val cpu_words_per_memory_word = nextPowerofTwo(bus_words_per_memory_word)
+    val bytes_per_memory_word = cpu_words_per_memory_word * bytes_per_cpu_word
+    val bytes_to_cpu_word_shift = log2Up(bytes_per_cpu_word)
+    val bytes_to_memory_word_shift = log2Up(bytes_per_memory_word)
+    val cpu_word_to_memory_word_shift = bytes_to_memory_word_shift - bytes_to_cpu_word_shift
+    printf("cpu_words_per_memory_word    = %d (CPU words reserved per lookup table word)\n", cpu_words_per_memory_word)
+    printf("bytes_to_cpu_word_shift      = %d (bits to strip off)\n", bytes_to_cpu_word_shift)
+    printf("bytes_to_memory_word_shift   = %d (bits to strip off)\n", bytes_to_memory_word_shift)
+    printf("cpu_word_to_memory_word_shift= %d (bits to strip off)\n", cpu_word_to_memory_word_shift)
+
+    printf("memory_words                 = %d\n", wordCount)
+
+    // this is the address space exposed on the control bus
+    val memory_size = wordCount * cpu_words_per_memory_word * bytes_per_cpu_word
+    printf("memory space size = %d (0x%x) bytes, addr = %d bits\n", memory_size, memory_size, log2Up(memory_size))
+
+    // this is the address space exposed on the control bus
+    val bus_wr_addr_memory_word = (busCtrl.writeAddress >> bytes_to_memory_word_shift).resize(memAddressWidth)
+    printf("memory space size = %d (0x%x) bytes, addr = %d bits\n", memory_size, memory_size, log2Up(memory_size))
 
     val writeState = RegInit(U"0")
 
-    val memory_size = wordCount * 4;
     val size_mapping = SizeMapping(0, memory_size)
 
     // clear pulse only when lookup interface is idle
@@ -177,10 +213,13 @@ object LookupCounterAxi4 {
     1 << log2Up(x)
   }
 
-  def slave_width(wordCount : Int, busCfg : Axi4Config) : Int = {
+  def slave_width(counterWidth : Int, wordCount : Int, busCfg : Axi4Config) : Int = {
     /* calculate the bus slave address width needed to address the lookup table */
     val bytes_per_cpu_word = busCfg.dataWidth / 8
-    val memory_space = wordCount * bytes_per_cpu_word
+    val bus_words_per_memory_word = (counterWidth + busCfg.dataWidth - 1) / busCfg.dataWidth
+    val cpu_words_per_memory_word = nextPowerofTwo(bus_words_per_memory_word)
+    val bytes_per_memory_word = cpu_words_per_memory_word * bytes_per_cpu_word
+    val memory_space = wordCount * bytes_per_memory_word
     val memory_space_address_bits = log2Up(memory_space)
 
     // the driving bus must have all address bits
@@ -199,9 +238,9 @@ case class LookupCounterAxi4(
                          busCfg : Axi4Config
                        /*,lookupCD: ClockDomain*/) extends Component {
   val memAddressWidth = log2Up(wordCount)
-  val memDataWidth = if (endValue==1) 1 else log2Up(endValue)
+  val counterWidth = LookupCounter.word_width(endValue)
 
-  val memory_space_address_bits = LookupCounterAxi4.slave_width(wordCount, busCfg);
+  val memory_space_address_bits = LookupCounterAxi4.slave_width(counterWidth, wordCount, busCfg);
   printf("LookupCounterAxi4() requires %d address bits.\n", memory_space_address_bits)
   printf("LookupCounterAxi4() bus configuration has %d address bits.\n", busCfg.addressWidth)
 
@@ -219,7 +258,7 @@ case class LookupCounterAxi4(
     val increment = in Bool()
     val clear = in Bool()
     val address = in UInt(memAddressWidth bits)
-    val counter = out UInt(memDataWidth bits)
+    val counter = out UInt(counterWidth bits)
   }
   val luc = LookupCounter(wordCount, startValue, endValue, restart, initRAM)
   val ctrl = new Axi4SlaveFactory(io.ctrlbus)

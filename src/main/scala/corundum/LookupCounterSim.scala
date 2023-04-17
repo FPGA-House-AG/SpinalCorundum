@@ -85,7 +85,7 @@ object LookupCounterSim {
           address = Random.nextInt(wordCount)
         }
         val increment = (Random.nextInt(8) > 1)
-        var clear = (Random.nextInt(iterations) >= (iterations * 50 / 100))
+        var clear = (Random.nextInt(iterations) >= (iterations - 1))
         // never clear on last quarter of counters, to test reaching endValue
         clear = clear & (address < ((wordCount * 3) / 4))
         dut.io.address #= address
@@ -146,7 +146,7 @@ object LookupCounterAxi4Sim {
   def main(args: Array[String]) : Unit = {
     val wordCount = 32//1024
     val startValue = 0
-    val endValue = 1 // (BigInt(1) << 12) - 1
+    val endValue = (BigInt(1) << 33) - 1
     val restart = false
     val initRAM = false
     printf("LookupCounterAxi4Sim: endValue = %d\n", endValue)
@@ -226,7 +226,8 @@ object LookupCounterAxi4Sim {
       } else {
         printf("Assuming full table RAM is pre-initialized with start value %d.\n", startValue)
       }
-
+      val bytes = (log2Up(endValue) + 31) / 8
+      printf("endValue = %d, bytes = %d\n", log2Up(endValue), bytes)
       printf("Starting torture test...\n");
 
       // prevent write thread from interfering with read-back of final counters, use done
@@ -243,7 +244,7 @@ object LookupCounterAxi4Sim {
             if ((Random.nextInt(iterations) >= (iterations * 15 / 16))) {
               address = Random.nextInt(wordCount * 3 / 4)
               dut.io.ctrlbus.aw.valid #= true
-              dut.io.ctrlbus.aw.payload.addr.assignBigInt(address * 4)
+              dut.io.ctrlbus.aw.payload.addr.assignBigInt(address * bytes)
               dut.io.ctrlbus.w.valid #= true
               dut.io.ctrlbus.w.payload.data.assignBigInt(BigInt("0DEADBEEF", 16) + address)
               dut.clockDomain.waitSamplingWhere(dut.io.ctrlbus.aw.ready.toBoolean && dut.io.ctrlbus.w.ready.toBoolean)
@@ -269,9 +270,10 @@ object LookupCounterAxi4Sim {
           address = Random.nextInt(wordCount)
         }
         val increment = (Random.nextInt(8) > 1)
-        var clear = (Random.nextInt(iterations) >= (iterations * 9 / 10))
+        // only sometimes clear
+        var clear = (Random.nextInt(iterations) >= (iterations - 1))
+        // but never for upper quarter of memory
         clear = clear & (address < ((wordCount * 3) / 4))
-        clear = false
 
         dut.io.address #= address
         dut.io.increment #= increment
