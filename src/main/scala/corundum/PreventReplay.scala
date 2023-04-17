@@ -15,11 +15,11 @@ object PreventReplay {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val verilogReport = Config.spinal.generateVerilog({
-      val toplevel = new PreventReplay(32, 32, 64)
+      val toplevel = new PreventReplay(32, 32, 64, 1024)
       toplevel
     })
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new PreventReplay(32, 32, 64)
+      val toplevel = new PreventReplay(32, 32, 64, 1024)
       toplevel
     })
   }
@@ -27,13 +27,22 @@ object PreventReplay {
 
 case class PreventReplay(windowSize:        Int,
                          sessionIdWidth:    Int,
-                         counterWidth:      Int           
+                         counterWidth:      Int,
+                         numberOfSessions:  Int         
                          ) extends Component {
 
-  
-  class ReceiveWindow(windowSize : Int, sessionIdWidth : Int) extends Bundle {
+  // This class is our per-session state. 
+  case class ReceiveWindow(windowSize : Int, sessionIdWidth : Int) extends Bundle {
     var wt          = UInt(sessionIdWidth bits)
     var bitmap      = Bits(windowSize bits)
+
+    def width: BitCount = {
+      var totalWidth = 0
+      for(field <- this.elements){
+        totalWidth = totalWidth + field._2.getBitsWidth
+      }
+      totalWidth bits
+    }
   }
 
   val io = new Bundle {
@@ -42,9 +51,9 @@ case class PreventReplay(windowSize:        Int,
       val counter   = in  UInt(counterWidth   bits)
   }
   
-  var state  = new ReceiveWindow(windowSize, sessionIdWidth)
+  var state  = ReceiveWindow(windowSize, sessionIdWidth)
   var result = RegInit(False)
-  var memory = Mem(Bits(windowSize bits), 1024)
+  var memory = Mem(Bits(state.width), numberOfSessions)
 
   io.drop := False
 
@@ -61,7 +70,7 @@ import scala.util.Random
 
 object PreventReplaySim {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplay(10, 32, 64)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplay(10, 32, 64, 1024)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
