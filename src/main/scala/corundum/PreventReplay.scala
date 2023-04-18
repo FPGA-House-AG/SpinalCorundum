@@ -15,11 +15,11 @@ object PreventReplay {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val verilogReport = Config.spinal.generateVerilog({
-      val toplevel = new PreventReplay(64, 10, 64, 1024)
+      val toplevel = new PreventReplay(32, 10, 64, 1024)
       toplevel
     })
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new PreventReplay(64, 10, 64, 1024)
+      val toplevel = new PreventReplay(32, 10, 64, 1024)
       toplevel
     })
   }
@@ -48,12 +48,12 @@ case class PreventReplay(windowSize:        Int,
   var state  = ReceiveWindow(windowSize, counterWidth)
   var result = RegInit(False)
   var memory = Mem(Bits(state.asBits.getWidth bits), numberOfSessions)
-
+  memory.initBigInt(Seq.fill(numberOfSessions)(0))
 
   io.read_data := RegNext(memory.readSync(
     enable  = io.read.enable,
     address = io.read.addr
-  )(counterWidth-1 downto 0))
+  )(counterWidth until counterWidth+windowSize))
     
   io.drop      := False
 
@@ -70,7 +70,7 @@ import scala.util.Random
 
 object PreventReplaySim {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplay(64, 10, 64, 1024)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplay(32, 10, 64, 1024)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
