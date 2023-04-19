@@ -49,6 +49,37 @@ case class PreventReplay(windowSize:        Int,
   var result = RegInit(False)
   var memory = Mem(Bits(state.asBits.getWidth bits), numberOfSessions)
   memory.initBigInt(Seq.fill(numberOfSessions)(0))
+  memory.addAttribute("ram_style", "block") 
+  
+  var data = memory.readSync(address = io.sessionId.resize(10 bits), 
+                             enable  = True)
+  
+  state.wt     := data(0, counterWidth bits).asUInt
+  state.bitmap := data(counterWidth, windowSize bits)
+
+  var wt     = io.counter
+  var wb     = wt-windowSize+1
+
+  var wt_ptr = wt & (windowSize-1)
+  var wb_ptr = wb & (windowSize-1)
+
+  when(wt === U(0, counterWidth bits)){
+    // Start of operation or wrapped
+  }.elsewhen(wt > state.wt){
+    // New packet, slide the window
+  }.elsewhen(wt + U(windowSize, counterWidth bits) < state.wt){
+    // Too old packet
+  }.otherwise{
+    // S inside window, check the memory
+  }
+
+
+
+
+
+
+
+
 
   io.read_data := RegNext(memory.readSync(
     enable  = io.read.enable,
