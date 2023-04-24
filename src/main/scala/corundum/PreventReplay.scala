@@ -54,40 +54,61 @@ case class PreventReplay(windowSize:        Int,
   var data = memory.readSync(address = io.sessionId.resize(10 bits), 
                              enable  = True)
   
-  state.wt     := data(0, counterWidth bits).asUInt
-  state.bitmap := data(counterWidth, windowSize bits)
+  state.wt     := data(windowSize, counterWidth bits).asUInt
+  state.bitmap := data(0, windowSize bits)
 
   var wt     = io.counter
   var wb     = wt-windowSize+1
 
-  var wt_ptr = wt & (windowSize-1)
-  var wb_ptr = wb & (windowSize-1)
+  var wt_ptr = wt % windowSize
+  var wb_ptr = wb % windowSize
 
   when(wt === U(0, counterWidth bits)){
     // Start of operation or wrapped
+    io.drop := False
   }.elsewhen(wt > state.wt){
     // New packet, slide the window
+    var diff = wt - state.wt - 1
+
+    for(i <- 0 until windowSize){
+      when((i > state.wt+1) & (i < wt)){
+        state.bitmap(i % windowSize)     := False
+      }.elsewhen(i === state.wt+1){
+        state.bitmap(i % windowSize)     := True
+      }
+    }
+    
+    data = wt.asBits ## state.bitmap
+    memory(io.sessionId.resize(10 bits)) := data
+
+    io.drop := False
+
   }.elsewhen(wt + U(windowSize, counterWidth bits) < state.wt){
     // Too old packet
+    io.drop := True
   }.otherwise{
+    
+    val conditionalReg = Reg(Bool())
+    conditionalReg := state.bitmap(wt_ptr.resize(5 bits))
     // S inside window, check the memory
+    when(conditionalReg === False){
+      state.bitmap(wt_ptr.resize(5 bits)) := True 
+      data = wt.asBits ## state.bitmap
+      memory(io.sessionId.resize(10 bits)) := data
+      io.drop := False
+      //We haven't seen this packet yet. We set the bit in memory, and don't update the window
+    }.otherwise{
+      //We've seen this packet already, we drop it, and we don't update the window.
+      io.drop := True
+    }
+    
+    
   }
-
-
-
-
-
-
-
-
 
   io.read_data := RegNext(memory.readSync(
     enable  = io.read.enable,
-    address = io.read.addr
-  )(counterWidth until counterWidth+windowSize))
-    
-  io.drop      := False
-
+    address = io.read.addr)
+  (counterWidth until counterWidth+windowSize))
 }
 
 
@@ -105,10 +126,12 @@ object PreventReplaySim {
       // Fork a process to generate the reset and the clock on the dut
       dut.clockDomain.forkStimulus(period = 10)
 
-      dut.clockDomain.waitRisingEdge(20)
-      dut.io.sessionId.assignBigInt(1)
-      dut.io.counter.assignBigInt(1)
-      dut.clockDomain.waitRisingEdge(20)
+      for(i <-0 until 20){
+        dut.io.sessionId.assignBigInt(1)
+        dut.io.counter.assignBigInt(i)
+        dut.clockDomain.waitRisingEdge()
+      }
+
     }
   }
 }
