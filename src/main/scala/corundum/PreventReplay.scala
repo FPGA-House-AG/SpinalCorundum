@@ -46,7 +46,8 @@ case class PreventReplay(windowSize:        Int,
   }
   
   var state  = ReceiveWindow(windowSize, counterWidth)
-  var result = RegInit(False)
+  var result = RegInit(UInt(2 bits))
+  result := 0
   var memory = Mem(Bits(state.asBits.getWidth bits), numberOfSessions)
   memory.initBigInt(Seq.fill(numberOfSessions)(0))
   memory.addAttribute("ram_style", "block") 
@@ -58,19 +59,17 @@ case class PreventReplay(windowSize:        Int,
   state.bitmap := data(0, windowSize bits)
 
   var s_val     = io.counter
-  var wb     = s_val-windowSize+1
-
-  var wt_ptr = s_val % windowSize
-  var wb_ptr = wb % windowSize
-
+  var s_ptr = s_val % windowSize
 
 
   when(s_val === U(0, counterWidth bits)){
     // Start of operation or wrapped
+    result := 0
     io.drop := False
   }.elsewhen(s_val > state.wt){
     // New packet, slide the window
     var diff = s_val - state.wt - 1
+    result := 1
 
     for(i <- 0 until windowSize){
       when((i > state.wt+1) & (i < s_val)){
@@ -87,14 +86,15 @@ case class PreventReplay(windowSize:        Int,
 
   }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt){
     // Too old packet
+    result := 2
     io.drop := True
   }.otherwise{
-    
+    result := 3
     val conditionalReg = Reg(Bool())
-    conditionalReg := state.bitmap(wt_ptr.resize(log2Up(windowSize) bits))
+    conditionalReg := state.bitmap(s_ptr.resize(log2Up(windowSize) bits))
     // S inside window, check the memory
     when(conditionalReg === False){
-      state.bitmap(wt_ptr.resize(log2Up(windowSize) bits)) := True 
+      state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True 
       data = s_val.asBits ## state.bitmap
       memory(io.sessionId.resize(log2Up(numberOfSessions) bits)) := data
       io.drop := False
@@ -130,54 +130,54 @@ object PreventReplaySim {
       for(i <-0 until 20){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
 
       for(i <-100 until 120){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
 
       for(i <-100 until 110){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
 
       //inside window
       dut.io.sessionId.assignBigInt(1)
       dut.io.counter.assignBigInt(157)
-      dut.clockDomain.waitRisingEdge(2)
+      dut.clockDomain.waitRisingEdge()
       //Window is now 157 - 150, but should not be dropped
       for(i <-147 until 157){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
       //Window is now 140 - 150, but should be dropped
       for(i <-147 until 157){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
 
       for(i <-147 until 157){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
 
       for(i <-147 until 157){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
 
       for(i <-147 until 157){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
-        dut.clockDomain.waitRisingEdge(2)
+        dut.clockDomain.waitRisingEdge()
       }
     }
   }
