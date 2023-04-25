@@ -1,0 +1,44 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Tue Apr 25 10:58:49 2023
+[*]
+[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/PreventReplay/test.fst"
+[dumpfile_mtime] "Tue Apr 25 10:55:13 2023"
+[dumpfile_size] 1548
+[savefile] "/project-on-host/SpinalCorundum/PreventReplayGHDL.gtkw"
+[timestart] 5
+[size] 2560 1376
+[pos] 83 -1
+*-5.444674 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 225
+[signals_width] 166
+[sst_expanded] 1
+[sst_vpaned_height] 424
+@28
+TOP.PreventReplay.clk
+TOP.PreventReplay.data[73:0]
+@420
+TOP.PreventReplay.io_counter[63:0]
+@28
+TOP.PreventReplay.io_drop
+@22
+TOP.PreventReplay.io_read_addr[9:0]
+TOP.PreventReplay.io_read_data[9:0]
+@28
+TOP.PreventReplay.io_read_enable
+@22
+TOP.PreventReplay.io_sessionId[9:0]
+@28
+TOP.PreventReplay.reset
+TOP.PreventReplay.result
+@29
+TOP.PreventReplay.state_bitmap[9:0]
+@420
+TOP.PreventReplay.state_wt[63:0]
+TOP.PreventReplay.wb[63:0]
+@22
+TOP.PreventReplay.wb_ptr[3:0]
+TOP.PreventReplay.wt_ptr[3:0]
+[pattern_trace] 1
+[pattern_trace] 0
