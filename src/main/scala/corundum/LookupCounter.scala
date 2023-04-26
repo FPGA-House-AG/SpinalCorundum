@@ -47,6 +47,22 @@ object LookupCounter {
 
 // 85c0b78507526d4106ea1620664b48af3cfaf3f5 stable
 //
+
+// The cycles in LookupCounter are as follows:
+// 
+//     register all inputs, which includes: register the input address for the memory, (d1)
+//     register the memory data output, register the registered inputs (d2)
+//     drive the output, calculate new state based on memory data output and registered inputs (d2)
+//     register the state (d3)
+//     register data address for writing (d4)
+//     remember written data (d5)
+// 
+// Because writing the data also takes some time, steps 1,2 can potentially "race"
+// against 3,4,5, but only in the case the same address (WireGuard session index) is used.
+// This is called a "pipeline data hazard".To fix the hazard (without losing too much performance)
+// is to check if the address is identical to the address that is being written, and if so, take
+// the "old state" data not from memory but from the pipeline.
+
 case class LookupCounter(wordCount : Int,
                          startValue : BigInt = 0,
                          endValue : BigInt = (BigInt(1) << 64) - 1,
