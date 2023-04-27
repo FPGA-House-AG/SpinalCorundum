@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Tue Apr 25 15:29:47 2023
+[*] Thu Apr 27 15:37:35 2023
 [*]
 [dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/PreventReplay/test.fst"
-[dumpfile_mtime] "Tue Apr 25 15:23:37 2023"
-[dumpfile_size] 1815
+[dumpfile_mtime] "Thu Apr 27 15:36:33 2023"
+[dumpfile_size] 2522
 [savefile] "/project-on-host/SpinalCorundum/PreventReplayGHDL.gtkw"
 [timestart] 0
 [size] 2560 1376
 [pos] -1 -1
-*-7.681383 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.504443 260 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [sst_width] 225
 [signals_width] 166
@@ -18,19 +18,55 @@
 @28
 TOP.PreventReplay.clk
 TOP.PreventReplay.reset
-@22
-TOP.PreventReplay.io_sessionId[9:0]
 @24
-TOP.PreventReplay.io_counter[63:0]
-@28
-TOP.PreventReplay.io_drop
-@22
-TOP.PreventReplay.s_ptr[3:0]
-TOP.PreventReplay.state_bitmap[9:0]
-TOP.PreventReplay.state_wt[63:0]
-@28
-TOP.PreventReplay.result[1:0]
+TOP.PreventReplay.io_counter[15:0]
+TOP.PreventReplay.d1_counter[15:0]
+[color] 1
+TOP.PreventReplay.d2_counter[15:0]
+TOP.PreventReplay.d3_counter[15:0]
+TOP.PreventReplay.d4_counter[15:0]
+TOP.PreventReplay.d5_counter[15:0]
 @200
 -
+@24
+TOP.PreventReplay.io_sessionId[9:0]
+TOP.PreventReplay.d1_sessionId[9:0]
+[color] 1
+TOP.PreventReplay.d2_sessionId[9:0]
+TOP.PreventReplay.d3_sessionId[9:0]
+TOP.PreventReplay.d4_sessionId[9:0]
+TOP.PreventReplay.d5_sessionId[9:0]
+@200
+-
+@28
+[color] 1
+TOP.PreventReplay.d2_data[25:0]
+TOP.PreventReplay.d3_data[25:0]
+[color] 5
+TOP.PreventReplay.d4_data[25:0]
+TOP.PreventReplay.d5_data[25:0]
+@200
+-
+@28
+TOP.PreventReplay.io_drop
+@200
+-
+@28
+TOP.PreventReplay.state_bitmap[9:0]
+[color] 2
+TOP.PreventReplay.state_wt[15:0]
+@200
+-
+@24
+[color] 3
+TOP.PreventReplay.result[1:0]
+@420
+[color] 2
+TOP.PreventReplay.state_wt[15:0]
+@22
+TOP.PreventReplay.s_ptr[3:0]
+@24
+[color] 7
+TOP.PreventReplay.hazard_case[1:0]
 [pattern_trace] 1
 [pattern_trace] 0
