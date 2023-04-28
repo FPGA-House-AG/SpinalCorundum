@@ -51,7 +51,7 @@ case class PreventReplay(windowSize:        Int,
   var hazard_case = UInt(2 bits)
   hazard_case := 0
   var memory = Mem(Bits(state.asBits.getWidth bits), numberOfSessions)
-  memory.initBigInt(Seq.fill(numberOfSessions)(0))
+  memory.initBigInt(Seq.fill(numberOfSessions)(1))
 
   //var addressReg = Reg(UInt(sessionIdWidth bits))
   //addressReg    := RegNext(io.sessionId.resize(log2Up(numberOfSessions) bits))
@@ -60,7 +60,7 @@ case class PreventReplay(windowSize:        Int,
   var d1_sessionId = RegNext(io.sessionId).init(0)
   var d1_counter   = RegNext(io.counter).init(0)
   /*SECOND STAGE DELAY*/
-  var d2_data      = RegNext(memory.readSync(address = d1_sessionId.resize(log2Up(numberOfSessions) bits), enable  = True))
+  var d2_data      = RegNext(memory.readSync(address = d1_sessionId.resize(log2Up(numberOfSessions) bits), enable  = True)).init(0)
   var d2_sessionId = RegNext(d1_sessionId).init(0)
   var d2_counter   = RegNext(d1_counter).init(0)
   var d2_sop       = True
@@ -71,29 +71,26 @@ case class PreventReplay(windowSize:        Int,
   var d3_sessionId = RegNext(d2_sessionId).init(0)
   var d3_counter   = RegNext(d2_counter).init(0)
   var d3_sop       = RegNext(d2_sop)
-  var d3_valid     = RegNext(d2_valid)
+  var d3_valid     = RegNext(d2_valid).init(False)
 
   /*FOURTH STAGE DELAY*/ /*REGISTER THE STATE AND DATA ADDRESS FOR WRITING*/ 
   var d4_sessionId = RegNext(d3_sessionId).init(0)
   var d4_counter   = RegNext(d3_counter).init(0)
   var d4_sop       = RegNext(d3_sop)
-  var d4_valid     = RegNext(d3_valid)
-  var d4_data      = RegNext(d3_data)//
+  var d4_valid     = RegNext(d3_valid).init(False)
+  var d4_data      = RegNext(d3_data).init(0)//
 
 
   /*FIFTH STAGE DELAY*/ /*REMEMBER WRITTEN DATA*/
-  var d5_data      = RegNext(d4_data)
+  var d5_data      = RegNext(d4_data).init(0)
   var d5_sessionId = RegNext(d4_sessionId).init(0)
   var d5_counter   = RegNext(d4_counter).init(0)
   var d5_sop       = RegNext(d4_sop)
-  var d5_valid     = RegNext(d4_valid)
+  var d5_valid     = RegNext(d4_valid).init(False)
   //io.drop         := d4_valid
-  var start_of_ops = d2_valid & d3_valid & d4_valid & d5_valid
+  var start_of_ops = d2_valid & d3_valid & d4_valid & d5_valid | (d2_counter===0 & d1_counter===1)
   memory.readWriteSync(d3_sessionId, data = d3_data, enable = True, write = True)
   /*SOLVE RACE CONDITIONS*/
-  var take_from_d3 = False
-  var take_from_d4 = False
-  var take_from_d5 = False
   
   //var dataReg    = Reg(Bits(counterWidth+windowSize bits))
   var counterReg = d2_counter
@@ -101,16 +98,16 @@ case class PreventReplay(windowSize:        Int,
 
   
   
-  when(d5_data(windowSize, counterWidth bits).asUInt > d2_data(windowSize, counterWidth bits).asUInt){
+  /*when(d5_data(windowSize, counterWidth bits).asUInt > d2_data(windowSize, counterWidth bits).asUInt){
     //dataReg    = d5_data
     state.wt     := d5_data(windowSize, counterWidth bits).asUInt
     state.bitmap := d5_data(0, windowSize bits)
     hazard_case := 3
-  }.elsewhen(d4_data(windowSize, counterWidth bits).asUInt > d2_data(windowSize, counterWidth bits).asUInt){
+  }.*/when(d4_data(windowSize, counterWidth bits).asUInt >= d2_data(windowSize, counterWidth bits).asUInt){
     state.wt     := d4_data(windowSize, counterWidth bits).asUInt
     state.bitmap := d4_data(0, windowSize bits)
     hazard_case := 2
-  }.elsewhen(d3_data(windowSize, counterWidth bits).asUInt > d2_data(windowSize, counterWidth bits).asUInt){
+  }.elsewhen(d3_data(windowSize, counterWidth bits).asUInt >= d2_data(windowSize, counterWidth bits).asUInt){
     state.wt     := d3_data(windowSize, counterWidth bits).asUInt
     state.bitmap := d3_data(0, windowSize bits)
     hazard_case := 1
@@ -125,12 +122,24 @@ case class PreventReplay(windowSize:        Int,
 
   var s_val    = counterReg
   var s_ptr = s_val % windowSize
+  var gotten_zero = Reg(Bool())
 
   when(start_of_ops === True){
-    when(s_val === U(0, counterWidth bits)){
+    when(s_val === U(0, counterWidth bits) & gotten_zero===False){
       // Start of operation or wrapped
       result := 0
-      io.drop := False
+      when(state.bitmap.andR===True){
+        io.drop := True
+      }.otherwise{
+        io.drop := False
+      }
+      gotten_zero := True
+      state.bitmap := B(1, windowSize bits)
+      when(d4_data.asUInt < (s_val.asBits ## state.bitmap).asUInt){
+        d4_data := s_val.asBits ## state.bitmap
+        d3_data := s_val.asBits ## state.bitmap
+        d2_data := s_val.asBits ## state.bitmap
+      }
     }.elsewhen(s_val > state.wt){
       // New packet, slide the window
       var diff = s_val - state.wt - 1
@@ -144,6 +153,7 @@ case class PreventReplay(windowSize:        Int,
         }
       }
 
+      d4_data := s_val.asBits ## state.bitmap
       d3_data := s_val.asBits ## state.bitmap
       d2_data := s_val.asBits ## state.bitmap
       //memory(io.sessionId.resize(log2Up(numberOfSessions) bits)) := s_val.asBits ## state.bitmap //////////////////////////////////////////////
@@ -173,7 +183,7 @@ case class PreventReplay(windowSize:        Int,
         io.drop := True
         
       }
-      //d4_data := state.wt ## state.bitmap
+      d4_data := state.wt ## state.bitmap
       d3_data := state.wt ## state.bitmap
       d2_data := state.wt ## state.bitmap
       
@@ -212,13 +222,12 @@ object PreventReplaySim {
         dut.io.counter.assignBigInt(i)
         dut.clockDomain.waitRisingEdge()
       }
-      /*
+      
       for(i <-100 until 110){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
         dut.clockDomain.waitRisingEdge()
-      }
-
+      }    
       //inside window
       dut.io.sessionId.assignBigInt(1)
       dut.io.counter.assignBigInt(157)
@@ -252,7 +261,9 @@ object PreventReplaySim {
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(i)
         dut.clockDomain.waitRisingEdge()
-      }*/
+      }
+      dut.clockDomain.waitRisingEdge(3)
+
     }
   }
 }
