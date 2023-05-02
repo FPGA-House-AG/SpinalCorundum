@@ -146,7 +146,7 @@ object LookupCounterAxi4Sim {
   def main(args: Array[String]) : Unit = {
     val wordCount = 32//1024
     val startValue = 0
-    val endValue = (BigInt(1) << 33) - 1
+    val endValue = (BigInt(1) << 64) - 1
     val restart = false
     val initRAM = false
     printf("LookupCounterAxi4Sim: endValue = %d\n", endValue)
@@ -246,7 +246,7 @@ object LookupCounterAxi4Sim {
               dut.io.ctrlbus.aw.valid #= true
               dut.io.ctrlbus.aw.payload.addr.assignBigInt(address * bytes)
               dut.io.ctrlbus.w.valid #= true
-              dut.io.ctrlbus.w.payload.data.assignBigInt(BigInt("0DEADBEEF", 16) + address)
+              dut.io.ctrlbus.w.payload.data.assignBigInt(BigInt("0DEADBEEF", 16) + address + 4)
               dut.clockDomain.waitSamplingWhere(dut.io.ctrlbus.aw.ready.toBoolean && dut.io.ctrlbus.w.ready.toBoolean)
               // update model
               model(address) = startValue
