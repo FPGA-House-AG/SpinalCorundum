@@ -1,6 +1,7 @@
 package corundum
 
 import spinal.core._
+import spinal.lib._
 import spinal.sim._
 import spinal.core.sim._
 import spinal.lib.sim.{ScoreboardInOrder, SimData}
@@ -17,7 +18,7 @@ object StreamLatencySim {
 
     SimConfig
     .withFstWave
-    .doSim(new StreamLatency(dataWidth/*bits*/, cycleCount)){dut =>
+    .doSim(new StreamLatency(Fragment(Bits(dataWidth bits)), cycleCount)){dut =>
 
       SimTimeout(1000000 * 10)
 

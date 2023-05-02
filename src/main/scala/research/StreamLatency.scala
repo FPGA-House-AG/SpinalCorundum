@@ -9,8 +9,8 @@ import scala.math._
 object StreamLatency {
   // generate VHDL and Verilog
   def main(args: Array[String]) : Unit = {
-    val vhdlReport = Config.spinal.generateVhdl(new StreamLatency(Config.corundumDataWidth, 65))
-    val verilogReport = Config.spinal.generateVerilog(new StreamLatency(Config.corundumDataWidth, 65))
+    val vhdlReport = Config.spinal.generateVhdl(StreamLatency(Bits(Config.corundumDataWidth bits), 65))
+    val verilogReport = Config.spinal.generateVerilog(StreamLatency(Bits(Config.corundumDataWidth bits), 65))
   }
 }
 
@@ -19,7 +19,7 @@ object StreamLatency {
  *
  * Latency is added to the (internal) latency caused by downstream backpressure (ready==0).
  */
-case class StreamLatency(dataWidth : Int, cycleCount : Int) extends Component {
+case class StreamLatency[T <: Data](dataType: HardType[T], cycleCount : Int) extends Component {
 
   // @TODO if true, the assert() does not hold?!
   val hasOutputReg = false
@@ -29,8 +29,8 @@ case class StreamLatency(dataWidth : Int, cycleCount : Int) extends Component {
   require(cycleCount >= (streamFifoLatency + outputRegLatency))
 
   val io = new Bundle {
-    val sink = slave Stream Fragment(Bits(dataWidth bits))
-    val source = master Stream Fragment(Bits(dataWidth bits))
+    val sink = slave Stream(dataType)
+    val source = master Stream(dataType)
   }
 
   // to measure latencies in simulation
@@ -38,7 +38,7 @@ case class StreamLatency(dataWidth : Int, cycleCount : Int) extends Component {
   cycle := cycle + 1
 
   // concatenate sink_length to Fragment, going through skid buffer in-sync with data
-  val x = Stream(Fragment(Bits(dataWidth bits)))
+  val x = Stream(dataType)
   x << io.sink
 
   // x is input stream, z is output stream with added 'cycleCount' delay.
@@ -48,7 +48,7 @@ case class StreamLatency(dataWidth : Int, cycleCount : Int) extends Component {
 
   // h is x, but paused on backpressure (internal delay through handshake)
   // z is the resulting delayed stream
-  val h, z = Stream(Fragment(Bits(dataWidth bits)))
+  val h, z = Stream(dataType)
   // halt on downstream backpressure (internal delay)
   h << x.continueWhen(io.source.ready)
   // store data in FIFO, y is the data FIFO output
