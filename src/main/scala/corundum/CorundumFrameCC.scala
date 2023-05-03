@@ -9,15 +9,21 @@ import spinal.lib._
 import scala.math.pow
 import java.util.Base64
 
+
+// @NOTE: Seems USER_WIDTH must be > 0, even when USER_ENABLE == 0
+// @NOTE: Seems DEPTH > KEEP_WIDTH, maybe even by a positive integer
 class axis_async_fifo(depth: Int = 8, pushCD: ClockDomain, popCD: ClockDomain,
-  DATA_WIDTH : Int = 512, USER_WIDTH : Int = 1,
+  DATA_WIDTH : Int = 512, USER_WIDTH : Int = 1, USER_ENABLE: Int = 1,
   KEEP_ENABLE : Int = 1, LAST_ENABLE : Int = 1) extends BlackBox {
+
+  val KEEP_WIDTH = if (KEEP_ENABLE > 0) ((DATA_WIDTH+7)/8) else 1
+
   addGeneric("DATA_WIDTH", DATA_WIDTH)
   addGeneric("DEPTH", depth)
   addGeneric("KEEP_ENABLE", KEEP_ENABLE)
   addGeneric("LAST_ENABLE", LAST_ENABLE)
   addGeneric("USER_WIDTH", USER_WIDTH)
-  val KEEP_WIDTH = if (KEEP_ENABLE > 0) ((DATA_WIDTH+7)/8) else 0
+  addGeneric("USER_ENABLE", USER_ENABLE)
   val ID_WIDTH = 0
   val DEST_WIDTH = 0
   // Define IO of the VHDL entity / Verilog module
@@ -90,6 +96,8 @@ case class CorundumFrameCC(val depth: Int,
   verilog.io.s_axis_tuser  := io.push.fragment.tuser
   verilog.io.s_axis_tvalid := io.push.valid
   verilog.io.s_axis_tlast  := io.push.last
+  verilog.io.s_axis_tid    := 0
+  verilog.io.s_axis_tdest  := 0
   io.push.ready             := verilog.io.s_axis_tready
 
   io.pop.fragment.tdata := verilog.io.m_axis_tdata
@@ -110,7 +118,7 @@ object KeyStreamCC {
     SpinalVhdl(new KeyStreamCC(8, ClockDomain.current, ClockDomain.current))
   }
 }
-case class KeyStreamCC(val depth: Int, val pushClock: ClockDomain,
+case class KeyStreamCC(val depth: Int = 8, val pushClock: ClockDomain,
                                val popClock: ClockDomain,
                                val dataWidth: Int = 256
                                ) extends Component {
@@ -120,7 +128,7 @@ case class KeyStreamCC(val depth: Int, val pushClock: ClockDomain,
     val pop = master Stream Bits(dataWidth bits)
   }
   val verilog = new axis_async_fifo(depth, pushClock, popClock,
-    DATA_WIDTH = dataWidth, USER_WIDTH = 0, KEEP_ENABLE = 0, LAST_ENABLE = 0)
+    DATA_WIDTH = dataWidth, USER_WIDTH = 1, USER_ENABLE = 0, KEEP_ENABLE = 0, LAST_ENABLE = 0)
 
   verilog.io.s_axis_tdata  := io.push.payload
   verilog.io.s_axis_tvalid := io.push.valid
