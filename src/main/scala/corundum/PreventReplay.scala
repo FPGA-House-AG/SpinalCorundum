@@ -41,8 +41,6 @@ case class PreventReplay(windowSize:        Int,
       val drop      = out Bool()
       val sessionId = in  UInt(sessionIdWidth bits)
       val counter   = in  UInt(counterWidth   bits)
-      //val read_data = out Bits(windowSize     bits)
-      //val read      = ReadBundle(log2Up(numberOfSessions), counterWidth)
   }
   
   var state  = ReceiveWindow(windowSize, counterWidth)
@@ -50,7 +48,7 @@ case class PreventReplay(windowSize:        Int,
   result := 0
   var hazard_case = UInt(2 bits)
   hazard_case := 0
-  var memory = Mem(Bits(state.asBits.getWidth bits), numberOfSessions)
+  var memory = Mem(ReceiveWindow(windowSize, counterWidth), numberOfSessions)
   memory.initBigInt(Seq.fill(numberOfSessions)(1))
 
   /*mem read latency 2 cycles*/
@@ -58,13 +56,13 @@ case class PreventReplay(windowSize:        Int,
   var d1_sessionId = RegNext(io.sessionId).init(0)
   var d1_counter   = RegNext(io.counter).init(0)
   /*SECOND STAGE DELAY*/
-  var d2_data      = RegNext(memory.readSync(address = d1_sessionId.resize(log2Up(numberOfSessions) bits), enable  = True)).init(0)
+  var d2_data      = RegNext(memory.readSync(address = d1_sessionId.resize(log2Up(numberOfSessions) bits), enable  = True))
   var d2_sessionId = RegNext(d1_sessionId).init(0)
   var d2_counter   = RegNext(d1_counter).init(0)
   var d2_sop       = True
   var d2_valid     = RegNext(True) 
   /*THIRD STAGE DELAY*/
-  var d3_data      = RegNext(d2_data).init(0)
+  var d3_data      = RegNext(d2_data)
   var d3_sessionId = RegNext(d2_sessionId).init(0)
   var d3_counter   = RegNext(d2_counter).init(0)
   var d3_sop       = RegNext(d2_sop)
@@ -74,9 +72,9 @@ case class PreventReplay(windowSize:        Int,
   var d4_counter   = RegNext(d3_counter).init(0)
   var d4_sop       = RegNext(d3_sop)
   var d4_valid     = RegNext(d3_valid).init(False)
-  var d4_data      = RegNext(d3_data).init(0)
+  var d4_data      = RegNext(d3_data)
   /*FIFTH STAGE DELAY*/
-  var d5_data      = RegNext(d4_data).init(0)
+  var d5_data      = RegNext(d4_data)
   var d5_sessionId = RegNext(d4_sessionId).init(0)
   var d5_counter   = RegNext(d4_counter).init(0)
   var d5_sop       = RegNext(d4_sop)
@@ -88,22 +86,18 @@ case class PreventReplay(windowSize:        Int,
   var sessionReg = d2_sessionId
 
   when(d3_sessionId === d2_sessionId){
-    when(d4_data(windowSize, counterWidth bits).asUInt >= d2_data(windowSize, counterWidth bits).asUInt){
-      state.wt     := d4_data(windowSize, counterWidth bits).asUInt
-      state.bitmap := d4_data(0, windowSize bits)
+    when(d4_data.wt >= d2_data.wt){
+      state := d4_data
       hazard_case := 2
-    }.elsewhen(d3_data(windowSize, counterWidth bits).asUInt >= d2_data(windowSize, counterWidth bits).asUInt){
-      state.wt     := d3_data(windowSize, counterWidth bits).asUInt
-      state.bitmap := d3_data(0, windowSize bits)
+    }.elsewhen(d3_data.wt >= d2_data.wt){
+      state := d3_data
       hazard_case := 1
     }.otherwise{
-      state.wt     := d2_data(windowSize, counterWidth bits).asUInt
-      state.bitmap := d2_data(0, windowSize bits)
+      state := d2_data
       hazard_case := 0
     }
   }.otherwise{
-    state.wt     := d2_data(windowSize, counterWidth bits).asUInt
-    state.bitmap := d2_data(0, windowSize bits)
+    state := d2_data
     hazard_case := 0
   }
   
@@ -122,10 +116,15 @@ case class PreventReplay(windowSize:        Int,
       }
       gotten_zero := True
       state.bitmap := B(1, windowSize bits)
-      when(d4_data.asUInt < (s_val.asBits ## state.bitmap).asUInt){
-        d4_data := s_val.asBits ## state.bitmap
-        d3_data := s_val.asBits ## state.bitmap
-        d2_data := s_val.asBits ## state.bitmap
+      when(d4_data.wt < (s_val.asBits).asUInt){
+        d4_data.wt     := s_val
+        d4_data.bitmap := state.bitmap
+
+        d3_data.wt     := s_val
+        d3_data.bitmap := state.bitmap
+
+        d2_data.wt     := s_val
+        d2_data.bitmap := state.bitmap
       }
     }.elsewhen(s_val > state.wt){
       // New packet, slide the window
@@ -139,10 +138,14 @@ case class PreventReplay(windowSize:        Int,
           state.bitmap(i % windowSize)     := True
         }
       }
+      d4_data.wt     := s_val
+      d4_data.bitmap := state.bitmap
 
-      d4_data := s_val.asBits ## state.bitmap
-      d3_data := s_val.asBits ## state.bitmap
-      d2_data := s_val.asBits ## state.bitmap
+      d3_data.wt     := s_val
+      d3_data.bitmap := state.bitmap
+
+      d2_data.wt     := s_val
+      d2_data.bitmap := state.bitmap
 
       io.drop := False
 
@@ -168,9 +171,14 @@ case class PreventReplay(windowSize:        Int,
         io.drop := True
         
       }
-      d4_data := state.wt ## state.bitmap
-      d3_data := state.wt ## state.bitmap
-      d2_data := state.wt ## state.bitmap
+      d4_data.wt     := s_val
+      d4_data.bitmap := state.bitmap
+
+      d3_data.wt     := s_val
+      d3_data.bitmap := state.bitmap
+
+      d2_data.wt     := s_val
+      d2_data.bitmap := state.bitmap
       
     }
   }.otherwise{
@@ -199,7 +207,7 @@ object PreventReplaySim {
         dut.io.counter.assignBigInt(sample)
         dut.clockDomain.waitRisingEdge()
       }
-      
+
       dut.clockDomain.waitRisingEdge(3)
 
     }
