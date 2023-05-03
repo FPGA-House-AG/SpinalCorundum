@@ -3,7 +3,7 @@ import math
 
 def rfc6479():
 
-    W            = 32
+    W            = 8
     #N            = 8
     #M            = 4
     Wt           = 0
@@ -21,13 +21,8 @@ def rfc6479():
         # Swap the elements at the randomly chosen indices
         swapped[index1], swapped[index2] = swapped[index2], swapped[index1]
 
-    values = list(range(50)) + [x for i, x in enumerate(list(range(50, 100))) if i not in random.sample(range(len(list(range(50, 100)))), 20)]  + swapped   
+    values = list(range(0)) + [x for i, x in enumerate(list(range(50, 100))) if i not in random.sample(range(len(list(range(50, 100)))), 20)]  + swapped   
     for i in values:
-        if i == 118:
-            a = 1
-        if i == 99:
-            b = 1
-        #S = ''.join(random.choice(['0', '1'])for _ in range(64))
         S = bin(i)[2:].zfill(64) 
         Wt_ptr = (Wt) & (W - 1)
         Wb_ptr = (Wb) & (W - 1)
@@ -65,7 +60,7 @@ def rfc6479():
             else:
             # We've seen this packet already, we drop it, and we don't update the window.
                 print("S=", int(S, 2), "DROP = 1, INSIDE WINDOW")
-
+    print(values)
 
   
 rfc6479()
