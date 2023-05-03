@@ -14,7 +14,7 @@
 # Run all commands of one make target in the same shell, by default
 .ONESHELL:
 
-.PHONY: spinal clean simulate repl sim_repl build blackwire rtl
+.PHONY: spinal clean simulate repl sim_repl build rtl
 
 build: rtl
 
@@ -132,17 +132,6 @@ spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	sbt "runMain corundum.CorundumFrameMuxPrioVerilog"
 
 # generate Verilog, VHDL and SystemVerilog RTL
-# this requires external VHDL modules
-blackwire:
-blackwire: src/main/scala/blackwire/BlackwireReceive.scala
-blackwire: src/main/scala/blackwire/BlackwireReceiveFmax.scala
-	set -e
-	sbt " \	
-	runMain blackwire.BlackwireReceive; \
-	runMain blackwire.BlackwireReceiveFmax; \
-	"
-
-# generate Verilog, VHDL and SystemVerilog RTL
 rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 rtl: src/main/scala/corundum/CorundumFrameDrop.scala
 rtl: src/main/scala/corundum/CorundumFrameMatchHeader.scala
@@ -157,7 +146,6 @@ rtl: src/main/scala/corundum/AxisUpSizer.scala
 rtl: src/main/scala/corundum/AxisToCorundumFrame.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
-rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrio; \
@@ -175,10 +163,7 @@ rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 	runMain corundum.AxisToCorundumFrame; \
 	runMain corundum.AxisWireguardKeyLookup; \
 	runMain corundum.LookupTable; \
-	runMain blackwire.BlackwireWireguardType4; \
 	"
-
-
 
 # formal verification. first generate SystemVerilog RTL, then use the .sby
 # file with SymbiYosys to test. @TODO convert to SpinalFormal maybe, this
