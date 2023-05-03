@@ -132,12 +132,13 @@ case class PreventReplay(windowSize:        Int,
       result := 1
 
       for(i <- 0 until windowSize){
-        when((i > state.wt+1) & (i < s_val)){
+        when((i >= state.wt+1) && (i < s_val)){
           state.bitmap(i % windowSize)     := False
-        }.elsewhen(i === state.wt+1){
+        }/*.elsewhen(i === state.wt+1){
           state.bitmap(i % windowSize)     := True
-        }
+        }*/
       }
+      state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True
       d4_data.wt     := s_val
       d4_data.bitmap := state.bitmap
 
@@ -197,7 +198,7 @@ object PreventReplaySim {
   def main(args: Array[String]) {
     SimConfig.withFstWave.doSim(new PreventReplay(8, 10, 16, 1024)){dut =>
       // Fork a process to generate the reset and the clock on the dut
-      val testValues = Array(52, 53, 57, 59, 60, 62, 63, 64, 67, 69, 71, 74, 75, 79, 80, 81, 82, 84, 85, 86, 87, 89, 90, 92, 93, 96, 97, 99, 125, 110, 118, 135, 127, 106, 128, 107, 101, 142, 115, 120, 112, 134, 114, 108, 136, 126, 100, 144, 130, 119, 122, 103, 138, 104, 123, 132, 102, 129, 133, 113, 149, 116, 143, 117, 146, 137, 131, 139, 109, 148, 140, 124, 121, 145, 111, 147, 105, 141)
+      val testValues = Array(52, 53, 57, 59, 60, 62, 60, 63, 64, 67, 69, 71, 74, 75, 79, 80, 81, 82, 84, 85, 86, 87, 89, 90, 92, 93, 96, 97, 99, 125, 110, 118, 135, 127, 106, 128, 107, 101, 142, 115, 120, 112, 134, 114, 108, 136, 126, 100, 144, 130, 119, 122, 103, 138, 104, 123, 132, 102, 129, 133, 113, 149, 116, 143, 117, 146, 137, 131, 139, 109, 148, 140, 124, 121, 145, 111, 147, 105, 141)
       dut.clockDomain.forkStimulus(period = 2)
       dut.io.sessionId.assignBigInt(0)
       dut.io.counter.assignBigInt(0)
