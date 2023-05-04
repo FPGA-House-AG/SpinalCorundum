@@ -55,33 +55,39 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
 
   val z = Stream(Fragment(Bits(dataWidthOut bits)))
 
-  // calculate number of output beats based on input length
-  val y_out_beat_last = RegNextWhen((x_length + dataWidthOut / 8 - 1) / (dataWidthOut / 8) - 1, x.ready)
-  //val y_out_beat_last = (y_length - 1) / (dataWidthOut / 8)
-  val y_out_beat_num = Reg(UInt(12 bits)) init(0)
+  // downsize factor (equals number of output beats per full input beat)
+  val factor = dataWidthIn / dataWidthOut
+  // number of bits needed to index output beats per single input beat
+  val factorBits = log2Up(factor)
+
+  // last output beat number (modulo factor), only valid iff y.last
+  val y_last_beat_num = RegNextWhen(((x_length + dataWidthOut / 8 - 1) / (dataWidthOut / 8) - 1).resize(factorBits), x.ready)
+  // current output beat number in y (modulo factor)
+  val y_cur_beat_num = Reg(UInt(factorBits bits)) init(0)
+
+  val is_last_output_beat = y.last && (y_cur_beat_num === y_last_beat_num)
 
   // current output beat in z?
   when (z.fire) {
     // last output beat for this input frame?
-    when (y_out_beat_num === y_out_beat_last) {
-      y_out_beat_num := 0
+    when (is_last_output_beat) {
+      // reset for next input frame
+      y_cur_beat_num := 0
     } otherwise {
-      y_out_beat_num := y_out_beat_num + 1
+      y_cur_beat_num := y_cur_beat_num + 1
     }
   }
-  val factor = dataWidthIn / dataWidthOut
   // when the input can take the next beat
-  val next_input = ((y_out_beat_num % factor) === (factor - 1)) |
-    (y_out_beat_num === y_out_beat_last)
+  val next_input = (y_cur_beat_num === (factor - 1)) | is_last_output_beat
 
-  val counter = y_out_beat_num.resize(log2Up(factor))
+  printf("AxisDownSizer widthOf(counter) = %d\n", widthOf(y_cur_beat_num))
   z.valid := y.valid
   //endianness match {
   //  case `LITTLE` =>
-    z.fragment.assignFromBits(y.fragment.asBits.resize(dataWidthIn).subdivideIn(factor slices).read(counter))
-  //  case `BIG`    => output.fragment.assignFromBits(y.fragment.asBits.resize(paddedInputWidth).subdivideIn(factor slices).reverse.read(counter))
+    z.fragment.assignFromBits(y.fragment.asBits.resize(dataWidthIn).subdivideIn(factor slices).read(y_cur_beat_num))
+  //  case `BIG`    => output.fragment.assignFromBits(y.fragment.asBits.resize(paddedInputWidth).subdivideIn(factor slices).reverse.read(y_cur_beat_num))
   // }
-  z.last := y.last && (y_out_beat_num === y_out_beat_last)
+  z.last := is_last_output_beat
   y.ready := z.ready && next_input
 
   // register outputs
