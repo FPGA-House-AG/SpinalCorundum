@@ -102,7 +102,7 @@ case class PreventReplay(windowSize:        Int,
   }
   
   var s_val    = counterReg
-  var s_ptr = s_val % windowSize
+  var s_ptr = (s_val % windowSize).resize(log2Up(windowSize) bits)
   var gotten_zero = Reg(Bool())
 
   when(start_of_ops === True){
@@ -145,7 +145,7 @@ case class PreventReplay(windowSize:        Int,
         }
       }
       
-      state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True
+      state.bitmap(s_ptr) := True
       
       d4_data.wt     := s_val
       d4_data.bitmap := state.bitmap
@@ -168,14 +168,14 @@ case class PreventReplay(windowSize:        Int,
     }.otherwise{
       result := 3
       // S inside window, check the memory
-      when(state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) === True){
+      when(state.bitmap(s_ptr) === True){
         //We've seen this packet already, we drop it, and we don't update the window.
         io.drop := True
       }.otherwise{
         //We haven't seen this packet yet. We set the bit in memory, and don't update the window
         io.drop := False
       }
-      state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True 
+      state.bitmap(s_ptr) := True 
       d4_data := state
       d3_data := state
       d2_data := state
