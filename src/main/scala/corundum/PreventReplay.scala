@@ -79,7 +79,7 @@ case class PreventReplay(windowSize:        Int,
   var d5_counter   = RegNext(d4_counter).init(0)
   var d5_sop       = RegNext(d4_sop)
   var d5_valid     = RegNext(d4_valid).init(False)
-  var start_of_ops = d2_valid & d3_valid & d4_valid & d5_valid | (d2_counter===0 & d1_counter===1)
+  var start_of_ops = d2_valid & d3_valid & d4_valid & d5_valid | (d2_counter===0 & d1_counter===1) | (d3_data.wt === d2_data.wt)
   memory.readWriteSync(d3_sessionId, data = d3_data, enable = True, write = True)
   
   var counterReg = d2_counter
@@ -130,48 +130,23 @@ case class PreventReplay(windowSize:        Int,
       // New packet, slide the window
       var diff = s_val - state.wt - 1
       result := 1
-
+      
       for(i <- 0 until windowSize){
-        when((i >= state.wt+1) && (i < s_val)){
-          state.bitmap(i % windowSize)     := False
-        }/*.elsewhen(i === state.wt+1){
-          state.bitmap(i % windowSize)     := True
-        }*/
-      }
-      state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True
-      d4_data.wt     := s_val
-      d4_data.bitmap := state.bitmap
-
-      d3_data.wt     := s_val
-      d3_data.bitmap := state.bitmap
-
-      d2_data.wt     := s_val
-      d2_data.bitmap := state.bitmap
-
-      io.drop := False
-
-    }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt){
-      // Too old packet
-      result := 2
-      io.drop := True
-    }.otherwise{
-      result := 3
-      var conditionalReg = Reg(Bool())
-      conditionalReg := state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) === True
-      // S inside window, check the memory
-      when(conditionalReg === False){
-        state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True 
-        when(state.bitmap.andR){
-          io.drop := True
+        when(diff >= windowSize){
+          state.bitmap := B(0, windowSize bits)
+        }.elsewhen(s_ptr === 0){
+          when(i>((state.wt)%windowSize) /*&& (i<=((s_val)%windowSize))*/){
+            state.bitmap(i) := False
+          }
         }.otherwise{
-          io.drop := False
-        } 
-        //We haven't seen this packet yet. We set the bit in memory, and don't update the window
-      }.otherwise{
-        //We've seen this packet already, we drop it, and we don't update the window.
-        io.drop := True
-        
+          when(i>=((state.wt+1)%windowSize) && (i<=((s_val-1)%windowSize))){
+            state.bitmap(i) := False
+          }
+        }
       }
+      
+      state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True
+      
       d4_data.wt     := s_val
       d4_data.bitmap := state.bitmap
 
@@ -181,6 +156,29 @@ case class PreventReplay(windowSize:        Int,
       d2_data.wt     := s_val
       d2_data.bitmap := state.bitmap
       
+      io.drop  := False
+      
+    }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt){
+      // Too old packet
+      result := 2
+      d4_data := state
+      d3_data := state
+      d2_data := state
+      io.drop := True
+    }.otherwise{
+      result := 3
+      // S inside window, check the memory
+      when(state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) === True){
+        //We've seen this packet already, we drop it, and we don't update the window.
+        io.drop := True
+      }.otherwise{
+        //We haven't seen this packet yet. We set the bit in memory, and don't update the window
+        io.drop := False
+      }
+      state.bitmap(s_ptr.resize(log2Up(windowSize) bits)) := True 
+      d4_data := state
+      d3_data := state
+      d2_data := state
     }
   }.otherwise{
     io.drop := False
