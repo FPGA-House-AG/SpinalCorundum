@@ -1,23 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Fri May  5 11:13:05 2023
+[*] Fri May  5 13:07:29 2023
 [*]
 [dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/PreventReplay/test.fst"
-[dumpfile_mtime] "Fri May  5 10:50:34 2023"
-[dumpfile_size] 4122
+[dumpfile_mtime] "Fri May  5 13:05:16 2023"
+[dumpfile_size] 4220
 [savefile] "/project-on-host/SpinalCorundum/PreventReplayGHDL.gtkw"
-[timestart] 29
+[timestart] 39
 [size] 2560 1376
-[pos] -39 -39
-*-4.030679 61 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-4.030679 38 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [sst_width] 225
-[signals_width] 182
+[signals_width] 206
 [sst_expanded] 1
-[sst_vpaned_height] 424
+[sst_vpaned_height] 586
 @28
 TOP.PreventReplay.clk
 TOP.PreventReplay.reset
+@29
 [color] 1
 TOP.io_drop
 @24
@@ -26,12 +27,18 @@ TOP.PreventReplay.result[1:0]
 [color] 6
 TOP.PreventReplay.s_ptr[2:0]
 TOP.PreventReplay.hazard_case[1:0]
-@29
+@28
 [color] 2
 TOP.PreventReplay.state_bitmap[7:0]
 @24
 [color] 7
 TOP.PreventReplay.state_wt[15:0]
+@28
+[color] 2
+TOP.PreventReplay.next_state_bitmap[7:0]
+@24
+[color] 7
+TOP.PreventReplay.next_state_wt[15:0]
 @200
 -
 @24
@@ -57,14 +64,12 @@ TOP.PreventReplay.d5_sessionId[9:0]
 @200
 -
 @24
-TOP.PreventReplay.d2_data_wt[15:0]
 TOP.PreventReplay.d3_data_wt[15:0]
 TOP.PreventReplay.d4_data_wt[15:0]
 TOP.PreventReplay.d5_data_wt[15:0]
 @200
 -
 @28
-TOP.PreventReplay.d2_data_bitmap[7:0]
 TOP.PreventReplay.d3_data_bitmap[7:0]
 TOP.PreventReplay.d4_data_bitmap[7:0]
 TOP.PreventReplay.d5_data_bitmap[7:0]
@@ -78,10 +83,6 @@ TOP.PreventReplay.d2_valid
 TOP.PreventReplay.d3_valid
 TOP.PreventReplay.d4_valid
 TOP.PreventReplay.d5_valid
-@200
--
-@28
-TOP.PreventReplay.start_of_ops
 @200
 -
 @28
