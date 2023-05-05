@@ -105,6 +105,7 @@ case class LookupCounter(wordCount : Int,
   /* d2 is taken from either memory or the to-memory-pipeline */
   val d2_counter = UInt(counterWidth bits)
 
+  /* the to-memory pipeline, which remembers what was being written to memory */
   val d3_valid  =  RegNext(d2_valid)
   val d3_address = RegNext(d2_address)
   val d3_counter = RegNext(d2_counter)
@@ -117,27 +118,34 @@ case class LookupCounter(wordCount : Int,
   val d5_address = RegNext(d4_address)
   val d5_counter = RegNext(d4_counter)
 
+  // by default, take counter (for output) from memory
   val take_from_memory = True
-  // return counter from memory
   io.counter := U(RegNext(mem.readSync(io.address, enable = True/*io.increment*/)))
 
+  // now resolve for hazards due to memory read and write latency
   val take_from_d3 = False
   val take_from_d4 = False
   val take_from_d5 = False
-  // resolve for hazards due to memory read and write latency
+  // we wrote the data to the d2_address 1 cycle earlier?
   when (d3_valid && (d3_address === d2_address)) {
+    // fetch state from d3 instead of from memory, because the memory is not yet updated
     io.counter := d3_counter
     take_from_memory := False
     take_from_d3 := d2_valid
+  // we wrote the data to the d2_address 2 cycles earlier?
   } elsewhen (d4_valid && (d4_address === d2_address)) {
+    // fetch state from d4 instead of from memory, because the memory is not yet updated
     io.counter := d4_counter
     take_from_memory := False
     take_from_d4 := d2_valid
+  // we wrote the data to the d2_address 3 cycles earlier?
   } elsewhen (d5_valid && (d5_address === d2_address)) {
+    // fetch state from d5 instead of from memory, because the memory is not yet updated
     io.counter := d5_counter
     take_from_memory := False
     take_from_d5 := d2_valid
   }
+  // the same counter we output, must now optionally be updated (cleared, incremented, restarted)
   d2_counter := io.counter
 
   val atEndValue = io.counter === U(endValue).resize(counterWidth)
