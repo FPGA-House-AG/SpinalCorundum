@@ -165,12 +165,14 @@ rtl: src/main/scala/corundum/LookupTable.scala
 	runMain corundum.LookupTable; \
 	"
 
-# formal verification. first generate SystemVerilog RTL, then use the .sby
-# file with SymbiYosys to test. @TODO convert to SpinalFormal maybe, this
-# used SymbiYosys as a back-end. See if feature-complete or not.
-formal: formal_stash formal_extract
+# formal verification.
 
-# Drop is known-broken, but unused.
+# Old approach: first generate SystemVerilog RTL, then use the .sby
+# file with SymbiYosys to test.
+# New approach: Use SpinalFormal maybe, this uses SymbiYosys as a back-end.
+formal: formal_stash formal_extract formal_upsizer
+
+# Drop is known-broken, but unused anyway.
 #formal: formal_drop 
 
 formal_stash:
@@ -187,6 +189,12 @@ formal_extract:
 	sby -h || . /home/vivado/oss-cad-suite/environment
 	sby -h || false
 	sbt "runMain corundum.AxisExtractHeaderFormal"
+
+formal_upsizer:
+	set -e
+	sby -h || . /home/vivado/oss-cad-suite/environment
+	sby -h || false
+	sbt "runMain corundum.AxisUpSizerFormal"
 
 formal_drop:
 # fail on first error
