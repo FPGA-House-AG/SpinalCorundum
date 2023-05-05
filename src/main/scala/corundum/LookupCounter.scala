@@ -142,10 +142,10 @@ case class LookupCounter(wordCount : Int,
 
   val atEndValue = io.counter === U(endValue).resize(counterWidth)
 
-  /* or clear counter to write back */
+  /* clear counter to write back? */
   when (d2_clear) {
     d2_counter := startValue
-  /* increment counter to write back */
+  /* increment counter to write back? */
   } elsewhen (d2_incr) {
       when (!atEndValue) {
         d2_counter := io.counter + 1
@@ -210,7 +210,7 @@ case class LookupCounter(wordCount : Int,
         busCtrl.writeHalt()
       }
     }
-    when(bus_slave_clear_pulse) {
+    when (bus_slave_clear_pulse) {
       io.clear := True
       io.address := bus_wr_addr_memory_word
     }

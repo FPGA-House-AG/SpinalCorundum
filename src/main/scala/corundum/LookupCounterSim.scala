@@ -226,7 +226,7 @@ object LookupCounterAxi4Sim {
       } else {
         printf("Assuming full table RAM is pre-initialized with start value %d.\n", startValue)
       }
-      val bytes = (log2Up(endValue) + 31) / 8
+      val bytes = ((log2Up(endValue) + 31) / 32) * 4
       printf("endValue = %d, bytes = %d\n", log2Up(endValue), bytes)
       printf("Starting torture test...\n");
 
@@ -246,7 +246,7 @@ object LookupCounterAxi4Sim {
               dut.io.ctrlbus.aw.valid #= true
               dut.io.ctrlbus.aw.payload.addr.assignBigInt(address * bytes)
               dut.io.ctrlbus.w.valid #= true
-              dut.io.ctrlbus.w.payload.data.assignBigInt(BigInt("0DEADBEEF", 16) + address + 4)
+              dut.io.ctrlbus.w.payload.data.assignBigInt(BigInt("0DEADBEEF", 16))
               dut.clockDomain.waitSamplingWhere(dut.io.ctrlbus.aw.ready.toBoolean && dut.io.ctrlbus.w.ready.toBoolean)
               // update model
               model(address) = startValue
@@ -279,12 +279,15 @@ object LookupCounterAxi4Sim {
         dut.io.increment #= increment
         dut.io.clear #= clear
         dut.io.lookup #= increment | clear | (Random.nextInt(8) > 3)
+        /* clear counter to write back? */
         if (clear) {
             model(address) = startValue
         }
+        /* increment counter to write back? */
         else if (increment) {
             if (model(address) < endValue) { 
               model(address) += 1
+            // either stop or restart counter
             } else {
               if (restart) {
                 model(address) = startValue

@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
 [*] Thu Apr 13 00:38:29 2023
 [*]
-[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/LookupCounterAxi4/test.fst"
+[dumpfile] "/project-on-hos./simWorkspace/LookupCounterAxi4/test.fst"
 [dumpfile_mtime] "Thu Apr 13 00:35:05 2023"
 [dumpfile_size] 1575398
-[savefile] "/project-on-host/SpinalCorundum/LookupCounterAxi4GHDL.gtkw"
+[savefile] "/project-on-hos./LookupCounterAxi4GHDL.gtkw"
 [timestart] 322
 [size] 3840 2066
 [pos] -1 -1
