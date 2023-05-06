@@ -140,6 +140,8 @@ case class KeyStreamCC(val depth: Int = 8, val pushClock: ClockDomain,
   verilog.io.s_axis_tlast  := True
   verilog.io.s_axis_tkeep  := 0
   verilog.io.s_axis_tuser  := 0
+  verilog.io.s_axis_tid    := 0
+  verilog.io.s_axis_tdest  := 0
   io.push.ready            := verilog.io.s_axis_tready
 
   io.pop.payload        := verilog.io.m_axis_tdata
