@@ -24,8 +24,13 @@ class axis_async_fifo(depth: Int = 8, pushCD: ClockDomain, popCD: ClockDomain,
   addGeneric("LAST_ENABLE", LAST_ENABLE)
   addGeneric("USER_WIDTH", USER_WIDTH)
   addGeneric("USER_ENABLE", USER_ENABLE)
-  val ID_WIDTH = 0
-  val DEST_WIDTH = 0
+  val ID_WIDTH = 8
+  val DEST_WIDTH = 8
+  addGeneric("ID_WIDTH", ID_WIDTH)
+  addGeneric("DEST_WIDTH", DEST_WIDTH)
+  addGeneric("ID_ENABLE", 0)
+  addGeneric("DEST_ENABLE", 0)
+
   // Define IO of the VHDL entity / Verilog module
   val io = new Bundle {
     /*
