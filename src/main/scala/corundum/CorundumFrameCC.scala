@@ -151,3 +151,100 @@ case class KeyStreamCC(val depth: Int = 8, val pushClock: ClockDomain,
   // Execute the function renameAxiIO after the creation of the component
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
 }
+
+import spinal.sim._
+import spinal.core.sim._
+import scala.util.Random
+
+object CorundumFrameCCSim {
+  def main(args: Array[String]) : Unit = {
+
+    SimConfig
+    .withWave
+    .addRtl(s"../corundum.rx.tx/fpga/lib/eth/lib/axis/rtl/axis_async_fifo.v")
+
+    .compile {
+      val dut = new CorundumFrameCC(128, ClockDomain.current, ClockDomain.current)
+      dut
+    }
+    //.addSimulatorFlag("-Wno-TIMESCALEMOD")
+    .doSim { dut =>
+
+      SimTimeout(10000)
+
+      dut.io.push.valid #= false
+      dut.io.pop.ready #= false
+
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.clockDomain.waitRisingEdge(10)
+      var beat_idx = 0
+      var beat_num = 30
+
+      while (beat_idx < beat_num) {
+        dut.io.push.valid #= (Random.nextInt(16) >= 8)
+        dut.io.push.last #= (Random.nextInt(16) >= 8)
+        dut.io.pop.ready #= (Random.nextInt(16) >= 8)
+        dut.io.push.fragment.tdata #= BigInt(beat_idx)
+        if (dut.io.push.valid.toBoolean & dut.io.push.ready.toBoolean) {
+          beat_idx += 1
+        }
+        dut.clockDomain.waitRisingEdge()
+      }
+
+
+      dut.clockDomain.waitRisingEdge(10)
+
+
+      dut.clockDomain.waitRisingEdge(500)
+
+      simSuccess()
+    }
+  }
+}
+
+object KeyStreamCCSim {
+  def main(args: Array[String]) : Unit = {
+
+    SimConfig
+    .withWave
+    .addRtl(s"../corundum.rx.tx/fpga/lib/eth/lib/axis/rtl/axis_async_fifo.v")
+
+    .compile {
+      val dut = new KeyStreamCC(128, ClockDomain.current, ClockDomain.current)
+      dut
+    }
+    //.addSimulatorFlag("-Wno-TIMESCALEMOD")
+    .doSim { dut =>
+
+      SimTimeout(10000)
+
+      dut.io.push.valid #= false
+      dut.io.pop.ready #= false
+
+      dut.clockDomain.forkStimulus(period = 10)
+
+      dut.clockDomain.waitRisingEdge(10)
+      var beat_idx = 0
+      var beat_num = 30
+
+      while (beat_idx < beat_num) {
+        dut.io.push.valid #= (Random.nextInt(16) >= 8)
+        dut.io.pop.ready #= (Random.nextInt(16) >= 8)
+        dut.io.push.payload #= BigInt(beat_idx)
+        if (dut.io.push.valid.toBoolean & dut.io.push.ready.toBoolean) {
+          beat_idx += 1
+        }
+        dut.clockDomain.waitRisingEdge()
+      }
+
+
+      dut.clockDomain.waitRisingEdge(10)
+
+
+      dut.clockDomain.waitRisingEdge(500)
+
+      simSuccess()
+    }
+  }
+}
