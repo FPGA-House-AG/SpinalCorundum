@@ -129,8 +129,8 @@ case class KeyStreamCC(val depth: Int = 8, val pushClock: ClockDomain,
                                ) extends Component {
   // Define IO of the VHDL entity / Verilog module
   val io = new Bundle {
-    val push =    slave Stream Bits(dataWidth bits)
-    val pop = master Stream Bits(dataWidth bits)
+    val push = slave Stream Bits(dataWidth bits)
+    val pop  = master Stream Bits(dataWidth bits)
   }
   val verilog = new axis_async_fifo(depth, pushClock, popClock,
     DATA_WIDTH = dataWidth, USER_WIDTH = 1, USER_ENABLE = 0, KEEP_ENABLE = 0, LAST_ENABLE = 0)
