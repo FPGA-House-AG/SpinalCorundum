@@ -20,6 +20,7 @@ build: rtl
 
 # CI/CD runs "make test"
 test: build formal sim_extract code_analysis
+	
 
 code_analysis:
 	grep -rne '.m2sPipe().s2mPipe()' src/main/scala && \
@@ -110,10 +111,11 @@ sim_reader:
 	gtkwave -F -f ./simWorkspace/CorundumFrameReaderAxi4/test.fst   -a ./CorundumFrameWriterAxi4.gtkw   &
 	sbt "~ test:runMain corundum.CorundumFrameReaderSim"
 
-# AxisExtractHeader simulation verification test
+# AxisExtractHeader and PreventReplay simulation verification test
 sim_extract:
 	set -e
 	sbt "runMain corundum.AxisExtractHeaderSim"
+	sbt "runMain corundum.PreventReplayLinuxSim"
 
 stash:
 	set -e
