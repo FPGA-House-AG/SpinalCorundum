@@ -151,6 +151,7 @@ rtl: src/main/scala/corundum/AxisUpSizer.scala
 rtl: src/main/scala/corundum/AxisToCorundumFrame.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
+rtl: src/main/scala/corundum/PreventReplay.scala
 rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 	set -e
 	sbt " \
@@ -169,6 +170,7 @@ rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 	runMain corundum.AxisToCorundumFrame; \
 	runMain corundum.AxisWireguardKeyLookup; \
 	runMain corundum.LookupTable; \
+	runMain corundum.PreventReplay; \
 	runMain blackwire.BlackwireWireguardType4; \
 	"
 

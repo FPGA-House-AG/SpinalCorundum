@@ -8,7 +8,7 @@ def rfc6479():
     #M            = 4
     Wt           = 0
     Wb           = Wt - W + 1
-    NUM_SESSIONS = 8
+    NUM_SESSIONS = 8 
 
     random.seed(123)
     memory    = ['0']*W
