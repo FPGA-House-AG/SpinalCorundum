@@ -4,7 +4,7 @@ import math
 def rfc6479():
 
     W            = 32
-    N            = 8
+    N            = 32
     M            = 4
     Wt           = 0
     Wb           = Wt - W + 1
