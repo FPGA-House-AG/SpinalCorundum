@@ -109,7 +109,7 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     val do_writeback = d3_valid
     memory.write(d3_sessionId, data = d3_data, enable = do_writeback)
 
-    val window_bits    = log2Up(m*n)
+    val window_bits    = log2Up(windowSize)
     val block_ptr_bits = log2Up(m)
     val bit_ptr_bits   = log2Up(n)
     val s_val          = d2_counter
@@ -122,25 +122,25 @@ case class PreventReplayMN(sessionIdWidth:    Int,
 
     next_state := state
 
-// their_counter === s_val === incomming new packet
-// counter->counter === state.wt == Wt === biggest encountered counter yet for this session.
-// COUNTER_WINDOW_SIZE === windowSize, power of 2
-// BITS_PER_LONG === n === 32 === bits per block
-// COUNTER_BITS_TOTAL === m*n === 128 bits === dimension of memory entry, size of state and memory(i)
-// COUNTER_BITS_TOTAL/BITS_PER_LONG === m === 4 === number of blocks
-// slide the window WT to S, clear diff blocks doing so
-        val diff = (s_val - state.wt) >> log2Up(n)
-        // diff2 is (diff-1) min (windowSize-1), then modulo windowSize
-        val diff2 = UInt(block_ptr_bits bits)
-        diff2 := Mux(diff >= U(m), U(m - 1), (diff - 1).resize(block_ptr_bits))
-        // first block to clear
-        val first = (wt_ptr + 1) >> log2Up(n) // same as (wt_ptr+1) / N
-        // last block to clear
-        val last = (wt_ptr + diff2 + 1) >> log2Up(n)
-        val reversed = (first > last)
+    // their_counter === s_val === incomming new packet
+    // counter->counter === state.wt == Wt === biggest encountered counter yet for this session.
+    // COUNTER_WINDOW_SIZE === windowSize, power of 2
+    // BITS_PER_LONG === n === 32 === bits per block
+    // COUNTER_BITS_TOTAL === m*n === 128 bits === dimension of memory entry, size of state and memory(i)
+    // COUNTER_BITS_TOTAL/BITS_PER_LONG === m === 4 === number of blocks
+    // slide the window WT to S, clear diff blocks doing so
+    val diff = (s_val - state.wt) >> log2Up(n)
+    val diff2 = UInt(block_ptr_bits bits)
+    diff2 := Mux(diff >= U(m), U(m - 1), (diff - 1).resize(block_ptr_bits))
+    // first block to clear
+    val first = wt_ptr >> log2Up(n)
+    // last block to clear
+    val last = (wt_ptr >> log2Up(n)) + diff2
+    val reversed = (first > last)
+    
     when (s_val > state.wt) {
         higher := True
-        
+        wt_ptr := state.wt.resize(window_bits bits)
 
         for (i <- 0 until windowSize){
             // should we clear this bit?   within [first, last] or within [last, first]
@@ -148,14 +148,14 @@ case class PreventReplayMN(sessionIdWidth:    Int,
             // the condition is either i is in [first,last]
             // or i is inside [0, last] or inside [first, windowSize-1] if last < first
             val i_block = i >> log2Up(n)
-            next_state.bitmap(i) := state.bitmap(i) & !(((i_block > first) & (i_block < last)) | (((i_block > first) | (i_block < last)) & reversed))
+            next_state.bitmap(i) := state.bitmap(i) & !(((i_block >= first) & (i_block <= last)) | (((i_block >= first) | (i_block <= last)) & reversed))
         }
 
         // set bit for received counter
         next_state.bitmap(s_ptr) := True
         next_state.wt            := s_val
         io.drop  := False
-    }.elsewhen(s_val + U(window_bits, counterWidth bits) <= state.wt){
+    }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt){
         lower := True
         // Too old packet
         io.drop := True
@@ -220,6 +220,7 @@ object PreventReplayMNLinuxSim {
           var retVal = dut.io.drop.toBoolean
           println(retVal)
           println(retValues(i-2))
+          println("")
           
           if(retVal != retValues(i-2).toBoolean){
             throw new SimFailure("WRONG RESULT")
