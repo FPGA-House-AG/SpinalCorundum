@@ -6,6 +6,7 @@ import spinal.lib._
 import sourcecode._
 import java.io._
 import sys.process._
+import rfc6479.RFC6479_MN
 
 // companion object for case class
 object PreventReplayMN {
@@ -42,6 +43,7 @@ case class PreventReplayMN(sessionIdWidth:    Int,
         val sessionId = in  UInt(sessionIdWidth bits)
         val counter   = in  UInt(counterWidth   bits)
         val valid     = in  Bool()
+        val clear     = in  Bool()
     }
 
     val memory = Mem(ReceiveWindow(windowSize, counterWidth), numberOfSessions)
@@ -52,11 +54,13 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     val d1_sessionId = RegNext(io.sessionId).init(0)
     val d1_counter   = RegNext(io.counter).init(0)
     val d1_valid     = RegNext(io.valid).init(False)
+    val d1_clear     = RegNext(io.clear).init(False)
 
     // d2 is the current state fetched from memory
     val d2_sessionId = RegNext(d1_sessionId).init(0)
     val d2_counter   = RegNext(d1_counter).init(0)
     val d2_valid     = RegNext(d1_valid).init(False)
+    val d2_clear     = RegNext(d1_clear).init(False)
     // the state is read from memory or from the write pipeline in case of a hazard
     val state        = ReceiveWindow(windowSize, counterWidth)
 
@@ -67,17 +71,20 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     val d3_sessionId = RegNext(d2_sessionId).init(0)
     val d3_counter   = RegNext(d2_counter).init(0)
     val d3_valid     = RegNext(d2_valid).init(False)
+    val d3_clear     = RegNext(d2_clear).init(False)
     val d3_data      = RegNext(next_state)
 
     // d4 and d5 remember what is written to memory, to resolve data hazards
     val d4_sessionId = RegNext(d3_sessionId).init(0)
     val d4_counter   = RegNext(d3_counter).init(0)
     val d4_valid     = RegNext(d3_valid).init(False)
+    val d4_clear     = RegNext(d3_clear).init(False)
     val d4_data      = RegNext(d3_data)
 
     val d5_sessionId = RegNext(d4_sessionId).init(0)
     val d5_counter   = RegNext(d4_counter).init(0)
     val d5_valid     = RegNext(d4_valid).init(False)
+    val d5_clear     = RegNext(d4_clear).init(False)
     val d5_data      = RegNext(d4_data)
 
     val take_from_memory = True
@@ -139,31 +146,38 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     val reversed = (first > last)
     
     when (s_val > state.wt) {
-        higher := True
-        wt_ptr := state.wt.resize(window_bits bits)
+      higher := True
+      wt_ptr := state.wt.resize(window_bits bits)
 
-        for (i <- 0 until windowSize){
-            // should we clear this bit?   within [first, last] or within [last, first]
-            // & !(condition) clears the bits with the condition
-            // the condition is either i is in [first,last]
-            // or i is inside [0, last] or inside [first, windowSize-1] if last < first
-            val i_block = i >> log2Up(n)
-            next_state.bitmap(i) := state.bitmap(i) & !(((i_block >= first) & (i_block <= last)) | (((i_block >= first) | (i_block <= last)) & reversed))
-        }
+      for (i <- 0 until windowSize){
+        // should we clear this bit?   within [first, last] or within [last, first]
+        // & !(condition) clears the bits with the condition
+        // the condition is either i is in [first,last]
+        // or i is inside [0, last] or inside [first, windowSize-1] if last < first
+        val i_block = i >> log2Up(n)
+        next_state.bitmap(i) := state.bitmap(i) & !(((i_block >= first) & (i_block <= last)) | (((i_block >= first) | (i_block <= last)) & reversed))
+      }
 
-        // set bit for received counter
-        next_state.bitmap(s_ptr) := True
-        next_state.wt            := s_val
-        io.drop  := False
+      // set bit for received counter
+      next_state.bitmap(s_ptr) := True
+      next_state.wt            := s_val
+      io.drop  := False
+
     }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt){
-        lower := True
-        // Too old packet
-        io.drop := True
-        // S inside window, check the memory
+      lower := True
+      // Too old packet
+      io.drop := True
+      // S inside window, check the memory
+    
+    }.elsewhen(d2_clear === True){
+      next_state.wt     := 0
+      next_state.bitmap := B(0, windowSize bits)
+      io.drop := False
+    
     }.otherwise{
-        inside := True
-        io.drop := state.bitmap(s_ptr)
-        next_state.bitmap(s_ptr) := True 
+      inside := True
+      io.drop := state.bitmap(s_ptr)
+      next_state.bitmap(s_ptr) := True 
     }
 }
 
