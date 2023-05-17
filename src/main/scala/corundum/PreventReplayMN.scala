@@ -138,13 +138,13 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     // COUNTER_BITS_TOTAL === m*n === 128 bits === dimension of memory entry, size of state and memory(i)
     // COUNTER_BITS_TOTAL/BITS_PER_LONG === m === 4 === number of blocks
     // slide the window WT to S, clear diff blocks doing so
-    val diff = (s_val - state.wt) >> log2Up(n)
+    val diff = (s_val - state.wt) / n
     val diff2 = UInt(block_ptr_bits bits)
     diff2 := Mux(diff >= U(m), U(m - 1), (diff - 1).resize(block_ptr_bits))
     // first block to clear
-    val first = (wt_ptr >> log2Up(n)) + 1
+    val first = (wt_ptr / n) + 1
     // last block to clear
-    val last = (wt_ptr >> log2Up(n)) + diff2 + 1
+    val last = (wt_ptr / n) + diff2 + 1
     val reversed = (first > last)
     
     when (s_val > state.wt) {
@@ -157,7 +157,7 @@ case class PreventReplayMN(sessionIdWidth:    Int,
         // the condition is either i is in [first,last]
         // or i is inside [0, last] or inside [first, windowSize-1] if last < first
         val i_block = i >> log2Up(n)
-        next_state.bitmap(i) := state.bitmap(i) & !(((i_block >= first) & (i_block <= last)) | (((i_block >= first) | (i_block <= last)) & reversed))
+        next_state.bitmap(i) := state.bitmap(i) & (!(((i_block >= first) & (i_block <= last)) | (((i_block >= first) | (i_block <= last)) & reversed)) /*| diff === 0*/)
       }
 
       // set bit for received counter
@@ -266,13 +266,13 @@ object PreventReplayRFC6479_MN {
       val random:      Random = new Random(seed)
       val rfc:         RFC6479_MN = new RFC6479_MN()
       var first, second: Int = 0
-      for(i <- 0 until 10000){
+      for(i <- 0 until 30000){
         var randValue = random.nextInt()
         randValue = randValue%65536
         randValue = randValue.abs
         var retValue  = rfc.counter_validate(randValue)
         var whatH     = rfc.resultArray.last
-        if(randValue==65535 || randValue == 12415){
+        if(randValue==65535){
           println(randValue)
           println(whatH)
           println(rfc.memory.mkString("")) 
