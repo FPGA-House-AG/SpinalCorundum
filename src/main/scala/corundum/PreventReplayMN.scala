@@ -7,6 +7,8 @@ import sourcecode._
 import java.io._
 import sys.process._
 import rfc6479.RFC6479_MN
+import scala.util.Random
+import scala.collection.mutable.ArrayBuffer
 
 // companion object for case class
 object PreventReplayMN {
@@ -140,9 +142,9 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     val diff2 = UInt(block_ptr_bits bits)
     diff2 := Mux(diff >= U(m), U(m - 1), (diff - 1).resize(block_ptr_bits))
     // first block to clear
-    val first = wt_ptr >> log2Up(n)
+    val first = (wt_ptr >> log2Up(n)) + 1
     // last block to clear
-    val last = (wt_ptr >> log2Up(n)) + diff2
+    val last = (wt_ptr >> log2Up(n)) + diff2 + 1
     val reversed = (first > last)
     
     when (s_val > state.wt) {
@@ -163,7 +165,7 @@ case class PreventReplayMN(sessionIdWidth:    Int,
       next_state.wt            := s_val
       io.drop  := False
 
-    }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt){
+    }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt & ((s_val + U(windowSize, counterWidth bits)) >= s_val) ){ //overflow detection since s_val i UInt
       lower := True
       // Too old packet
       io.drop := True
@@ -195,11 +197,13 @@ object PreventReplayMNSim {
       dut.io.sessionId.assignBigInt(0)
       dut.io.counter.assignBigInt(0)
       dut.io.valid #= true
+      dut.io.clear #= false
 
       for(sample <- testValues){
         dut.io.sessionId.assignBigInt(1)
         dut.io.counter.assignBigInt(sample)
         dut.io.valid #= true
+        dut.io.clear #= false
         dut.clockDomain.waitRisingEdge()
       }
 
@@ -226,6 +230,7 @@ object PreventReplayMNLinuxSim {
           dut.io.sessionId.assignBigInt(1)
           dut.io.counter.assignBigInt(testValues(i))
           dut.io.valid #= true
+          dut.io.clear #= false
         }
 
         dut.clockDomain.waitRisingEdge()
@@ -243,6 +248,91 @@ object PreventReplayMNLinuxSim {
         }
       }
 
+      dut.clockDomain.waitRisingEdge()
+      throw new SimSuccess
+    }
+  }
+}
+
+
+object PreventReplayRFC6479_MN {
+  def main(args: Array[String]) {
+    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 16, 1024, 32, 4)){dut =>
+      // Fork a process to generate the reset and the clock on the dut
+      val testValues   = ArrayBuffer[Int]() 
+      val retValues    = ArrayBuffer[Boolean]()
+      val whatHappened = ArrayBuffer[Int]()
+      val seed:        Long = 123L
+      val random:      Random = new Random(seed)
+      val rfc:         RFC6479_MN = new RFC6479_MN()
+      var first, second: Int = 0
+      for(i <- 0 until 10000){
+        var randValue = random.nextInt()
+        randValue = randValue%65536
+        randValue = randValue.abs
+        var retValue  = rfc.counter_validate(randValue)
+        var whatH     = rfc.resultArray.last
+        if(randValue==65535 || randValue == 12415){
+          println(randValue)
+          println(whatH)
+          println(rfc.memory.mkString("")) 
+        }
+
+        testValues.append(randValue)
+        retValues.append(retValue)
+        whatHappened.append(whatH)
+      }
+      //println(testValues.mkString(" "))
+      //println(retValues.mkString(" "))
+
+      dut.clockDomain.forkStimulus(period = 2)
+      dut.io.sessionId.assignBigInt(0)
+      dut.io.counter.assignBigInt(0)
+      dut.io.valid #= true
+      dut.io.clear #= false
+
+      for(i <- 0 until testValues.size+2){
+
+        if(i<testValues.size){
+          dut.io.sessionId.assignBigInt(1)
+          dut.io.counter.assignBigInt(testValues(i))
+          dut.io.valid #= true
+          dut.io.clear #= false
+        }
+
+        dut.clockDomain.waitRisingEdge()
+        if(i>=2){
+          /*if(testValues(i-2) == 65518){
+            second = first
+            first = i-2
+            println(first)
+            println(second)    
+          }*/
+          
+          var retVal = dut.io.drop.toBoolean
+          /*print(i+1)
+          print("th value for input=")
+          print(testValues(i-2))
+          print(" ")
+          print(" output of RFC6479_MN ")
+          print(whatHappened(i-2))
+          print(" ")
+          print(retVal)
+          print(" == ")
+          print(retValues(i-2))
+          print(" ?")
+          println("")*/
+          //00000001001010000001010000001000001000000001100100100000010010001101100000011010010001000000011010110101000111100111011001100101
+          //00000001001010000001010000001000001000000001100100100000010010001101100000011010010001000000011010110101000111100111011001100101
+          if(retVal != retValues(i-2)){
+            //println(first)
+            //println(second)    
+            throw new SimFailure("WRONG RESULT")
+          }
+
+        }
+      }
+      
       dut.clockDomain.waitRisingEdge()
       throw new SimSuccess
     }

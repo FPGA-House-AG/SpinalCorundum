@@ -1,6 +1,7 @@
 package rfc6479
 import scala.math.log
 import scala.math.ceil
+import scala.collection.mutable.ArrayBuffer
 
 class RFC6479_MN {
     var windowSizeValue = 128;
@@ -8,18 +9,19 @@ class RFC6479_MN {
     var n               = 32;
     var memory          = Array.fill[Int](windowSizeValue)(0)
     var counter         = -1;
-
+    var counterSize     = 16;
+    var resultArray     = ArrayBuffer[Int]()
     def log2Upper(n: Int): Int = ceil(log(n) / log(2)).toInt
 
     def test_and_set_bit(addr: Int): Boolean = {
         var old_val = this.memory(addr)
         if(old_val == 1){
-            println("INSIDE AND ALREADY SEEN!");
+            this.resultArray.append(3)
             return true;
         }
         else{
             this.memory(addr) = 1
-            println("NEW PACKET OR ALREADY INSIDE AND NOT ALREADY SEEN!")
+            this.resultArray.append(4)
             return false
         }
     }
@@ -34,13 +36,14 @@ class RFC6479_MN {
 
         //too old 
         if(this.windowSizeValue + their_counter < this.counter){
-            println("TOO OLD!")
+            this.resultArray.append(2)
             return true;
         }
         
+
         
         //new
-        index = their_counter >> log2Upper(n)
+        index = (their_counter+1) >> log2Upper(counterSize)
 
         if((their_counter) > (this.counter)){
             index_current = this.counter >> log2Upper(n);
@@ -49,16 +52,30 @@ class RFC6479_MN {
                 top = (index-index_current)
             else
                 top = (windowSizeValue >> log2Upper(n))
-            for(i <- 0 until top)
+            for(i <- 1 to top)
                 for(j <-0 until n)
-                    memory(i*n+j) = 0
+                    memory(((i+index_current)&((windowSizeValue/n) - 1))*n +j) = 0
 
             this.counter = their_counter; 
+            //println(this.counter)
         }
-        
         //new or inside
         var ret :Boolean = test_and_set_bit(their_counter % windowSizeValue)
-
+        /*
+        if(this.go == true){
+            println(their_counter)
+            println(this.memory.mkString(""))
+        }
+        if(their_counter == 65518){
+            this.go = true
+            //println(their_counter)
+            //println(this.memory.mkString(""))
+            //println(their_counter%windowSizeValue)
+            //println(this.memory(their_counter%windowSizeValue))
+        }
+        if(their_counter == 65404)
+        {this.go = false}
+        */
         return ret
     }
 
@@ -69,6 +86,7 @@ class RFC6479_MN {
 
 object Main {
     def main(args: Array[String]){
+        /*
         val testme = new RFC6479_MN
         val testValues = Array(0, 1, 1, 9, 8, 7, 7, 128, 127, 127, 126, 2, 2, 144, 3, 144, 512, 385, 10, 384, 383, 386, 385, 0) 
         val retValues  = Array(0, 0, 1, 0, 0, 0, 1,   0,   0,   1,   0, 0, 1,   0, 1,   1,   0,   0,  1,   1,   1,   0,   1, 1)
@@ -86,6 +104,6 @@ object Main {
             
             println("")
         }
-        
+        */
     }
 }
