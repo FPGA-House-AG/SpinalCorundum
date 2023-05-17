@@ -43,15 +43,15 @@ class RFC6479_MN {
 
         
         //new
-        index = (their_counter+1) >> log2Upper(counterSize)
-
+        index = (their_counter+1) >> log2Upper(n)
+        var newValueFlag:Boolean = false
         if((their_counter) > (this.counter)){
             index_current = this.counter >> log2Upper(n);
 
-            if((index-index_current) < (windowSizeValue >> log2Upper(n)))
+            if((index-index_current) < (windowSizeValue / n))
                 top = (index-index_current)
             else
-                top = (windowSizeValue >> log2Upper(n))
+                top = (windowSizeValue / n)
             for(i <- 1 to top)
                 for(j <-0 until n)
                     memory(((i+index_current)&((windowSizeValue/n) - 1))*n +j) = 0
