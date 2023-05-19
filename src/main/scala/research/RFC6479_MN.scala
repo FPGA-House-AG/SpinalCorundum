@@ -7,20 +7,20 @@ class RFC6479_MN {
     var windowSizeValue = 128;
     var m               = 4;
     var n               = 32;
-    var memory          = Array.fill[Int](windowSizeValue)(0)
+    var memory          = Array.ofDim[Int](m, n)
     var counter         = -1;
     var counterSize     = 16;
     var resultArray     = ArrayBuffer[Int]()
     def log2Upper(n: Int): Int = ceil(log(n) / log(2)).toInt
 
-    def test_and_set_bit(addr: Int): Boolean = {
-        var old_val = this.memory(addr)
+    def test_and_set_bit(addr: Int, block: Int): Boolean = {
+        var old_val = this.memory(block)(addr)
         if(old_val == 1){
             this.resultArray.append(3)
             return true;
         }
         else{
-            this.memory(addr) = 1
+            this.memory(block)(addr) = 1
             this.resultArray.append(4)
             return false
         }
@@ -43,24 +43,27 @@ class RFC6479_MN {
 
         
         //new
-        index = (their_counter+1) >> log2Upper(n)
+        index = (their_counter+1) / n //>> log2Upper(n)
         var newValueFlag:Boolean = false
-        if((their_counter) > (this.counter)){
-            index_current = this.counter >> log2Upper(n);
+        if((their_counter+1) > (this.counter)){
+            index_current = this.counter / n;
 
-            if((index-index_current) < (windowSizeValue / n))
+            if((index-index_current) < (m))
                 top = (index-index_current)
             else
-                top = (windowSizeValue / n)
+                top = (m)
             for(i <- 1 to top)
                 for(j <-0 until n)
-                    memory(((i+index_current)&((windowSizeValue/n) - 1))*n +j) = 0
+                    memory((i+index_current)%(m))(j) = 0
 
             this.counter = their_counter; 
             //println(this.counter)
+            this.memory(index % m)(their_counter % n) = 1
+            this.resultArray.append(1)
+            return false;
         }
         //new or inside
-        var ret :Boolean = test_and_set_bit(their_counter % windowSizeValue)
+        var ret :Boolean = test_and_set_bit(their_counter % n, index % m)
         /*
         if(this.go == true){
             println(their_counter)
