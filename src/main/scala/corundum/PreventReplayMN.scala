@@ -266,17 +266,17 @@ object PreventReplayRFC6479_MN {
       val random:      Random = new Random(seed)
       val rfc:         RFC6479_MN = new RFC6479_MN()
       var first, second: Int = 0
-      for(i <- 0 until 30000){
+      for(i <- 0 until 50000){
         var randValue = random.nextInt()
         randValue = randValue%65536
         randValue = randValue.abs
         var retValue  = rfc.counter_validate(randValue)
         var whatH     = rfc.resultArray.last
-        if(randValue==65535){
+        /*if(randValue==65535){
           println(randValue)
           println(whatH)
           println(rfc.memory.mkString("")) 
-        }
+        }*/
 
         testValues.append(randValue)
         retValues.append(retValue)
@@ -325,8 +325,18 @@ object PreventReplayRFC6479_MN {
           //00000001001010000001010000001000001000000001100100100000010010001101100000011010010001000000011010110101000111100111011001100101
           //00000001001010000001010000001000001000000001100100100000010010001101100000011010010001000000011010110101000111100111011001100101
           if(retVal != retValues(i-2)){
-            //println(first)
-            //println(second)    
+            print(i+1)
+            print("th value for input=")
+            print(testValues(i-2))
+            print(" ")
+            print(" output of RFC6479_MN ")
+            print(whatHappened(i-2))
+            print(" ")
+            print(retVal)
+            print(" == ")
+            print(retValues(i-2))
+            print(" ?")
+            println("")   
             throw new SimFailure("WRONG RESULT")
           }
 
