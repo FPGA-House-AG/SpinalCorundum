@@ -131,22 +131,20 @@ case class PreventReplayMN(sessionIdWidth:    Int,
 
     next_state := state
 
-    // their_counter === s_val === incomming new packet
-    // counter->counter === state.wt == Wt === biggest encountered counter yet for this session.
-    // COUNTER_WINDOW_SIZE === windowSize, power of 2
-    // BITS_PER_LONG === n === 32 === bits per block
-    // COUNTER_BITS_TOTAL === m*n === 128 bits === dimension of memory entry, size of state and memory(i)
-    // COUNTER_BITS_TOTAL/BITS_PER_LONG === m === 4 === number of blocks
-    // slide the window WT to S, clear diff blocks doing so
-    val diff = (s_val - state.wt) / n
-    val diff2 = UInt(block_ptr_bits bits)
-    diff2 := Mux(diff >= U(m), U(m - 1), (diff - 1).resize(block_ptr_bits))
-    // first block to clear
-    val first = (wt_ptr / n) + 1
-    // last block to clear
-    val last = (wt_ptr / n) + diff2 + 1
-    val reversed = (first > last)
-    
+
+    val s_plus_1            = RegNext(d1_counter + 1)
+    val index_s_plus_1      = s_plus_1 >> log2Up(n)
+    val index_current       = state.wt >> log2Up(n)
+    val diff                = index_s_plus_1 - index_current
+    val top                 = UInt((block_ptr_bits + 1) bits)
+    top := Mux(diff >= U(m), U(m), diff.resize(block_ptr_bits + 1))
+
+    val first               = ((wt_ptr+1) >> log2Up(n)).resize(block_ptr_bits)
+    val last                = (first + top).resize(block_ptr_bits)
+    val reversed            = (first > last)
+    val clear_all_blocks    = (diff >= U(m))
+    val clear_no_blocks     = (top === 0)
+
     when (s_val > state.wt) {
       higher := True
       wt_ptr := state.wt.resize(window_bits bits)
@@ -156,16 +154,30 @@ case class PreventReplayMN(sessionIdWidth:    Int,
         // & !(condition) clears the bits with the condition
         // the condition is either i is in [first,last]
         // or i is inside [0, last] or inside [first, windowSize-1] if last < first
+        //val i_block = i >> log2Up(n)
+        //next_state.bitmap(i) := state.bitmap(i) & (!(((i_block >= first) & (i_block <= last)) | (((i_block >= first) | (i_block <= last)) & reversed)) & diff < m)
         val i_block = i >> log2Up(n)
-        next_state.bitmap(i) := state.bitmap(i) & (!(((i_block >= first) & (i_block <= last)) | (((i_block >= first) | (i_block <= last)) & reversed)) /*| diff === 0*/)
+        next_state.bitmap(i) := state.bitmap(i) & (
+          // 1 if no blocks to clear
+          clear_no_blocks & first===last |
+          // 0 if
+          !(
+            // [first, last]
+            (((i_block > first) & (i_block <= last)) & !reversed) |
+            // or [first, last] reversed
+            (((i_block > first) | (i_block <= last)) & reversed) |
+            // or clear_blocks and loop around (first == last) => clear all
+            (!clear_no_blocks & first === last) 
+          )
+        )
       }
 
       // set bit for received counter
       next_state.bitmap(s_ptr) := True
-      next_state.wt            := s_val
+      next_state.wt            := s_plus_1
       io.drop  := False
 
-    }.elsewhen(s_val + U(windowSize, counterWidth bits) <= state.wt & ((s_val + U(windowSize, counterWidth bits)) >= s_val) ){ //overflow detection since s_val i UInt
+    }.elsewhen(((s_plus_1 + n*(m-1)) < state.wt) & ((s_plus_1 + n*(m-1)) > s_plus_1)){ //overflow detection
       lower := True
       // Too old packet
       io.drop := True
@@ -217,8 +229,8 @@ object PreventReplayMNLinuxSim {
   def main(args: Array[String]) {
     SimConfig.withFstWave.doSim(new PreventReplayMN(10, 16, 1024, 32, 4)){dut =>
       // Fork a process to generate the reset and the clock on the dut
-      val testValues = Array(0, 1, 1, 9, 8, 7, 7, 128, 127, 127, 126, 2, 2, 144, 3, 144, 512, 385, 10, 384, 383, 386, 385, 0) 
-      val retValues  = Array(0, 0, 1, 0, 0, 0, 1,   0,   0,   1,   0, 0, 1,   0, 1,   1,   0,   0,  1,   1,   1,   0,   1, 1)
+      val testValues = Array(0, 1, 1, 9, 8, 7, 7,  97,  96,  96,  95,  2,  2, 129, 3, 129, 388, 292, 10, 291, 290, 293, 292, 0) 
+      val retValues  = Array(0, 0, 1, 0, 0, 0, 1,   0,   0,   1,   0,  0,  1,   0, 1,   1,   0,   0,  1,   1,   1,   0,   1, 1)
       dut.clockDomain.forkStimulus(period = 2)
       dut.io.sessionId.assignBigInt(0)
       dut.io.counter.assignBigInt(0)
@@ -265,25 +277,21 @@ object PreventReplayRFC6479_MN {
       val seed:        Long = 123L
       val random:      Random = new Random(seed)
       val rfc:         RFC6479_MN = new RFC6479_MN()
+      val bw = new BufferedWriter(new FileWriter("./outputs_sw.txt"))
       var first, second: Int = 0
-      for(i <- 0 until 50000){
+      for(i <- 0 until 1000000){
         var randValue = random.nextInt()
-        randValue = randValue%65536
+        randValue = randValue%65535
         randValue = randValue.abs
         var retValue  = rfc.counter_validate(randValue)
         var whatH     = rfc.resultArray.last
-        /*if(randValue==65535){
-          println(randValue)
-          println(whatH)
-          println(rfc.memory.mkString("")) 
-        }*/
+        bw.write(randValue.toString)
 
+        
         testValues.append(randValue)
         retValues.append(retValue)
         whatHappened.append(whatH)
       }
-      //println(testValues.mkString(" "))
-      //println(retValues.mkString(" "))
 
       dut.clockDomain.forkStimulus(period = 2)
       dut.io.sessionId.assignBigInt(0)
@@ -302,28 +310,9 @@ object PreventReplayRFC6479_MN {
 
         dut.clockDomain.waitRisingEdge()
         if(i>=2){
-          /*if(testValues(i-2) == 65518){
-            second = first
-            first = i-2
-            println(first)
-            println(second)    
-          }*/
-          
+
           var retVal = dut.io.drop.toBoolean
-          /*print(i+1)
-          print("th value for input=")
-          print(testValues(i-2))
-          print(" ")
-          print(" output of RFC6479_MN ")
-          print(whatHappened(i-2))
-          print(" ")
-          print(retVal)
-          print(" == ")
-          print(retValues(i-2))
-          print(" ?")
-          println("")*/
-          //00000001001010000001010000001000001000000001100100100000010010001101100000011010010001000000011010110101000111100111011001100101
-          //00000001001010000001010000001000001000000001100100100000010010001101100000011010010001000000011010110101000111100111011001100101
+          
           if(retVal != retValues(i-2)){
             print(i+1)
             print("th value for input=")
@@ -344,6 +333,7 @@ object PreventReplayRFC6479_MN {
       }
       
       dut.clockDomain.waitRisingEdge()
+      bw.close()
       throw new SimSuccess
     }
   }

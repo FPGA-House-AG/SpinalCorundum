@@ -11,6 +11,15 @@ class RFC6479_MN {
     var counter         = -1;
     var counterSize     = 16;
     var resultArray     = ArrayBuffer[Int]()
+    var s_plus_1        = -1
+    var index_s_plus_1  = -1
+    var index_current   = -1
+    var diff            = -1
+    var top             = -1
+    var first           = -1
+    var last            = -1
+    var reversed        = false
+    var clear_no_blocks = false
     def log2Upper(n: Int): Int = ceil(log(n) / log(2)).toInt
 
     def test_and_set_bit(addr: Int, block: Int): Boolean = {
@@ -29,56 +38,42 @@ class RFC6479_MN {
     //if method returns true, we drop the packet.
     def counter_validate(their_counter: Int): Boolean = {
         var index         :Int = -1;
-        var index_current :Int = -1;
-        var top           :Int = -1;
         var i             :Int = -1;
-        
 
+        this.s_plus_1       = their_counter + 1
+        this.index_s_plus_1 = s_plus_1 / n
+        this.index_current  = this.counter / n
+        this.diff           = index_s_plus_1 - index_current
+        this.top            = if(diff >= this.m) m else diff
+        this.first          = (this.counter%this.windowSizeValue) / n
+        this.last           = (first + top) % (m)
+        this.reversed       = (first > last)
+        this.clear_no_blocks= (top == 0)
+        
         //too old 
-        if(this.windowSizeValue + their_counter < this.counter){
+        if((this.s_plus_1 + 96) < (this.counter)){
             this.resultArray.append(2)
             return true;
         }
-        
 
-        
         //new
-        index = (their_counter+1) / n //>> log2Upper(n)
         var newValueFlag:Boolean = false
-        if((their_counter+1) > (this.counter)){
-            index_current = this.counter / n;
-
-            if((index-index_current) < (m))
-                top = (index-index_current)
-            else
-                top = (m)
+        if((their_counter) > (this.counter)){
+            if(!this.clear_no_blocks){
             for(i <- 1 to top)
                 for(j <-0 until n)
                     memory((i+index_current)%(m))(j) = 0
-
-            this.counter = their_counter; 
+            }
+            this.counter = s_plus_1; 
             //println(this.counter)
-            this.memory(index % m)(their_counter % n) = 1
+            this.memory((their_counter/n) % m)(their_counter % n) = 1
             this.resultArray.append(1)
             return false;
+            
         }
         //new or inside
-        var ret :Boolean = test_and_set_bit(their_counter % n, index % m)
-        /*
-        if(this.go == true){
-            println(their_counter)
-            println(this.memory.mkString(""))
-        }
-        if(their_counter == 65518){
-            this.go = true
-            //println(their_counter)
-            //println(this.memory.mkString(""))
-            //println(their_counter%windowSizeValue)
-            //println(this.memory(their_counter%windowSizeValue))
-        }
-        if(their_counter == 65404)
-        {this.go = false}
-        */
+        var ret :Boolean = test_and_set_bit(their_counter % n, (their_counter/n) % m)
+
         return ret
     }
 
@@ -89,24 +84,6 @@ class RFC6479_MN {
 
 object Main {
     def main(args: Array[String]){
-        /*
-        val testme = new RFC6479_MN
-        val testValues = Array(0, 1, 1, 9, 8, 7, 7, 128, 127, 127, 126, 2, 2, 144, 3, 144, 512, 385, 10, 384, 383, 386, 385, 0) 
-        val retValues  = Array(0, 0, 1, 0, 0, 0, 1,   0,   0,   1,   0, 0, 1,   0, 1,   1,   0,   0,  1,   1,   1,   0,   1, 1)
-
         
-        for(k <- 0 until testValues.length){
-        
-            println(k)
-            var retval = testme.counter_validate(testValues(k))
-            assert(retval == (retValues(k)==1))
-            println("")
-            for(i <-0 until testme.windowSizeValue){
-                print(testme.memory(i))
-            }
-            
-            println("")
-        }
-        */
     }
 }
