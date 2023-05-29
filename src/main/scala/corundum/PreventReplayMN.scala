@@ -15,17 +15,18 @@ object PreventReplayMN {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val verilogReport = Config.spinal.generateVerilog({
-      val toplevel = new PreventReplayMN(10, 16, 1024, 32, 4)
+      val toplevel = new PreventReplayMN(65535, 10, 16, 1024, 32, 4)
       toplevel
     })
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new PreventReplayMN(10, 16, 1024, 32, 4)
+      val toplevel = new PreventReplayMN(65535, 10, 16, 1024, 32, 4)
       toplevel
     })
   }
 }
 
-case class PreventReplayMN(sessionIdWidth:    Int,
+case class PreventReplayMN(rejectAfterNumMessages: Int,
+                         sessionIdWidth:    Int,
                          counterWidth:      Int,
                          numberOfSessions:  Int,
                          n:                 Int,
@@ -69,54 +70,57 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     // from state we define the next_state
     val next_state   = ReceiveWindow(windowSize, counterWidth)
 
+    // from counter_d1 we derive if we should drop due to REJECT_AFTER_MESSAGES
+    val reject_d2    = RegNext(d1_counter >= rejectAfterNumMessages)
+
     // d3 registers the new state
     val d3_sessionId = RegNext(d2_sessionId).init(0)
     val d3_counter   = RegNext(d2_counter).init(0)
     val d3_valid     = RegNext(d2_valid).init(False)
-    val d3_clear     = RegNext(d2_clear).init(False)
+    //val d3_clear     = RegNext(d2_clear).init(False)
     val d3_data      = RegNext(next_state)
 
     // d4 and d5 remember what is written to memory, to resolve data hazards
     val d4_sessionId = RegNext(d3_sessionId).init(0)
     val d4_counter   = RegNext(d3_counter).init(0)
     val d4_valid     = RegNext(d3_valid).init(False)
-    val d4_clear     = RegNext(d3_clear).init(False)
+    //val d4_clear     = RegNext(d3_clear).init(False)
     val d4_data      = RegNext(d3_data)
 
     val d5_sessionId = RegNext(d4_sessionId).init(0)
     val d5_counter   = RegNext(d4_counter).init(0)
     val d5_valid     = RegNext(d4_valid).init(False)
-    val d5_clear     = RegNext(d4_clear).init(False)
+    //val d5_clear     = RegNext(d4_clear).init(False)
     val d5_data      = RegNext(d4_data)
 
-    val take_from_memory = True
+    //val take_from_memory = True
     state := RegNext(memory.readSync(address = io.sessionId, enable = True))
 
-    val take_from_d3 = False
-    val take_from_d4 = False
-    val take_from_d5 = False
+    //val take_from_d3 = False
+    //val take_from_d4 = False
+    //val take_from_d5 = False
     /* solve data read/write hazards */
     when(d3_valid && (d3_sessionId === d2_sessionId)){
     // fetch state from d3_data instead of from memory, because the memory is not yet updated
     state            := d3_data
-    take_from_memory := False
-    take_from_d3     := d2_valid
+    //take_from_memory := False
+    //take_from_d3     := d2_valid
 
     }.elsewhen(d4_valid && (d4_sessionId === d2_sessionId)){
     // fetch state from d4_data instead of from memory, because the memory is not yet updated
     state            := d4_data
-    take_from_memory := False
-    take_from_d4     := d2_valid
+    //take_from_memory := False
+    //take_from_d4     := d2_valid
 
     }.elsewhen(d5_valid && (d5_sessionId === d2_sessionId)){
     // fetch state from d5_data instead of from memory, because the memory is not yet updated
     state            := d5_data
-    take_from_memory := False
-    take_from_d4     := d2_valid
+    //take_from_memory := False
+    //take_from_d4     := d2_valid
     }
 
-    val do_writeback = d3_valid
-    memory.write(d3_sessionId, data = d3_data, enable = do_writeback)
+    //val do_writeback = d3_valid
+    memory.write(d3_sessionId, data = d3_data, enable = d3_valid)
 
     val window_bits    = log2Up(windowSize)
     val block_ptr_bits = log2Up(m)
@@ -125,9 +129,9 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     val s_ptr          = s_val.resize(window_bits bits)
     val wt_ptr         = state.wt.resize(window_bits bits)
 
-    val higher = False
-    val lower = False
-    val inside = False
+    //val higher = False
+    //val lower = False
+    //val inside = False
 
     next_state := state
 
@@ -142,11 +146,11 @@ case class PreventReplayMN(sessionIdWidth:    Int,
     val first               = ((wt_ptr+1) >> log2Up(n)).resize(block_ptr_bits)
     val last                = (first + top).resize(block_ptr_bits)
     val reversed            = (first > last)
-    val clear_all_blocks    = (diff >= U(m))
+    //val clear_all_blocks    = (diff >= U(m))
     val clear_no_blocks     = (top === 0)
 
     when (s_val > state.wt) {
-      higher := True
+      //higher := True
       wt_ptr := state.wt.resize(window_bits bits)
 
       for (i <- 0 until windowSize){
@@ -175,22 +179,22 @@ case class PreventReplayMN(sessionIdWidth:    Int,
       // set bit for received counter
       next_state.bitmap(s_ptr) := True
       next_state.wt            := s_plus_1
-      io.drop  := False
+      io.drop  := False | reject_d2
 
     }.elsewhen(((s_plus_1 + n*(m-1)) < state.wt) & ((s_plus_1 + n*(m-1)) > s_plus_1)){ //overflow detection
-      lower := True
+      //lower := True
       // Too old packet
-      io.drop := True
+      io.drop := True | reject_d2
       // S inside window, check the memory
     
     }.elsewhen(d2_clear === True){
       next_state.wt     := 0
       next_state.bitmap := B(0, windowSize bits)
-      io.drop := False
+      io.drop := False | reject_d2
     
     }.otherwise{
-      inside := True
-      io.drop := state.bitmap(s_ptr)
+      //inside := True | reject_d2
+      io.drop := state.bitmap(s_ptr) | reject_d2
       next_state.bitmap(s_ptr) := True 
     }
 }
@@ -202,7 +206,7 @@ import scala.util.Random
 
 object PreventReplayMNSim {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 16, 1024, 32, 4)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplayMN(65535, 10, 16, 1024, 32, 4)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       val testValues = Array(52, 53, 57, 59, 60, 62, 60, 63, 64, 67, 69, 71, 74, 75, 79, 80, 81, 82, 84, 85, 86, 87, 89, 90, 92, 93, 96, 97, 99, 125, 110, 118, 135, 127, 106, 128, 107, 101, 142, 115, 120, 112, 134, 114, 108, 136, 126, 100, 144, 130, 119, 122, 103, 138, 104, 123, 132, 102, 129, 133, 113, 149, 116, 143, 117, 146, 137, 131, 139, 109, 148, 140, 124, 121, 145, 111, 147, 105, 141)
       dut.clockDomain.forkStimulus(period = 2)
@@ -227,7 +231,7 @@ object PreventReplayMNSim {
 
 object PreventReplayMNLinuxSim {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 16, 1024, 32, 4)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplayMN(65535, 10, 16, 1024, 32, 4)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       val testValues = Array(0, 1, 1, 9, 8, 7, 7,  97,  96,  96,  95,  2,  2, 129, 3, 129, 388, 292, 10, 291, 290, 293, 292, 0) 
       val retValues  = Array(0, 0, 1, 0, 0, 0, 1,   0,   0,   1,   0,  0,  1,   0, 1,   1,   0,   0,  1,   1,   1,   0,   1, 1)
@@ -269,7 +273,7 @@ object PreventReplayMNLinuxSim {
 
 object PreventReplayRFC6479_MN {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 16, 1024, 32, 4)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplayMN(65535, 10, 16, 1024, 32, 4)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       val testValues   = ArrayBuffer[Int]() 
       val retValues    = ArrayBuffer[Boolean]()
@@ -277,7 +281,6 @@ object PreventReplayRFC6479_MN {
       val seed:        Long = 123L
       val random:      Random = new Random(seed)
       val rfc:         RFC6479_MN = new RFC6479_MN()
-      val bw = new BufferedWriter(new FileWriter("./outputs_sw.txt"))
       var first, second: Int = 0
       for(i <- 0 until 1000000){
         var randValue = random.nextInt()
@@ -285,8 +288,6 @@ object PreventReplayRFC6479_MN {
         randValue = randValue.abs
         var retValue  = rfc.counter_validate(randValue)
         var whatH     = rfc.resultArray.last
-        bw.write(randValue.toString)
-
         
         testValues.append(randValue)
         retValues.append(retValue)
@@ -333,7 +334,6 @@ object PreventReplayRFC6479_MN {
       }
       
       dut.clockDomain.waitRisingEdge()
-      bw.close()
       throw new SimSuccess
     }
   }
