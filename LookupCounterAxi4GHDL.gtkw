@@ -1,0 +1,55 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Thu Apr 13 00:38:29 2023
+[*]
+[dumpfile] "/project-on-hos./simWorkspace/LookupCounterAxi4/test.fst"
+[dumpfile_mtime] "Thu Apr 13 00:35:05 2023"
+[dumpfile_size] 1575398
+[savefile] "/project-on-hos./LookupCounterAxi4GHDL.gtkw"
+[timestart] 322
+[size] 3840 2066
+[pos] -1 -1
+*-6.000000 630 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 1032
+[signals_width] 1020
+[sst_expanded] 1
+[sst_vpaned_height] 658
+@28
+clk
+reset
+@200
+-
+-Slave Counter Reset Writes
+@28
+io_ctrlbus_aw_ready
+io_ctrlbus_aw_valid
+@22
+io_ctrlbus_aw_payload_addr[6:0]
+@28
+io_ctrlbus_w_ready
+io_ctrlbus_w_valid
+bridge_writestate[0]
+@200
+-
+-
+-Fixed Latency Lookup/Increment/Clear
+@29
+io_lookup
+@28
+io_increment
+io_clear
+@22
+io_address[4:0]
+@200
+-
+@22
+luc_io_address[4:0]
+@28
+luc_io_clear
+@200
+-
+@22
+luc_io_counter[63:0]
+io_counter[63:0]
+[pattern_trace] 1
+[pattern_trace] 0

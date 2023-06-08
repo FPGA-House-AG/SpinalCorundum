@@ -12,20 +12,20 @@ import scala.math._
 object CorundumFrameAppendTailer {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
-    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameAppendTailer(Config.corundumDataWidth, 14))
-    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameAppendTailer(Config.corundumDataWidth, 14))
+    val vhdlReport = Config.spinal.generateVhdl(new CorundumFrameAppendTailer(Config.corundumDataWidth, 1, 14))
+    val verilogReport = Config.spinal.generateVerilog(new CorundumFrameAppendTailer(Config.corundumDataWidth, 1, 14))
   }
 }
 
 // Appends bytes to the end of the packet, with undefined data
 // Intended to add a checksum field that is not checked (or overwritten by another module)
-case class CorundumFrameAppendTailer(dataWidth : Int, tailerWidthBytes : Int) extends Component {
+case class CorundumFrameAppendTailer(dataWidth : Int, userWidth : Int, tailerWidthBytes : Int) extends Component {
 
   val tailerWidth = tailerWidthBytes * 8
 
   val io = new Bundle {
-    val sink = slave Stream Fragment(CorundumFrame(dataWidth))
-    val source = master Stream Fragment(CorundumFrame(dataWidth))
+    val sink = slave Stream Fragment(CorundumFrame(dataWidth, userWidth))
+    val source = master Stream Fragment(CorundumFrame(dataWidth, userWidth))
     //val tailer = in Bits(tailerWidth bits)
   }
 
@@ -33,13 +33,13 @@ case class CorundumFrameAppendTailer(dataWidth : Int, tailerWidthBytes : Int) ex
   require(tailerWidth <= dataWidth, s"tailerWidth <= dataWidth, needed because CorundumFrameAppendTailer does not support multibeat tailers yet.")
 
   // 2 skid buffer
-  val x = Stream Fragment(CorundumFrame(dataWidth))
+  val x = Stream Fragment(CorundumFrame(dataWidth, userWidth))
   x << io.sink.s2mPipe().m2sPipe()
 
   // remember the part that overflows on shift left by tailer width
   val tkeep_buffer = RegNextWhen(x.payload.tkeep.resizeLeft(tailerWidth/8), x.fire)
 
-  val y = Stream Fragment(CorundumFrame(dataWidth))
+  val y = Stream Fragment(CorundumFrame(dataWidth, userWidth))
 
   val have_extra_beat = x.payload.tkeep(dataWidth/8 - tailerWidth/8) && x.lastFire
   val in_extra_beat = RegInit(False) setWhen(have_extra_beat) clearWhen(y.lastFire)
