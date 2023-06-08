@@ -41,61 +41,53 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
     val source_length = out UInt(12 bits)
   }
 
-  // translateWith() for Stream(Fragment())
-  // (before this we needed to work-around this, see AxisUpSizer.scala commented out code)
+  // x is sink
+  val x = Stream(Fragment(Bits(dataWidthIn bits)))
+  val x_length = UInt(12 bits)
 
-  // With that you could write io.sink.~~(_.~~(io.sink_length.asBits ## _))
-  // Q: How should I interpret the _ and _.~~ here?
-  // A: io.sink ~~ (x => x ~~ (y => io.sink_length.asBits ## y))
-  implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
-    def ~~[T2 <: Data](trans: T => T2) = {
-      val that = trans(v.fragment)
-      val res = Fragment(cloneOf(that))
-      res.fragment := trans(v.fragment)
-      res.last := v.last
-      res
-    }
-  }
-  // x is sink, but with sink_length added into stream payload
-  // such that both sink and sink_length are skid buffered together
-  val x = Stream(Fragment(Bits(dataWidthIn + 12 bits)))
-  x << io.sink.~~(_.~~(io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
+  x << io.sink
+  x_length := io.sink_length
    
-  // y is input stream with original payload, but after the skid buffer
+  // y is input stream with original payload, but staged
   val y = Stream(Fragment(Bits(dataWidthIn bits)))
-  y << x.~~(_.~~(_.resize(dataWidthIn)))
-  val y_length = (x.payload.fragment >> dataWidthIn).asUInt
+  y <-< x
+  val y_length = RegNextWhen(x_length, x.ready)
 
   val z = Stream(Fragment(Bits(dataWidthOut bits)))
 
-  // calculate number of output beats based on input length
-  // @TODO buggy, y_length == 8 gives 5, must be 4
-  val out_beat_last = (y_length + dataWidthOut / 8 - 1) / (dataWidthOut / 8) - 1
-  //val out_beat_last = (y_length - 1) / (dataWidthOut / 8)
-  val out_beat_num = Reg(UInt(12 bits)) init(0)
+  // downsize factor (equals number of output beats per full input beat)
+  val factor = dataWidthIn / dataWidthOut
+  // number of bits needed to index output beats per single input beat
+  val factorBits = log2Up(factor)
+
+  // last output beat number (modulo factor), only valid iff y.last
+  val y_last_beat_num = RegNextWhen(((x_length + dataWidthOut / 8 - 1) / (dataWidthOut / 8) - 1).resize(factorBits), x.ready)
+  // current output beat number in y (modulo factor)
+  val y_cur_beat_num = Reg(UInt(factorBits bits)) init(0)
+
+  val is_last_output_beat = y.last && (y_cur_beat_num === y_last_beat_num)
 
   // current output beat in z?
   when (z.fire) {
     // last output beat for this input frame?
-    when (out_beat_num === out_beat_last) {
-      out_beat_num := 0
+    when (is_last_output_beat) {
+      // reset for next input frame
+      y_cur_beat_num := 0
     } otherwise {
-      out_beat_num := out_beat_num + 1
+      y_cur_beat_num := y_cur_beat_num + 1
     }
   }
-  val factor = dataWidthIn / dataWidthOut
   // when the input can take the next beat
-  val next_input = ((out_beat_num % factor) === (factor - 1)) |
-    (out_beat_num === out_beat_last)
+  val next_input = (y_cur_beat_num === (factor - 1)) | is_last_output_beat
 
-  val counter = out_beat_num.resize(log2Up(factor))
+  printf("AxisDownSizer widthOf(counter) = %d\n", widthOf(y_cur_beat_num))
   z.valid := y.valid
   //endianness match {
   //  case `LITTLE` =>
-    z.fragment.assignFromBits(y.fragment.asBits.resize(dataWidthIn).subdivideIn(factor slices).read(counter))
-  //  case `BIG`    => output.fragment.assignFromBits(y.fragment.asBits.resize(paddedInputWidth).subdivideIn(factor slices).reverse.read(counter))
+    z.fragment.assignFromBits(y.fragment.asBits.resize(dataWidthIn).subdivideIn(factor slices).read(y_cur_beat_num))
+  //  case `BIG`    => output.fragment.assignFromBits(y.fragment.asBits.resize(paddedInputWidth).subdivideIn(factor slices).reverse.read(y_cur_beat_num))
   // }
-  z.last := y.last && (out_beat_num === out_beat_last)
+  z.last := is_last_output_beat
   y.ready := z.ready && next_input
 
   // register outputs

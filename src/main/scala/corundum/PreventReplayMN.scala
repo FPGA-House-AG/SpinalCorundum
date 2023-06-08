@@ -321,9 +321,11 @@ object PreventReplayRFC6479_MN {
       }
 
       dut.clockDomain.forkStimulus(period = 2)
+
+      dut.clockDomain.waitSampling()
       dut.io.sessionId.assignBigInt(0)
       dut.io.counter.assignBigInt(0)
-      dut.io.valid #= true
+      dut.io.valid #= false
       dut.io.clear #= false
 
       for(i <- 0 until testValues.size+2){

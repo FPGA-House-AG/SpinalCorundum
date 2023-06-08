@@ -29,8 +29,8 @@ case class CorundumFrameEndianess(dataWidth : Int) extends Component {
 
   // reverse endianess in tdata and tkeep
   when (True) {
-    x.payload.fragment.tdata.assignFromBits(io.sink.payload.fragment.tdata.asBits.subdivideIn(num_bytes slices).reverse.asBits())
-    x.payload.fragment.tkeep.assignFromBits(io.sink.payload.fragment.tkeep.asBits.subdivideIn(num_bytes slices).reverse.asBits())
+    x.payload.fragment.tdata.assignFromBits(io.sink.payload.fragment.tdata.asBits.subdivideIn(8 bits).reverse.asBits)
+    x.payload.fragment.tkeep.assignFromBits(io.sink.payload.fragment.tkeep.asBits.subdivideIn(8 bits).reverse.asBits)
   }
   io.source << x
 

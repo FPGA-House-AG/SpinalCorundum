@@ -14,13 +14,12 @@
 # Run all commands of one make target in the same shell, by default
 .ONESHELL:
 
-.PHONY: spinal clean simulate repl sim_repl build blackwire rtl
+.PHONY: spinal clean simulate repl sim_repl build rtl
 
 build: rtl
 
 # CI/CD runs "make test"
-test: build formal sim_extract code_analysis
-	
+test: build formal sim_extract sim_counter code_analysis
 
 code_analysis:
 	grep -rne '.m2sPipe().s2mPipe()' src/main/scala && \
@@ -117,6 +116,12 @@ sim_extract:
 	sbt "runMain corundum.AxisExtractHeaderSim"
 	sbt "runMain corundum.PreventReplayRFC6479_MN"
 
+# LookupCounter{,Axi4} simulation verification test
+sim_counter:
+	set -e
+	sbt "runMain corundum.LookupCounterSim"
+	sbt "runMain corundum.LookupCounterAxi4Sim"
+
 stash:
 	set -e
 	gtkwave -F -f ./simWorkspace/CorundumFrameStash/test.fst -a ./CorundumFrameStash.gtkw &
@@ -126,17 +131,6 @@ stash:
 spinal: src/main/scala/corundum/CorundumFrameMuxPrio.scala
 	set -e
 	sbt "runMain corundum.CorundumFrameMuxPrioVerilog"
-
-# generate Verilog, VHDL and SystemVerilog RTL
-# this requires external VHDL modules
-blackwire:
-blackwire: src/main/scala/blackwire/BlackwireReceive.scala
-blackwire: src/main/scala/blackwire/BlackwireReceiveFmax.scala
-	set -e
-	sbt " \	
-	runMain blackwire.BlackwireReceive; \
-	runMain blackwire.BlackwireReceiveFmax; \
-	"
 
 # generate Verilog, VHDL and SystemVerilog RTL
 rtl: src/main/scala/corundum/CorundumFrameMuxPrio.scala
@@ -154,7 +148,6 @@ rtl: src/main/scala/corundum/AxisToCorundumFrame.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
 rtl: src/main/scala/corundum/PreventReplayMN.scala
-rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrio; \
@@ -173,17 +166,16 @@ rtl: src/main/scala/blackwire/BlackwireWireguardType4.scala
 	runMain corundum.AxisWireguardKeyLookup; \
 	runMain corundum.LookupTable; \
 	runMain corundum.PreventReplayMN; \
-	runMain blackwire.BlackwireWireguardType4; \
 	"
 
+# formal verification.
 
+# Old approach: first generate SystemVerilog RTL, then use the .sby
+# file with SymbiYosys to test.
+# New approach: Use SpinalFormal maybe, this uses SymbiYosys as a back-end.
+formal: formal_stash formal_extract formal_upsizer
 
-# formal verification. first generate SystemVerilog RTL, then use the .sby
-# file with SymbiYosys to test. @TODO convert to SpinalFormal maybe, this
-# used SymbiYosys as a back-end. See if feature-complete or not.
-formal: formal_stash formal_extract
-
-# Drop is known-broken, but unused.
+# Drop is known-broken, but unused anyway.
 #formal: formal_drop 
 
 formal_stash:
@@ -200,6 +192,12 @@ formal_extract:
 	sby -h || . /home/vivado/oss-cad-suite/environment
 	sby -h || false
 	sbt "runMain corundum.AxisExtractHeaderFormal"
+
+formal_upsizer:
+	set -e
+	sby -h || . /home/vivado/oss-cad-suite/environment
+	sby -h || false
+	sbt "runMain corundum.AxisUpSizerFormal"
 
 formal_drop:
 # fail on first error

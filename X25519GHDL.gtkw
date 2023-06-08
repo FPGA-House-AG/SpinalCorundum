@@ -1,0 +1,89 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Thu Apr 13 18:11:13 2023
+[*]
+[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/X25519Axi4/test.vcd"
+[dumpfile_mtime] "Thu Apr 13 15:10:22 2023"
+[dumpfile_size] 1726457516
+[savefile] "/project-on-host/SpinalCorundum/X25519GHDL.gtkw"
+[timestart] 0
+[size] 3807 1450
+[pos] -1 -1
+*-16.000000 371150 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] x25519axi4.
+[sst_width] 899
+[signals_width] 652
+[sst_expanded] 1
+[sst_vpaned_height] 430
+@28
+x25519axi4.bridge_write_pulse
+@22
+x25519axi4.ctrlbus_aw_addr[9:0]
+@28
+x25519axi4.ctrlbus_aw_tready
+x25519axi4.ctrlbus_aw_tvalid
+@22
+x25519axi4.ctrlbus_w_data[31:0]
+@28
+x25519axi4.ctrlbus_w_tready
+x25519axi4.ctrlbus_w_tvalid
+@200
+-
+@22
+x25519axi4.bridge_kp_word_fragment[255:0]
+@28
+x25519axi4.bridge_kp_word_last
+@22
+x25519axi4.bridge_u_k_word[511:0]
+@200
+-
+@28
+x25519axi4.clk
+x25519axi4.x25519.reset
+@22
+x25519axi4.x25519.vhdl_in_k[255:0]
+x25519axi4.x25519.vhdl_sink_tdata[255:0]
+@28
+x25519axi4.x25519.vhdl_sink_tready
+@22
+x25519axi4.x25519.vhdl_source_tdata[255:0]
+@28
+x25519axi4.x25519.vhdl_source_tlast
+x25519axi4.bridge_write_pulse
+x25519axi4.bridge_busy
+@29
+x25519axi4.x25519.vhdl_source_tvalid
+@28
+x25519axi4.bridge_kp_valid
+@200
+-
+-x25519 FSM
+@22
+x25519axi4.x25519.k[255:0]
+x25519axi4.x25519.sink_tdata[255:0]
+@28
+x25519axi4.x25519.sink_tlast
+x25519axi4.x25519.sink_tready
+x25519axi4.x25519.sink_tvalid
+@22
+x25519axi4.x25519.source_tdata[255:0]
+@28
+x25519axi4.x25519.source_tlast
+x25519axi4.x25519.source_tready
+x25519axi4.x25519.source_tvalid
+@200
+-
+-
+-Read Back
+@22
+x25519axi4.ctrlbus_ar_addr[9:0]
+@28
+x25519axi4.ctrlbus_ar_tready
+x25519axi4.ctrlbus_ar_tvalid
+@22
+x25519axi4.ctrlbus_r_data[31:0]
+@28
+x25519axi4.ctrlbus_r_tready
+x25519axi4.ctrlbus_r_tvalid
+[pattern_trace] 1
+[pattern_trace] 0

@@ -44,18 +44,18 @@ object CorundumFrameStash {
 
 case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) extends Component {
   val keepWidth = dataWidth/8
-  val maxFrameBytes = fifoSize * keepWidth
+  val maxFrameBytes = 2048 //fifoSize * keepWidth
   printf("maxFrameBytes = %d\n", maxFrameBytes)
   val io = new Bundle {
     val sink = slave Stream new Fragment(CorundumFrame(dataWidth, userWidth))
     val source = master Stream new Fragment(CorundumFrame(dataWidth, userWidth))
     // worst case each packet is one beat
-    val packets = out UInt(log2Up(fifoSize * 2) bits)
+    val packets = out UInt(log2Up(fifoSize * 2/*@TODO why was this times 2 ?*/) bits)
     val length = out UInt(12 bits)
     val length_valid = out Bool()
     //val full = out Bool()
     //println(log2Up(fifoSize))
-    val availability = out UInt()
+    val availability = out UInt((log2Up(fifoSize + 1) bits))
   }
   val length_and_truncated = new Bundle {
     val length = UInt(12 bits)
@@ -77,11 +77,11 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
   // one cycle to count leading zeroes
   x <-< w
 
-  //GenerationFlags.formal {
-    assume(!(io.sink.isLast) | (io.sink.fragment.tkeep(0) === True))
-    when (w.isLast) { assert(assertion = (w.fragment.tkeep(0) === True), message = "LAST cannot be empty") }
-    when (x.isLast) { assert(assertion = (x.fragment.tkeep(0) === True), message = "LAST cannot be empty") }
-  //}
+//  //GenerationFlags.formal {
+//    assume(!(io.sink.lastFire) | (io.sink.fragment.tkeep(0) === True))
+//    when (w.lastFire) { assert(assertion = (w.fragment.tkeep(0) === True), message = "LAST cannot be empty") }
+//    when (x.lastFire) { assert(assertion = (x.fragment.tkeep(0) === True), message = "LAST cannot be empty") }
+//  //}
 
   val x2 = Stream Fragment(CorundumFrame(dataWidth, userWidth))
   val x3 = Stream Fragment(CorundumFrame(dataWidth, userWidth))

@@ -1,55 +1,66 @@
 [*]
-[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Fri Nov 11 11:00:14 2022
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Thu May  4 23:20:17 2023
 [*]
-[dumpfile] "./simWorkspace/AxisWidthAdapter/test.fst"
-[dumpfile_mtime] "Fri Nov 11 10:59:45 2022"
-[dumpfile_size] 9373
-[savefile] "./AxisWidthAdapter.gtkw"
-[timestart] 123
-[size] 1440 855
+[dumpfile] "/project-on-hos./simWorkspace/AxisDownSizer/test.fst"
+[dumpfile_mtime] "Thu May  4 22:59:11 2023"
+[dumpfile_size] 6411
+[savefile] "/project-on-hos./AxisDownSizer.gtkw"
+[timestart] 1053
+[size] 2794 1544
 [pos] -1 -1
-*-9.000000 1185 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 1190 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
-[sst_width] 287
-[signals_width] 275
+[sst_width] 525
+[signals_width] 499
 [sst_expanded] 1
-[sst_vpaned_height] 241
-@28
-TOP.AxisWidthAdapter.clk
-TOP.AxisWidthAdapter.reset
-@24
-TOP.AxisWidthAdapter.sink_length[11:0]
-@22
-TOP.AxisWidthAdapter.sink_tdata[31:0]
-@28
-TOP.AxisWidthAdapter.sink_tlast
-TOP.AxisWidthAdapter.sink_tready
-TOP.AxisWidthAdapter.sink_tvalid
+[sst_vpaned_height] 492
 @200
 -
-@24
-TOP.AxisWidthAdapter.x_length[11:0]
-@22
-TOP.AxisWidthAdapter.x_payload_fragment[31:0]
+-
+-
 @28
-TOP.AxisWidthAdapter.x_payload_last
-TOP.AxisWidthAdapter.x_ready
-TOP.AxisWidthAdapter.x_valid
+TOP.AxisDownSizer.reset
+TOP.AxisDownSizer.sink_tready
+TOP.AxisDownSizer.sink_tvalid
+TOP.AxisDownSizer.sink_tlast
+@22
+TOP.AxisDownSizer.sink_tdata[31:0]
+TOP.AxisDownSizer.sink_length[11:0]
 @200
 -
+@28
+TOP.AxisDownSizer.y_ready
+TOP.AxisDownSizer.y_valid
+TOP.AxisDownSizer.y_payload_last
 @22
-TOP.AxisWidthAdapter.out_beat_last[11:0]
-TOP.AxisWidthAdapter.out_beat_num[11:0]
+TOP.AxisDownSizer.y_payload_fragment[31:0]
+@24
+TOP.AxisDownSizer.y_length[11:0]
+@25
++{TOP.AxisDownSizer.y_cur_beat_num[1:0]} TOP.AxisDownSizer.y_cur_beat_num[1:0]
+@24
+TOP.AxisDownSizer.y_last_beat_num[1:0]
+@28
+TOP.AxisDownSizer.is_last_output_beat
 @200
 -
-@24
-TOP.AxisWidthAdapter.source_length[11:0]
-@22
-TOP.AxisWidthAdapter.source_tdata[15:0]
 @28
-TOP.AxisWidthAdapter.source_tlast
-TOP.AxisWidthAdapter.source_tready
-TOP.AxisWidthAdapter.source_tvalid
+TOP.AxisDownSizer.z_fire
+TOP.AxisDownSizer.z_payload_last
+@22
+TOP.AxisDownSizer.z_payload_fragment[7:0]
+@28
+TOP.AxisDownSizer.z_ready
+TOP.AxisDownSizer.z_valid
+@200
+-
+-
+@28
+TOP.AxisDownSizer.source_tlast
+TOP.AxisDownSizer.source_tready
+TOP.AxisDownSizer.source_tvalid
+@22
+TOP.AxisDownSizer.source_length[11:0]
 [pattern_trace] 1
 [pattern_trace] 0

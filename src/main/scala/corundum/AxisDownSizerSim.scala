@@ -9,7 +9,7 @@ import scala.util.Random
 object AxisDownSizerSim {
   def main(args: Array[String]) {
     val dataWidthIn = 32
-    val dataWidthOut = dataWidthIn/2
+    val dataWidthOut = dataWidthIn/4
 
     val maxDataValue = scala.math.pow(2, dataWidthIn).intValue - 1
     val keepWidth = dataWidthIn/8
