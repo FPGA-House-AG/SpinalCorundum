@@ -3,13 +3,13 @@ import scala.math.log
 import scala.math.ceil
 import scala.collection.mutable.ArrayBuffer
 
-class RFC6479_MN {
-    var windowSizeValue = 128;
-    var m               = 4;
-    var n               = 32;
+class RFC6479_MN(var p_counterSize: Int, var p_M: Int, var p_N: Int) {
+    var windowSizeValue = p_M * p_N;
+    var m               = p_M;
+    var n               = p_N;
     var memory          = Array.ofDim[Int](m, n)
     var counter         = -1;
-    var counterSize     = 16;
+    var counterSize     = p_counterSize;
     var resultArray     = ArrayBuffer[Int]()
     var s_plus_1        = -1
     var index_s_plus_1  = -1
@@ -20,6 +20,8 @@ class RFC6479_MN {
     var last            = -1
     var reversed        = false
     var clear_no_blocks = false
+    var rejectAfterNumMessages = ((1 << counterSize - 1) - (m-1)*n)
+    println(rejectAfterNumMessages)
     def log2Upper(n: Int): Int = ceil(log(n) / log(2)).toInt
 
     def test_and_set_bit(addr: Int, block: Int): Boolean = {
@@ -50,8 +52,14 @@ class RFC6479_MN {
         this.reversed       = (first > last)
         this.clear_no_blocks= (top == 0)
         
+        //Wireguard check reject after # messages 
+        if(this.s_plus_1 >= this.rejectAfterNumMessages){
+            this.resultArray.append(2)
+            return true;
+        }
+
         //too old 
-        if((this.s_plus_1 + 96) < (this.counter)){
+        if((this.s_plus_1 + n*(m-1)) < (this.counter)){
             this.resultArray.append(2)
             return true;
         }
