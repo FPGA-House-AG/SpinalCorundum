@@ -15,29 +15,27 @@ object PreventReplayMN {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val verilogReport = Config.spinal.generateVerilog({
-      val toplevel = new PreventReplayMN(10, 64, 1024, 32, 4)
+      val toplevel = new PreventReplayMN(10, 64, 32, 4)
       toplevel
     })
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new PreventReplayMN(10, 64, 1024, 32, 4)
+      val toplevel = new PreventReplayMN(10, 64, 32, 4)
       toplevel
     })
   }
 }
 
-case class PreventReplayMN(//rejectAfterNumMessages: Int,
+case class PreventReplayMN(
                          sessionIdWidth:    Int,
                          counterWidth:      Int,
-                         numberOfSessions:  Int,
                          n:                 Int,
                          m:                 Int,
                          initMem: Boolean = false
                          ) extends Component
 {
   val windowSize = m * n
-  val rejectAfterMessages = ((1 << counterWidth - 1) - (m-1)*n)
-  assert(numberOfSessions == (1 << sessionIdWidth))
-  //numberOfSessions = (1 << sessionIdWidth)
+  val rejectAfterMessages = (BigInt(1) << counterWidth) - (m-1)*n - 1
+  val numberOfSessions = (1 << sessionIdWidth)
 
   // This class is our per-session state. 
   case class ReceiveWindow(windowSizeValue : Int, counterWidthValue : Int) extends Bundle {
@@ -229,7 +227,7 @@ import scala.util.Random
 
 object PreventReplayMNSim {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 1024, 32, 4, initMem = true)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 32, 4, initMem = true)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       val testValues = Array(52, 53, 57, 59, 60, 62, 60, 63, 64, 67, 69, 71, 74, 75, 79, 80, 81, 82, 84, 85, 86, 87, 89, 90, 92, 93, 96, 97, 99, 125, 110, 118, 135, 127, 106, 128, 107, 101, 142, 115, 120, 112, 134, 114, 108, 136, 126, 100, 144, 130, 119, 122, 103, 138, 104, 123, 132, 102, 129, 133, 113, 149, 116, 143, 117, 146, 137, 131, 139, 109, 148, 140, 124, 121, 145, 111, 147, 105, 141)
       dut.clockDomain.forkStimulus(period = 2)
@@ -254,7 +252,7 @@ object PreventReplayMNSim {
 
 object PreventReplayMNLinuxSim {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 1024, 32, 4, initMem = true)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 32, 4, initMem = true)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       val testValues = Array(0, 1, 1, 9, 8, 7, 7,  97,  96,  96,  95,  2,  2, 129, 3, 129, 388, 292, 10, 291, 290, 293, 292, 0) 
       val retValues  = Array(0, 0, 1, 0, 0, 0, 1,   0,   0,   1,   0,  0,  1,   0, 1,   1,   0,   0,  1,   1,   1,   0,   1, 1)
@@ -299,7 +297,7 @@ object PreventReplayMNLinuxSim {
 
 object PreventReplayRFC6479_MN {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 1024, 32, 4, initMem = true)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 32, 4, initMem = true)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       val testValues   = ArrayBuffer[Int]() 
       val retValues    = ArrayBuffer[Boolean]()

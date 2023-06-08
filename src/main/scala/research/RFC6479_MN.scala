@@ -20,8 +20,7 @@ class RFC6479_MN(var p_counterSize: Int, var p_M: Int, var p_N: Int) {
     var last            = -1
     var reversed        = false
     var clear_no_blocks = false
-    var rejectAfterNumMessages = ((1 << counterSize - 1) - (m-1)*n)
-    println(rejectAfterNumMessages)
+    var rejectAfterNumMessages = (BigInt(1) << counterSize) - (m-1)*n - 1 
     def log2Upper(n: Int): Int = ceil(log(n) / log(2)).toInt
 
     def test_and_set_bit(addr: Int, block: Int): Boolean = {
@@ -52,7 +51,7 @@ class RFC6479_MN(var p_counterSize: Int, var p_M: Int, var p_N: Int) {
         this.reversed       = (first > last)
         this.clear_no_blocks= (top == 0)
         
-        //Wireguard check reject after # messages 
+        //Wireguard check reject after # messages for overflows
         if(this.s_plus_1 >= this.rejectAfterNumMessages){
             this.resultArray.append(2)
             return true;
@@ -73,7 +72,6 @@ class RFC6479_MN(var p_counterSize: Int, var p_M: Int, var p_N: Int) {
                     memory((i+index_current)%(m))(j) = 0
             }
             this.counter = s_plus_1; 
-            //println(this.counter)
             this.memory((their_counter/n) % m)(their_counter % n) = 1
             this.resultArray.append(1)
             return false;
