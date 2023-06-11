@@ -62,7 +62,7 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
     val truncated = Bool()
   }
 
-  val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth, userWidth)), fifoSize)
+  val fifo = new StreamFifoWithPipeline(Fragment(CorundumFrame(dataWidth, userWidth)), fifoSize + 1)
 
   io.availability := fifo.io.availability
 
@@ -168,7 +168,7 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
 
   // worst-case, a packet is a single beat, so this FIFO must be at least the size of
   // the data stream FIFO, plus extra 
-  val length_fifo = new StreamFifo(UInt(12 bits), fifoSize + 4/*@TODO does this match registers? */)
+  val length_fifo = new StreamFifoWithPipeline(UInt(12 bits), fifoSize * 2 + 1/*@TODO does this match registers? */)
 
   val push_length_on_last = RegNext(x_is_last_beat & !frame_too_large) init(False)
   length_fifo.io.push.valid := push_length_on_last | frame_going_oversize_event
