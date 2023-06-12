@@ -51,7 +51,7 @@ case class AxisDownSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component
   // y is input stream with original payload, but staged
   val y = Stream(Fragment(Bits(dataWidthIn bits)))
   y <-< x
-  val y_length = RegNextWhen(x_length, x.ready)
+  val y_length = RegNextWhen(x_length, x.firstFire)
 
   val z = Stream(Fragment(Bits(dataWidthOut bits)))
 
