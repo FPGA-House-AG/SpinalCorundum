@@ -9,14 +9,10 @@ object StreamFifoWithPipeline {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new StreamFifoWithPipeline(Bits(512 bits), 32)
+      val toplevel = new StreamFifoWithPipeline(Bits(512 bits), 32 + 1)
       toplevel
     })
-    val verilogReport = Config.spinal.generateVerilog(new StreamFifoWithPipeline(Bits(512 bits), 32))
-  }
-
-  def IsPowerOfTwo(x: BigInt): Boolean = {
-    return (x != 0) && ((x & (x - 1)) == 0);
+    val verilogReport = Config.spinal.generateVerilog(new StreamFifoWithPipeline(Bits(512 bits), 32 + 1))
   }
 }
 
@@ -27,7 +23,7 @@ class StreamFifoWithPipeline[T <: Data](dataType: HardType[T], depth: Int) exten
   // This is the optimal size for fast FIFO pointer logic (and maybe the only allowed for Gray counters
   // when using StreamFifoCC for clock-domain crossing).
   require(depth >= 3)
-  require(StreamFifoWithPipeline.IsPowerOfTwo(depth - 1))
+  require(isPow2(depth - 1))
   val io = new Bundle {
     val push = slave Stream (dataType())
     val pop = master Stream (dataType())
@@ -35,18 +31,25 @@ class StreamFifoWithPipeline[T <: Data](dataType: HardType[T], depth: Int) exten
     val occupancy    = out UInt (log2Up(depth + 1) bits)
     val availability = out UInt (log2Up(depth + 1) bits)
   }
-  val fifo_ram = StreamFifo(dataType(), depth)
+  val fifo_ram = StreamFifo(dataType(), depth - 1)
+  fifo_ram.logic.ram.addAttribute(new AttributeString("RAM_STYLE", "block"))
   fifo_ram.io.push << io.push
   fifo_ram.io.flush := io.flush
 
   // this adds a register stage
-  io.pop <-< fifo_ram.io.pop
+  //io.pop <-< fifo_ram.io.pop
+  io.pop << fifo_ram.io.pop.s2mPipe().m2sPipe()
 
-  val this_availability = fifo_ram.io.availability + U(!io.pop.valid)
-  val this_occupancy = fifo_ram.io.occupancy + U(io.pop.valid)
+  assert(isPow2((depth - 1) * 2))
 
-  io.occupancy := RegNext(this_occupancy).init(0)
-  io.availability := RegNext(this_availability).init(depth + 1)
+  val occupancy_counter = CounterUpDown((depth - 1) * 2, io.push.fire, io.pop.fire)
+  val availability_counter = CounterUpDown((depth - 1) * 2, io.pop.fire, io.push.fire)
+  availability_counter.value.init(depth)
+  //val this_availability = fifo_ram.io.availability + U(!io.pop.valid)
+  //val this_occupancy = fifo_ram.io.occupancy + U(io.pop.valid)
+
+  io.occupancy := occupancy_counter.value //.init(0)
+  io.availability := availability_counter.value //.init(depth + 1)
 
   // Rename SpinalHDL library defaults to AXI naming convention
   addPrePopTask(() => CorundumFrame.renameAxiIO(io))
