@@ -177,7 +177,7 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
     (drop_this_frame.asUInt << 11)
   val length_pop = Bool()
   /* pop length from length FIFO on last packet word */
-  length_pop := z.last & z.fire
+  length_pop := z.lastFire
   length_fifo.io.pop.ready := length_pop;
 
   // do not push data beyond truncation */
