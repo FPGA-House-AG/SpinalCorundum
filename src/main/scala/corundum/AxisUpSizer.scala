@@ -44,28 +44,11 @@ case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
     val source_drop = out Bool()
   }
 
-  // translateWith() for Stream(Fragment())
-  // (before this we needed to work-around this, see AxisUpSizer.scala commented out code)
-  implicit class FragmentPimper[T <: Data](v: Fragment[T]) {
-    def ~~[T2 <: Data](trans: T => T2) = {
-      val that = trans(v.fragment)
-      val res = Fragment(cloneOf(that))
-      res.fragment := trans(v.fragment)
-      res.last := v.last
-      res
-    }
-  }
-
-  // x is sink, but adds the sink_length and drop flag as stream payload
-  // such that both sink and sink_length and drop flag are skid buffered
-  val x = Stream(Fragment(Bits(dataWidthIn + 12 + 1 bits)))
-  x << io.sink.~~(_.~~(io.sink_drop ## io.sink_length.asBits ## _)).s2mPipe().m2sPipe()
-   
   // y is input stream with original payload, but after the skid buffer
   val y = Stream(Fragment(Bits(dataWidthIn bits)))
-  y << x.~~(_.~~(_.resize(dataWidthIn)))
-  val y_length = (x.payload.fragment >> dataWidthIn).resize(12).asUInt
-  val y_drop = (x.payload.fragment >> dataWidthIn)(12)
+  y <-< io.sink
+  val y_length = RegNextWhen(io.sink_length, io.sink.ready)
+  val y_drop = RegNextWhen(io.sink_drop, io.sink.ready)
 
   val z = Stream(Fragment(Bits(dataWidthOut bits)))
 
@@ -73,8 +56,6 @@ case class AxisUpSizer(dataWidthIn : Int, dataWidthOut: Int) extends Component {
 
   io.source <-< z
   io.source_length := RegNextWhen(y_length, z.ready)
-  // @NOTE we could take drop directly from y, to make it line up with last from chacha
-  // this is currently taken care of in chacha wrapper already - so leave as is!
   io.source_drop := RegNextWhen(y_drop, z.ready)
 
   // Execute the function renameAxiIO after the creation of the component

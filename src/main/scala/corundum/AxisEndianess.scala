@@ -39,10 +39,8 @@ case class AxisEndianess(dataWidth : Int) extends Component {
     }
   }
 
-  val num_bytes = dataWidth / 8
-  io.source << io.sink.~~(_.~~(_.asBits.subdivideIn(num_bytes slices).reverse.asBits()))
-  //io.source << io.sink.translateWith(io.sink.fragment.asBits.subdivideIn(num_bytes slices).reverse.asBits())
-  //io.source.fragment.assignFromBits(io.sink.fragment.asBits.resize(dataWidth).subdivideIn(num_bytes slices).reverse.asBits())
+  //val num_bytes = dataWidth / 8
+  io.source << io.sink.~~(_.~~(_.asBits.subdivideIn(8 bits).reverse.asBits))
   io.source_length := io.sink_length
   val x = RegNext(io.sink_length)
 

@@ -62,16 +62,13 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
   val hdr_counter = RegNextWhen (io.sink.payload(8 * 8, 64 bits), io.sink.isFirst)
 
   // drive external key LUT, expect key_in valid after two clock cycles
-  io.receiver := hdr_receiver.asBits.subdivideIn(4 slices).reverse.asBits().asUInt
-  io.counter := hdr_counter.asBits.subdivideIn(8 slices).reverse.asBits().asUInt
+  io.receiver := hdr_receiver.asBits.subdivideIn(8 bits).reverse.asBits.asUInt
+  io.counter := hdr_counter.asBits.subdivideIn(8 bits).reverse.asBits.asUInt
 
    // round up to next 16 bytes (should we always do this? -- Ethernet MTU?)
   val padded16_length_out = RegNextWhen(((io.sink_length + 15) >> 4) << 4, io.sink.isFirst)
   // remove 128 bits Wireguard Type 4 header and 128 bits tag from output length
   val plaintext_length_out = RegNext(padded16_length_out - 128/8 - 128/8)
-
-  // @NOTE: during testing, do not pad, to verify correct propagation delay in simulator
-
 
   val x = Stream(Fragment(Bits(dataWidth bits)))
 
@@ -87,7 +84,7 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
     // receiver in little-endian
     x.payload( 63 downto 32).asBits ##
     // 3-bytes reserved are replaced by plaintext_length_out in little-endian
-    plaintext_length_out.resize(24).asBits.subdivideIn(3 slices).reverse.asBits ##
+    plaintext_length_out.resize(24).asBits.subdivideIn(8 bits).reverse.asBits ##
     // pass type 4 byte as-is
     x.payload(7 downto 0)
   val data_payload = x.payload
@@ -103,7 +100,7 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
 
   val gen_external_keylut = (!has_internal_test_lut) generate new Area {
     // optional hardware here
-    io.key_out := io.key_in.subdivideIn((widthOf(io.key_out) / 8) slices).reverse.asBits()
+    io.key_out := io.key_in.subdivideIn(8 bits).reverse.asBits
   }
   val gen_internal_keylut = (has_internal_test_lut) generate new Area {
     val keys_num = 256
@@ -119,7 +116,7 @@ case class AxisWireguardKeyLookup(dataWidth : Int, has_internal_test_lut : Boole
 
     // key lookup based on receiver index of the Type 4
     lut.io.portA.addr := hdr_receiver.resize(log2Up(keys_num)).asUInt
-    io.key_out := lut.io.portA.rdData.subdivideIn((widthOf(io.key_out) / 8) slices).reverse.asBits()
+    io.key_out := lut.io.portA.rdData.subdivideIn(8 bits).reverse.asBits
 
     lut.io.portB.en := True
     lut.io.portB.wr := False
