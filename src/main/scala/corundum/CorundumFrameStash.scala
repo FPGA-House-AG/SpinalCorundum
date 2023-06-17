@@ -206,7 +206,7 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
   y << fifo.io.pop
   // highest bit indicates truncated packet or dropped packet
   val drop_on_truncate = length_fifo.io.pop.payload(11)
-  io.source << z.throwWhen(drop_on_truncate).haltWhen(!length_fifo.io.pop.valid)
+  io.source << z.haltWhen(!length_fifo.io.pop.valid).throwWhen(drop_on_truncate)
 
   // drive length in parallel to packet, unless packet dropped
   io.length := length_fifo.io.pop.payload & U(0x7FF)
