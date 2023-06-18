@@ -32,7 +32,7 @@ class StreamFifoWithPipeline[T <: Data](dataType: HardType[T], depth: Int) exten
     val availability = out UInt (log2Up(depth + 1) bits)
   }
   val fifo_ram = StreamFifo(dataType(), depth - 1)
-  fifo_ram.logic.ram.addAttribute(new AttributeString("RAM_STYLE", "block"))
+  //fifo_ram.logic.ram.addAttribute(new AttributeString("RAM_STYLE", "block"))
   fifo_ram.io.push << io.push
   fifo_ram.io.flush := io.flush
 
