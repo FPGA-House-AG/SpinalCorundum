@@ -52,7 +52,7 @@ case class PreventReplayMN(
   }
 
   val memory = Mem(ReceiveWindow(windowSize, counterWidth).asBits, numberOfSessions)
-  memory.addAttribute(new AttributeString("RAM_STYLE", "ultra"))
+  memory.addAttribute(new AttributeString("RAM_STYLE", "block"))
   if (initMem) {
     memory.initBigInt(Seq.fill(numberOfSessions)(0))
   }
