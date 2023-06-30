@@ -15,15 +15,17 @@ object PreventReplayMN {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val verilogReport = Config.spinal.generateVerilog({
-      val toplevel = new PreventReplayMN(10, 64, 32, 4)
+      val toplevel = new PreventReplayMN(10, 64, 64, 4) // 350  MHz
       toplevel
     })
     val vhdlReport = Config.spinal.generateVhdl({
-      val toplevel = new PreventReplayMN(10, 64, 32, 4)
+      val toplevel = new PreventReplayMN(10, 64, 64, 4)
       toplevel
     })
   }
 }
+
+// ~runMain corundum.PreventReplayRFC6479_MN
 
 case class PreventReplayMN(
                          sessionIdWidth:    Int,
@@ -35,6 +37,7 @@ case class PreventReplayMN(
 {
   val windowSize = m * n
   val rejectAfterMessages = (BigInt(1) << counterWidth) - (m-1)*n - 1
+  printf("rejectAfterMesssages = %s (0x%16x)\n", rejectAfterMessages.toString, rejectAfterMessages)
   val numberOfSessions = (1 << sessionIdWidth)
 
   // This class is our per-session state. 
@@ -305,14 +308,14 @@ object PreventReplayMNLinuxSim {
 
 object PreventReplayRFC6479_MN {
   def main(args: Array[String]) {
-    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 32, 4, initMem = true)){dut =>
+    SimConfig.withFstWave.doSim(new PreventReplayMN(10, 64, 64, 4, initMem = true)){dut =>
       // Fork a process to generate the reset and the clock on the dut
       val testValues   = ArrayBuffer[Int]() 
       val retValues    = ArrayBuffer[Boolean]()
       val whatHappened = ArrayBuffer[Int]()
       val seed:        Long = 123L
       val random:      Random = new Random(seed)
-      val rfc:         RFC6479_MN = new RFC6479_MN(64, 4, 32)
+      val rfc:         RFC6479_MN = new RFC6479_MN(64, 4, 64)
       var first, second: Int = 0
       for(i <- 0 until 1000000){
         var randValue = random.nextInt()
