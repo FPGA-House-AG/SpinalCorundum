@@ -144,13 +144,21 @@ case class PreventReplayMN(
   // WT % WS
   val wt_ptr              = state.wt.resize(mn_bits bits)
 
+  // (block index of (S+1)) >= m ?
+  val index_s_plus_1_ge_m       = RegNext((s_plus_1_d1 >> n_bits) >= m)
+
+  // (block index of (S+1)) - m
+  val index_s_plus_1_minus_m    = RegNext((s_plus_1_d1 >> n_bits) - m)
+
   // block indexes (not modulo M!) for (S+1) and WT
   val index_s_plus_1      = s_plus_1 >> n_bits
   val index_current       = state.wt >> n_bits
 
   // clear all blocks if (index_s_plus_1 - index_current) >= m  (because we only have m blocks)
   // clear all blocks if index_s_plus_1 >= (index_current + m)
-  val clear_all_blocks    = (index_s_plus_1 >= (index_current + m))
+  //val clear_all_blocks    = (index_s_plus_1 >= (index_current + m))
+  //val clear_all_blocks    = ((index_s_plus_1 - m) >= index_current) && (index_s_plus_1 >= m)
+  val clear_all_blocks    = (index_s_plus_1_minus_m >= index_current) && index_s_plus_1_ge_m
   // clear no blocks if S+1 is in same block as where WT is
   val clear_no_blocks     = (index_s_plus_1 === index_current)
   // if some, but not all, blocks are cleared, just for debugging, not used
