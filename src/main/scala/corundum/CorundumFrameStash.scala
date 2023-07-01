@@ -62,7 +62,7 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
     val truncated = Bool()
   }
 
-  val fifo = new StreamFifo(Fragment(CorundumFrame(dataWidth, userWidth)), fifoSize)
+  val fifo = new StreamFifoWithPipeline(Fragment(CorundumFrame(dataWidth, userWidth)), fifoSize + 1)
 
   io.availability := fifo.io.availability
 
@@ -168,7 +168,7 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
 
   // worst-case, a packet is a single beat, so this FIFO must be at least the size of
   // the data stream FIFO, plus extra 
-  val length_fifo = new StreamFifo(UInt(12 bits), fifoSize + 4/*@TODO does this match registers? */)
+  val length_fifo = new StreamFifoWithPipeline(UInt(12 bits), fifoSize * 2 + 1/*@TODO does this match registers? */)
 
   val push_length_on_last = RegNext(x_is_last_beat & !frame_too_large) init(False)
   length_fifo.io.push.valid := push_length_on_last | frame_going_oversize_event
@@ -177,7 +177,7 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
     (drop_this_frame.asUInt << 11)
   val length_pop = Bool()
   /* pop length from length FIFO on last packet word */
-  length_pop := z.last & z.fire
+  length_pop := z.lastFire
   length_fifo.io.pop.ready := length_pop;
 
   // do not push data beyond truncation */
@@ -205,8 +205,8 @@ case class CorundumFrameStash(dataWidth : Int, userWidth : Int, fifoSize : Int) 
   fifo.io.push << x3
   y << fifo.io.pop
   // highest bit indicates truncated packet or dropped packet
-  val drop_on_truncate = ((length_fifo.io.pop.payload & U(0x800)) === U(0x800)) // length_fifo.io.pop.payload >= 0x800
-  io.source << z.throwWhen(drop_on_truncate) //.haltWhen(!io.length.ready)
+  val drop_on_truncate = length_fifo.io.pop.payload(11)
+  io.source << z.haltWhen(!length_fifo.io.pop.valid).throwWhen(drop_on_truncate)
 
   // drive length in parallel to packet, unless packet dropped
   io.length := length_fifo.io.pop.payload & U(0x7FF)
