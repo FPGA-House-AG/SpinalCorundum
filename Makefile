@@ -210,6 +210,14 @@ LookupTable_netlist:
 	netlistsvg LookupTable.json -o LookupTable.svg
 	xviewer LookupTable.svg
 
+AxisDownSizer_netlist:
+	sbt "runMain corundum.AxisDownSizer"
+	yosys -h || . /home/vivado/oss-cad-suite/environment
+	yosys AxisDownSizer.ys
+	netlistsvg AxisDownSizer.json -o AxisDownSizer.svg
+	xviewer AxisDownSizer.svg
+
+
 # The following two targets build an SVG diagram of the Priority Mux
 # @TODO support these tools in our Docker image
 CorundumFrameMuxPrio.json: CorundumFrameMuxPrio.v CorundumFrameMuxPrio.ys
