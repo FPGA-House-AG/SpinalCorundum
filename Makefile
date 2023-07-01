@@ -110,10 +110,11 @@ sim_reader:
 	gtkwave -F -f ./simWorkspace/CorundumFrameReaderAxi4/test.fst   -a ./CorundumFrameWriterAxi4.gtkw   &
 	sbt "~ test:runMain corundum.CorundumFrameReaderSim"
 
-# AxisExtractHeader simulation verification test
+# AxisExtractHeader and PreventReplay simulation verification test
 sim_extract:
 	set -e
 	sbt "runMain corundum.AxisExtractHeaderSim"
+	sbt "runMain corundum.PreventReplayRFC6479_MN"
 
 # LookupCounter{,Axi4} simulation verification test
 sim_counter:
@@ -146,6 +147,7 @@ rtl: src/main/scala/corundum/AxisUpSizer.scala
 rtl: src/main/scala/corundum/AxisToCorundumFrame.scala
 rtl: src/main/scala/corundum/AxisWireguardKeyLookup.scala
 rtl: src/main/scala/corundum/LookupTable.scala
+rtl: src/main/scala/corundum/PreventReplayMN.scala
 	set -e
 	sbt " \
 	runMain corundum.CorundumFrameMuxPrio; \
@@ -163,6 +165,7 @@ rtl: src/main/scala/corundum/LookupTable.scala
 	runMain corundum.AxisToCorundumFrame; \
 	runMain corundum.AxisWireguardKeyLookup; \
 	runMain corundum.LookupTable; \
+	runMain corundum.PreventReplayMN; \
 	"
 
 # formal verification.

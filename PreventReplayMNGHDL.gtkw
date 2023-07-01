@@ -1,0 +1,84 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Wed May 24 11:57:32 2023
+[*]
+[dumpfile] "/project-on-host/SpinalCorundum/simWorkspace/PreventReplayMN/test.fst"
+[dumpfile_mtime] "Wed May 24 11:55:29 2023"
+[dumpfile_size] 95587
+[savefile] "/project-on-host/SpinalCorundum/PreventReplayMNGHDL.gtkw"
+[timestart] 292
+[size] 2560 915
+[pos] -1 -1
+*-3.699211 322 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[sst_width] 225
+[signals_width] 1256
+[sst_expanded] 1
+[sst_vpaned_height] 261
+@28
+TOP.PreventReplayMN.clk
+TOP.io_clear
+TOP.reset
+TOP.io_valid
+[color] 1
+TOP.io_drop
+@24
+[color] 6
+TOP.io_counter[15:0]
+@200
+-
+@a8
+[color] 2
+TOP.PreventReplayMN.state_bitmap[127:0]
+@24
+TOP.PreventReplayMN.state_wt[15:0]
+@a8
+[color] 2
+TOP.PreventReplayMN.next_state_bitmap[127:0]
+@24
+[color] 1
+TOP.PreventReplayMN.next_state_wt[15:0]
+@200
+-
+@28
+TOP.PreventReplayMN.higher
+TOP.PreventReplayMN.inside_1
+TOP.PreventReplayMN.lower
+@200
+-
+@24
+TOP.PreventReplayMN.s_plus_1[15:0]
+TOP.PreventReplayMN.s_ptr[6:0]
+TOP.PreventReplayMN.wt_ptr[6:0]
+[color] 2
+TOP.PreventReplayMN.index_s_plus_1[10:0]
+[color] 2
+TOP.PreventReplayMN.index_current[10:0]
+[color] 2
+TOP.PreventReplayMN.top[2:0]
+[color] 2
+TOP.PreventReplayMN.first[1:0]
+@25
+[color] 2
+TOP.PreventReplayMN.last[1:0]
+@28
+[color] 2
+TOP.PreventReplayMN.reversed
+[color] 2
+TOP.PreventReplayMN.clear_no_blocks
+@200
+-
+@a8
+TOP.PreventReplayMN.d3_data_bitmap[127:0]
+TOP.PreventReplayMN.d4_data_bitmap[127:0]
+TOP.PreventReplayMN.d5_data_bitmap[127:0]
+@24
+TOP.PreventReplayMN.d1_counter[15:0]
+[color] 1
+TOP.PreventReplayMN.d2_counter[15:0]
+TOP.PreventReplayMN.d3_counter[15:0]
+TOP.PreventReplayMN.d4_counter[15:0]
+TOP.PreventReplayMN.d5_counter[15:0]
+TOP.PreventReplayMN.diff[10:0]
+[pattern_trace] 1
+[pattern_trace] 0
