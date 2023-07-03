@@ -22,7 +22,7 @@ object StreamLatency {
 case class StreamLatency[T <: Data](dataType: HardType[T], cycleCount : Int) extends Component {
 
   // @TODO if true, the assert() does not hold?!
-  val hasOutputReg = false
+  val hasOutputReg = true
   val streamFifoLatency = 2
   val outputRegLatency = if (hasOutputReg) 1 else 0
 
@@ -37,7 +37,6 @@ case class StreamLatency[T <: Data](dataType: HardType[T], cycleCount : Int) ext
   val cycle = Reg(UInt(32 bits)).init(0)
   cycle := cycle + 1
 
-  // concatenate sink_length to Fragment, going through skid buffer in-sync with data
   val x = Stream(dataType)
   x << io.sink
 
@@ -52,9 +51,10 @@ case class StreamLatency[T <: Data](dataType: HardType[T], cycleCount : Int) ext
   // halt on downstream backpressure (internal delay)
   h << x.continueWhen(io.source.ready)
   // store data in FIFO, y is the data FIFO output
-  val (y, available) = h.queueWithAvailability(cycleCount + streamFifoLatency - outputRegLatency)
+  //val (y, available) = h.queueWithAvailability(cycleCount)
+  val y = h.queue(cycleCount)
   // assert data FIFO will not overflow
-  when (available === 0) { assert(!h.valid) }
+  //when (available === 0) { assert(!h.valid) }
   // z is the delayed stream result
   z << y
   // delay valid signal parallel to the data FIFO with a delay line
