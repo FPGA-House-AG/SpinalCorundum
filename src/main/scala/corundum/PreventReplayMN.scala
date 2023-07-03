@@ -10,18 +10,25 @@ import rfc6479.RFC6479_MN
 import scala.util.Random
 import scala.collection.mutable.ArrayBuffer
 
+// Alveo U50 just meets 375 MHz timing with BRAMs and M=4 x N=64 or M=8 x N=32
+//
+
 // companion object for case class
 object PreventReplayMN {
   // generate VHDL and Verilog
   def main(args: Array[String]) {
     val verilogReport = Config.spinal.generateVerilog({
-      val toplevel = new PreventReplayMN(10, 64, 64, 4) // 350  MHz
-      toplevel
-    })
-    val vhdlReport = Config.spinal.generateVhdl({
+      // (10, 64, 64, 4) 375 MHz, 1472 LUTs, 1364 Regs, 9 BRAMs (packet window size 192)
+      // (10, 64, 64, 4) 325 MHz, 1475 LUTs, 1349 Regs, 5 URAMs
       val toplevel = new PreventReplayMN(10, 64, 64, 4)
+      // 375 MHz, 1515 LUTs, 1367 Regs, 9 BRAMs (packet window size 224)
+      //val toplevel = new PreventReplayMN(10, 64, 32, 8) 
       toplevel
     })
+    //val vhdlReport = Config.spinal.generateVhdl({
+    //  val toplevel = new PreventReplayMN(10, 64, 64, 4)
+    //  toplevel
+    //})
   }
 }
 
@@ -55,7 +62,7 @@ case class PreventReplayMN(
   }
 
   val memory = Mem(ReceiveWindow(windowSize, counterWidth).asBits, numberOfSessions)
-  memory.addAttribute(new AttributeString("RAM_STYLE", "block"))
+  memory.addAttribute(new AttributeString("RAM_STYLE", "ultra"))
   if (initMem) {
     memory.initBigInt(Seq.fill(numberOfSessions)(0))
   }
@@ -157,10 +164,9 @@ case class PreventReplayMN(
   val index_s_plus_1      = s_plus_1 >> n_bits
   val index_current       = state.wt >> n_bits
 
-  // clear all blocks if (index_s_plus_1 - index_current) >= m  (because we only have m blocks)
-  // clear all blocks if index_s_plus_1 >= (index_current + m)
-  //val clear_all_blocks    = (index_s_plus_1 >= (index_current + m))
-  //val clear_all_blocks    = ((index_s_plus_1 - m) >= index_current) && (index_s_plus_1 >= m)
+  // val clear_all_blocks   =  (index_s_plus_1 - index_current) >= m  // (because we only have m blocks)
+  //val clear_all_blocks    = (index_s_plus_1 >= (index_current + m)) // move index_current to the right side
+  //val clear_all_blocks    = ((index_s_plus_1 - m) >= index_current) && (index_s_plus_1 >= m) //move m left
   val clear_all_blocks    = (index_s_plus_1_minus_m >= index_current) && index_s_plus_1_ge_m
   // clear no blocks if S+1 is in same block as where WT is
   val clear_no_blocks     = (index_s_plus_1 === index_current)
@@ -179,14 +185,14 @@ case class PreventReplayMN(
   val clear_block = Bits(m bits)
   for (i_block <- 0 until m) {
     clear_block(i_block) :=
-      // clear no blocks?
+      // clear no blocks? (has precedence over clear_all_blocks)
       !clear_no_blocks &
       (
         // clear blocks in range (current, last] (exclusive, inclusive]
         (((i_block > current) & (i_block <= last)) & !last_is_wrapped) |
         // same, but now in case last is wrapped
         (((i_block > current) | (i_block <= last)) & last_is_wrapped) |
-        // or clear all blocks
+        // or clear all blocks (S is so much higher than WT that complete window must be cleared)
         clear_all_blocks
       )
   }
@@ -202,7 +208,7 @@ case class PreventReplayMN(
     for (i_block <- 0 until m) {
       // iterate over bits in block
       for (i <- 0 until n) {
-        // the condition to clear (all) the (bits in the) block is identical; !clear_block(i_block)
+        // the condition to clear the bits in a block is clear_block(i_block)
         next_state.bitmap(i_block * n + i) := state.bitmap(i_block * n + i) & !clear_block(i_block)
       }
     }
