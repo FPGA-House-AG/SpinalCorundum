@@ -7,10 +7,11 @@ ThisBuild / organization := "online.blackwire"
 // https://github.com/SpinalHDL/SpinalHDL.git
 // ad62c4ea3fc0acf70885441a88fe8f2336e4cb20
 val spinalVersion = "dev"
-val spinalDir = "../SpinalHDL.dev"
+val spinalDir = "../SpinalHDL"
 
 val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
 val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
+val spinalSim = "com.github.spinalhdl" %% "spinalhdl-sim" % spinalVersion
 val spinalTester = "com.github.spinalhdl" %% "spinalhdl-tester" % spinalVersion
 val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
 
@@ -24,7 +25,7 @@ lazy val spinalCorundum = (project in file("."))
     name := "SpinalCorundum",
     libraryDependencies ++= Seq(sourceCode, scalaTest),
     //libraryDependencies ++= Seq(breeze),
-    //libraryDependencies ++= Seq(spinalCore, spinalLib, spinalTester, spinalIdslPlugin)
+    //libraryDependencies ++= Seq(spinalCore, spinalLib, spinalSim, spinalTester, spinalIdslPlugin)
 
     // the following 3 lines take SpinalHDL from a local checkout, above line must be commented out
     scalacOptions += s"-Xplugin:${new File(baseDirectory.value + s"/" + spinalDir + s"/idslplugin/target/scala-2.11/spinalhdl-idsl-plugin_2.11-$spinalVersion.jar")}",
