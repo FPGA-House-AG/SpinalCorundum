@@ -17,10 +17,16 @@ object StreamLatencySim {
     val dataWidthBytes = dataWidth/8
 
     SimConfig
-    .withFstWave
+    // GHDL can simulate VHDL
+    .withGhdl
+    //.addRunFlag support is now in SpinalHDL dev branch
+    .addRunFlag("--unbuffered") //.addRunFlag("--disp-tree=inst")
+    .addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none")
+    .addRunFlag("--backtrace-severity=warning")    
+    .withWave
     .doSim(new StreamLatency(Fragment(Bits(dataWidth bits)), cycleCount)){dut =>
 
-      SimTimeout(1000000 * 10)
+      SimTimeout(10000 * 100)
 
       var maxFrameWords = 32
       var maxPacketSizeBytes = maxFrameWords * dataWidthBytes
