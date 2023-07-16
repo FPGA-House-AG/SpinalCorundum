@@ -11,7 +11,10 @@ object CorundumFrameStashSim {
     val dataWidth = 24
     val maxDataValue = scala.math.pow(2, dataWidth).intValue - 1
     val keepWidth = dataWidth/8
-    SimConfig.withFstWave.doSim(CorundumFrameStash(dataWidth, fifoSize = 8)){dut =>
+    SimConfig
+    .allOptimisation
+    .withGhdl.addRunFlag("--unbuffered").addRunFlag("--ieee-asserts=disable").addRunFlag("--assert-level=none").addRunFlag("--backtrace-severity=warning")
+    .withFstWave.doSim(CorundumFrameStash(dataWidth, fifoSize = 8)){dut =>
 
       var maxFrameWords = 16
       var maxPacketSizeBytes = (maxFrameWords + 1) * keepWidth
