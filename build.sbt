@@ -2,7 +2,7 @@ ThisBuild / version := "1.0"
 ThisBuild / scalaVersion := "2.11.12"
 ThisBuild / organization := "online.blackwire"
 
-val spinalVersion = "1.9.0"
+val spinalVersion = "1.9.1"
 //val spinalVersion = "dev"
 
 val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
